@@ -28,39 +28,32 @@ function StatusControl({ task, onChange }: { task: Task; onChange: (s: TaskStatu
 
 export default function TaskList({ onToast }: { onToast: (msg: string, type?: 'success'|'error') => void }) {
   const qc = useQueryClient()
-  const [dismissed, setDismissed] = useState<string[]>([])
+  const [dismissed, setDismissed] = useState<(string | number)[]>([])
 
   const recQ = useQuery({
     queryKey: ['recs', 10],
     queryFn: () => listRecommendations(10),
   })
-  
 
   const createM = useMutation({
     mutationFn: (vals: TaskFormValues) => createTask({ title: vals.title, tags: splitTags(vals.tags), project_id: vals.project_id ?? null }),
-    onSuccess: () => { onToast('Task created'); qc.invalidateQueries({ predicate: q => q.queryKey[0] === 'recs' }) },
-    onSettled: () => { qc.invalidateQueries({ predicate: q => q.queryKey[0] === 'recs' }) },
+    onSuccess: () => { onToast('Task created'); qc.invalidateQueries({ queryKey: ['recs', 10] }) },
     onError: () => onToast('Failed to create task', 'error'),
   })
 
   const statusM = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: TaskStatus }) => updateTaskStatus(id, status),
+    mutationFn: ({ id, status }: { id: string | number; status: TaskStatus }) => updateTaskStatus(String(id), status),
     onMutate: async ({ id, status }) => {
-      await qc.cancelQueries({ queryKey: ['recs'] })
-      const prev = qc.getQueryData<RecommendationItem[]>(['recs', { limit: 10 }])
+      await qc.cancelQueries({ queryKey: ['recs', 10] })
+      const prev = qc.getQueryData<RecommendationItem[]>(['recs', 10])
       if (prev) {
-        qc.setQueryData<RecommendationItem[]>(['recs', { limit: 10 }], prev.map(r => r.task.id === id ? { ...r, task: { ...r.task, status } } : r))
+        qc.setQueryData<RecommendationItem[]>(['recs', 10], prev.map(r => r.task.id === id ? { ...r, task: { ...r.task, status } } : r))
       }
       return { prev }
     },
-    onError: (_err, _vars, ctx) => {
-      if (ctx?.prev) qc.setQueryData(['recs', { limit: 10 }], ctx.prev)
-      onToast('Failed to update status', 'error')
-    },
+    onError: (_err, _vars, ctx) => { if (ctx?.prev) qc.setQueryData(['recs', 10], ctx.prev); onToast('Failed to update status', 'error') },
     onSuccess: () => onToast('Status updated'),
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: ['recs'] })
-    }
+    onSettled: () => qc.invalidateQueries({ queryKey: ['recs', 10] }),
   })
 
   function splitTags(input: string): string[] {
@@ -98,7 +91,11 @@ export default function TaskList({ onToast }: { onToast: (msg: string, type?: 's
         <div role="alert" className="p-3 rounded-xl bg-red-100 text-red-800">Failed to load recommendations.</div>
       )}
 
-      {Array.isArray(recQ.data) && (
+      {Array.isArray(recQ.data) && recQ.data.length === 0 && (
+        <div className="text-sm text-gray-500 italic">No recommended tasks yet — add one above.</div>
+      )}
+
+      {Array.isArray(recQ.data) && recQ.data.length > 0 && (
         <ul className="divide-y">
           {recQ.data.map((rec, idx) => (
             <li key={rec.task.id} className="flex items-center gap-3 p-3 hover:bg-gray-50 transition">
@@ -107,7 +104,7 @@ export default function TaskList({ onToast }: { onToast: (msg: string, type?: 's
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <div className="font-medium text-gray-800">{rec.task.title}</div>
-                  {idx === 0 && <span className="text-xs px-2 py-0.5 rounded-full bg-blue-600 text-white">Recommended</span>}
+                  {idx === 0 && <span className="text-xs px-2 py-0.5 rounded-full bg-blue-600 text-white" aria-label="Next best task">Recommended</span>}
                 </div>
                 <TagChips tags={rec.task.tags} />
                 <div className="text-xs text-gray-500 mt-1">{rec.why}</div>
