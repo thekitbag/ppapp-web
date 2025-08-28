@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createTask, updateTaskStatus } from '../api/tasks'
+import { createTask, listTasks, promoteTasksToWeek, updateTaskStatus } from '../api/tasks'
 import type { Task, TaskStatus } from '../types'
 import TaskForm, { TaskFormValues } from './TaskForm'
-import { listRecommendations, type RecommendationItem } from '../api/recommendations'
-import NextBestCard from './NextBestCard'
+import { suggestWeek, type RecommendationItem } from '../api/recommendations'
+import SuggestWeekModal from './SuggestWeekModal'
 
 function TagChips({ tags }: { tags: string[] }) {
   if (!tags?.length) return null
@@ -18,7 +18,7 @@ function TagChips({ tags }: { tags: string[] }) {
 }
 
 function StatusControl({ task, onChange }: { task: Task; onChange: (s: TaskStatus) => void }) {
-  const nexts: TaskStatus[] = ['inbox','todo','doing','done']
+  const nexts: TaskStatus[] = ['backlog','today','week','waiting','done', 'doing']
   return (
     <select aria-label={`Change status for ${task.title}`} value={task.status} onChange={(e)=>onChange(e.target.value as TaskStatus)} className="border rounded-lg px-2 py-1 focus:ring-2 focus:ring-primary">
       {nexts.map((s)=> <option key={s} value={s}>{s}</option>)}
@@ -26,98 +26,165 @@ function StatusControl({ task, onChange }: { task: Task; onChange: (s: TaskStatu
   )
 }
 
+function Bucket({ title, cta, children }: { title: string; cta?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <section className="bg-white rounded-2xl shadow p-4">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="font-medium capitalize">{title}</h3>
+        {cta}
+      </div>
+      {children}
+    </section>
+  )
+}
+
 export default function TaskList({ onToast }: { onToast: (msg: string, type?: 'success'|'error') => void }) {
   const qc = useQueryClient()
-  const [dismissed, setDismissed] = useState<(string | number)[]>([])
 
-  const recQ = useQuery({
-    queryKey: ['recs', 10],
-    queryFn: () => listRecommendations(10),
-  })
+  const tasksQ = useQuery({ queryKey: ['tasks'], queryFn: listTasks })
+  const [modalOpen, setModalOpen] = useState(false)
+  const [suggestions, setSuggestions] = useState<RecommendationItem[]>([])
 
   const createM = useMutation({
     mutationFn: (vals: TaskFormValues) => createTask({ title: vals.title, tags: splitTags(vals.tags), project_id: vals.project_id ?? null }),
-    onSuccess: () => { onToast('Task created'); qc.invalidateQueries({ queryKey: ['recs', 10] }) },
+    onSuccess: () => { onToast('Task created'); qc.invalidateQueries({ queryKey: ['tasks'] }) },
     onError: () => onToast('Failed to create task', 'error'),
   })
 
   const statusM = useMutation({
     mutationFn: ({ id, status }: { id: string | number; status: TaskStatus }) => updateTaskStatus(String(id), status),
     onMutate: async ({ id, status }) => {
-      await qc.cancelQueries({ queryKey: ['recs', 10] })
-      const prev = qc.getQueryData<RecommendationItem[]>(['recs', 10])
+      await qc.cancelQueries({ queryKey: ['tasks'] })
+      const prev = qc.getQueryData<Task[]>(['tasks'])
       if (prev) {
-        qc.setQueryData<RecommendationItem[]>(['recs', 10], prev.map(r => r.task.id === id ? { ...r, task: { ...r.task, status } } : r))
+        qc.setQueryData<Task[]>(['tasks'], prev.map(t => t.id === id ? { ...t, status } : t))
       }
       return { prev }
     },
-    onError: (_err, _vars, ctx) => { if (ctx?.prev) qc.setQueryData(['recs', 10], ctx.prev); onToast('Failed to update status', 'error') },
+    onError: (_err, _vars, ctx) => { if (ctx?.prev) qc.setQueryData(['tasks'], ctx.prev); onToast('Failed to update status', 'error') },
     onSuccess: () => onToast('Status updated'),
-    onSettled: () => qc.invalidateQueries({ queryKey: ['recs', 10] }),
+    onSettled: () => qc.invalidateQueries({ queryKey: ['tasks'] }),
+  })
+
+  const suggestM = useMutation({
+    mutationFn: (limit: number) => suggestWeek(limit),
+    onSuccess: (items) => { setSuggestions(items); setModalOpen(true) },
+    onError: () => onToast('Failed to get suggestions', 'error'),
+  })
+
+  const promoteM = useMutation({
+    mutationFn: (ids: Array<string | number>) => promoteTasksToWeek(ids),
+    onSuccess: (_res, ids) => {
+      const prev = qc.getQueryData<Task[]>(['tasks'])
+      if (prev) {
+        qc.setQueryData<Task[]>(['tasks'], prev.map(t => ids.includes(t.id) ? { ...t, status: 'week' } as Task : t))
+      }
+      onToast(`${ids.length} tasks moved to This Week`)
+      setModalOpen(false)
+    },
+    onError: () => onToast('Failed to move tasks', 'error'),
+    onSettled: () => { qc.invalidateQueries({ queryKey: ['tasks'] }) }
   })
 
   function splitTags(input: string): string[] {
     return input.split(',').map(s=>s.trim()).filter(Boolean)
   }
 
-  const topRec = useMemo(() => {
-    const data = recQ.data
-    if (!Array.isArray(data)) return undefined
-    const items = data.filter(r => !dismissed.includes(r.task.id))
-    return items[0]
-  }, [recQ.data, dismissed])
+  const tasks = tasksQ.data || []
+  const current = useMemo(() => tasks.find(t => t.status === 'doing'), [tasks])
+  const remainingToday = useMemo(() => tasks.filter(t => t.status === 'today'), [tasks])
+  const backlog = useMemo(() => tasks.filter(t => t.status === 'backlog'), [tasks])
+  const waiting = useMemo(() => tasks.filter(t => t.status === 'waiting'), [tasks])
+  const week = useMemo(() => tasks.filter(t => t.status === 'week'), [tasks])
 
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-6 bg-white rounded-2xl shadow-md">
-      <h1 className="text-2xl font-semibold text-secondary">Today</h1>
-
-      {topRec && (
-        <NextBestCard
-          rec={topRec}
-          onDone={(id, status) => statusM.mutate({ id, status })}
-          onSnooze={(id) => setDismissed((d) => [...d, id])}
-        />
-      )}
-
+    <div className="max-w-5xl mx-auto space-y-6">
       <TaskForm onSubmit={(v)=>createM.mutate(v)} disabled={createM.isPending} />
 
-      {recQ.isLoading && (
-        <div className="space-y-2">
-          {Array.from({ length: 4 }).map((_,i)=> <div key={i} className="skeleton h-14 rounded-xl" />)}
-        </div>
-      )}
+      <section className="bg-white rounded-2xl shadow p-4">
+        <h2 className="text-lg font-semibold mb-2">Currently in progress</h2>
+        {current ? (
+          <div className="flex items-start gap-3">
+            <div className="flex-1">
+              <div className="font-medium text-gray-900">{current.title}</div>
+              <TagChips tags={current.tags} />
+            </div>
+            <StatusControl task={current} onChange={(s)=>statusM.mutate({ id: current.id, status: s })} />
+          </div>
+        ) : (
+          <div className="text-sm text-gray-500">No task in progress. Pick one from Today or Backlog.</div>
+        )}
+      </section>
 
-      {recQ.isError && (
-        <div role="alert" className="p-3 rounded-xl bg-red-100 text-red-800">Failed to load recommendations.</div>
-      )}
-
-      {Array.isArray(recQ.data) && recQ.data.length === 0 && (
-        <div className="text-sm text-gray-500 italic">No recommended tasks yet — add one above.</div>
-      )}
-
-      {Array.isArray(recQ.data) && recQ.data.length > 0 && (
-        <ul className="divide-y">
-          {recQ.data.map((rec, idx) => (
-            <li key={rec.task.id} className="flex items-center gap-3 p-3 hover:bg-gray-50 transition">
-              <span aria-hidden className="text-gray-400 select-none cursor-not-allowed">⋮⋮</span>
-
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <div className="font-medium text-gray-800">{rec.task.title}</div>
-                  {idx === 0 && <span className="text-xs px-2 py-0.5 rounded-full bg-blue-600 text-white" aria-label="Next best task">Recommended</span>}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Bucket title="backlog">
+          <ul className="space-y-2">
+            {backlog.map(t => (
+              <li key={t.id} className="p-2 rounded-lg border flex items-center gap-3">
+                <div className="flex-1">
+                  <div className="font-medium">{t.title}</div>
+                  <TagChips tags={t.tags} />
                 </div>
-                <TagChips tags={rec.task.tags} />
-                <div className="text-xs text-gray-500 mt-1">{rec.why}</div>
-              </div>
+                <StatusControl task={t} onChange={(s)=>statusM.mutate({ id: t.id, status: s })} />
+              </li>
+            ))}
+            {backlog.length === 0 && <li className="text-sm text-gray-500 italic">No backlog tasks.</li>}
+          </ul>
+        </Bucket>
 
-              <StatusControl task={rec.task} onChange={(s)=>statusM.mutate({ id: rec.task.id, status: s })} />
+        <Bucket title="today">
+          <ul className="space-y-2">
+            {remainingToday.map(t => (
+              <li key={t.id} className="p-2 rounded-lg border flex items-center gap-3">
+                <div className="flex-1">
+                  <div className="font-medium">{t.title}</div>
+                  <TagChips tags={t.tags} />
+                </div>
+                <StatusControl task={t} onChange={(s)=>statusM.mutate({ id: t.id, status: s })} />
+              </li>
+            ))}
+            {!current && remainingToday.length === 0 && <li className="text-sm text-gray-500 italic">No tasks for today yet.</li>}
+          </ul>
+        </Bucket>
 
-              <button className="ml-2 px-2 py-1 text-sm rounded-lg border" onClick={() => setDismissed(d => [...d, rec.task.id])}>
-                Dismiss
-              </button>
-            </li>
-          ))}
-        </ul>
+        <Bucket title="week" cta={<button className="px-3 py-1.5 rounded-lg bg-primary text-white" onClick={() => suggestM.mutate(5)}>Suggest Tasks</button>}>
+          <ul className="space-y-2">
+            {week.map(t => (
+              <li key={t.id} className="p-2 rounded-lg border flex items-center gap-3">
+                <div className="flex-1">
+                  <div className="font-medium">{t.title}</div>
+                  <TagChips tags={t.tags} />
+                </div>
+                <StatusControl task={t} onChange={(s)=>statusM.mutate({ id: t.id, status: s })} />
+              </li>
+            ))}
+            {week.length === 0 && <li className="text-sm text-gray-500 italic">No tasks planned this week.</li>}
+          </ul>
+        </Bucket>
+
+        <Bucket title="waiting">
+          <ul className="space-y-2">
+            {waiting.map(t => (
+              <li key={t.id} className="p-2 rounded-lg border flex items-center gap-3">
+                <div className="flex-1">
+                  <div className="font-medium">{t.title}</div>
+                  <TagChips tags={t.tags} />
+                </div>
+                <StatusControl task={t} onChange={(s)=>statusM.mutate({ id: t.id, status: s })} />
+              </li>
+            ))}
+            {waiting.length === 0 && <li className="text-sm text-gray-500 italic">Nothing waiting on others.</li>}
+          </ul>
+        </Bucket>
+      </div>
+
+      {modalOpen && (
+        <SuggestWeekModal
+          open={modalOpen}
+          suggestions={suggestions}
+          onClose={() => setModalOpen(false)}
+          onConfirm={(ids) => promoteM.mutate(ids)}
+        />
       )}
     </div>
   )
