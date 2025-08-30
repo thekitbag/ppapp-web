@@ -29,7 +29,7 @@ export default function SuggestWeekModal({ open, suggestions, onClose, onConfirm
           {suggestions.map((s) => (
             <label key={s.task.id} className="flex items-start gap-3 p-2">
               <input
-                aria-label={`Select ${s.task.title}`}
+                aria-label={`Include ${s.task.title} in This Week`}
                 type="checkbox"
                 checked={!!checked[s.task.id]}
                 onChange={(e) => setChecked((c) => ({ ...c, [s.task.id]: e.target.checked }))}

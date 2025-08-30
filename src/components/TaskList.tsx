@@ -83,7 +83,7 @@ export default function TaskList({ onToast }: { onToast: (msg: string, type?: 's
       setModalOpen(false)
     },
     onError: () => onToast('Failed to move tasks', 'error'),
-    onSettled: () => { qc.invalidateQueries({ queryKey: ['tasks'] }) }
+    onSettled: () => { qc.invalidateQueries({ queryKey: ['tasks'] }); qc.invalidateQueries({ queryKey: ['recs', 'week'] }) }
   })
 
   function splitTags(input: string): string[] {
