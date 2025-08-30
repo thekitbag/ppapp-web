@@ -95,7 +95,7 @@ function TaskColumn({ status, tasks, onTaskDrop }: { status: TaskStatus; tasks: 
 export default function TaskBoard() {
   const qc = useQueryClient();
   const tasksQ = useQuery({
-    queryKey: ['tasks'],
+    queryKey: ['tasks', STATUS_ORDER],
     queryFn: () => listTasks(STATUS_ORDER),
     select: (data) => data.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)),
   });
@@ -118,7 +118,7 @@ export default function TaskBoard() {
   const patchM = useMutation({
     mutationFn: ({ id, ...input }: { id: string } & Partial<Task>) => patchTask(id, input),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['tasks'] });
+      qc.invalidateQueries({ queryKey: ['tasks', STATUS_ORDER] });
     },
   });
 
