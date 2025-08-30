@@ -1,12 +1,12 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { qk } from '../lib/queryKeys';
 import { listTasks, patchTask } from '../api/tasks';
 import { Task, TaskStatus } from '../types';
+import { STATUS_ORDER } from '../constants';
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-
-const STATUS_ORDER: TaskStatus[] = ['backlog', 'week', 'today', 'doing', 'waiting', 'done'];
 
 function TaskCard({ task, project, goal }: { task: Task, project: any, goal: any }) {
   const ref = useRef(null);
@@ -98,12 +98,12 @@ import { listGoals } from '../api/goals';
 export default function TaskBoard() {
   const qc = useQueryClient();
   const tasksQ = useQuery({
-    queryKey: ['tasks', STATUS_ORDER],
+    queryKey: qk.tasks.byStatuses(STATUS_ORDER),
     queryFn: () => listTasks(STATUS_ORDER),
     select: (data) => data.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)),
   });
-  const projectsQ = useQuery({ queryKey: ['projects'], queryFn: listProjects });
-  const goalsQ = useQuery({ queryKey: ['goals'], queryFn: listGoals });
+  const projectsQ = useQuery({ queryKey: qk.projects.all, queryFn: listProjects });
+  const goalsQ = useQuery({ queryKey: qk.goals.all, queryFn: listGoals });
 
   const projectsById = useMemo(() => {
     if (!projectsQ.data) return {};
@@ -132,7 +132,7 @@ export default function TaskBoard() {
   const patchM = useMutation({
     mutationFn: ({ id, ...input }: { id: string } & Partial<Task>) => patchTask(id, input),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['tasks', STATUS_ORDER] });
+      qc.invalidateQueries({ queryKey: qk.tasks.byStatuses(STATUS_ORDER) });
     },
   });
 

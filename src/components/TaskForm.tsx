@@ -1,5 +1,6 @@
 import React, { FormEvent, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { qk } from '../lib/queryKeys'
 import { listProjects } from '../api/projects'
 import { listGoals } from '../api/goals'
 
@@ -20,8 +21,8 @@ export default function TaskForm({ onSubmit, disabled }: { onSubmit: (values: Ta
   const [hardDue, setHardDue] = useState('')
   const [softDue, setSoftDue] = useState('')
 
-  const projectsQ = useQuery({ queryKey: ['projects'], queryFn: listProjects })
-  const goalsQ = useQuery({ queryKey: ['goals'], queryFn: listGoals })
+  const projectsQ = useQuery({ queryKey: qk.projects.all, queryFn: listProjects })
+  const goalsQ = useQuery({ queryKey: qk.goals.all, queryFn: listGoals })
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
