@@ -1,7 +1,5 @@
 export type TaskStatus = 'backlog' | 'doing' | 'week' | 'done' | 'waiting' | 'today'
 
-export type TaskStatus = 'backlog' | 'doing' | 'week' | 'done' | 'waiting' | 'today'
-
 export interface Task {
   id: string
   title: string

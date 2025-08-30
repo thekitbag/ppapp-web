@@ -19,3 +19,13 @@ export async function patchTask(id: string | number, input: PatchTaskInput): Pro
   const { data } = await api.patch(`/tasks/${id}`, input)
   return data as Task
 }
+
+export async function updateTaskOrder(id: string | number, sort_order: number): Promise<Task> {
+  const { data } = await api.patch(`/tasks/${id}` as string, { sort_order })
+  return data as Task
+}
+
+export async function promoteTasksToWeek(task_ids: Array<string | number>): Promise<{ moved: number } | any> {
+  const { data } = await api.post('/tasks/promote-week', { task_ids })
+  return data
+}
