@@ -24,7 +24,7 @@ export default function App() {
     },
     onSuccess: () => {
       t.push('Task created')
-      qc.invalidateQueries({ queryKey: ['tasks'] })
+      qc.invalidateQueries({ queryKey: ['tasks', ['backlog', 'week', 'today', 'doing', 'waiting', 'done']] })
     },
     onError: () => t.push('Failed to create task', 'error'),
   })

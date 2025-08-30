@@ -8,7 +8,7 @@ import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 
 const STATUS_ORDER: TaskStatus[] = ['backlog', 'week', 'today', 'doing', 'waiting', 'done'];
 
-function TaskCard({ task }: { task: Task }) {
+function TaskCard({ task, project, goal }: { task: Task, project: any, goal: any }) {
   const ref = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -40,8 +40,8 @@ function TaskCard({ task }: { task: Task }) {
     >
       <p className="font-medium text-sm">{task.title}</p>
       <div className="text-xs text-gray-500 mt-2 space-y-1">
-        {task.project_id && <div>Project: {task.project_id}</div>}
-        {task.goal_id && <div>Goal: {task.goal_id}</div>}
+        {project && <div>Project: {project.name}</div>}
+        {goal && <div>Goal: {goal.title}</div>}
         {task.soft_due_at && <div>Soft due: {formatDate(task.soft_due_at)}</div>}
         {task.hard_due_at && (
           <div className="font-semibold text-red-600">
@@ -53,7 +53,7 @@ function TaskCard({ task }: { task: Task }) {
   );
 }
 
-function TaskColumn({ status, tasks, onTaskDrop }: { status: TaskStatus; tasks: Task[]; onTaskDrop: (task: Task, newStatus: TaskStatus) => void; }) {
+function TaskColumn({ status, tasks, onTaskDrop, projectsById, goalsById }: { status: TaskStatus; tasks: Task[]; onTaskDrop: (task: Task, newStatus: TaskStatus) => void; projectsById: any, goalsById: any }) {
   const ref = useRef(null);
   const [isDraggedOver, setIsDraggedOver] = useState(false);
 
@@ -85,20 +85,34 @@ function TaskColumn({ status, tasks, onTaskDrop }: { status: TaskStatus; tasks: 
       </h3>
       <div className="space-y-3">
         {tasks.map((task) => (
-          <TaskCard key={task.id} task={task} />
+          <TaskCard key={task.id} task={task} project={projectsById[task.project_id!]} goal={goalsById[task.goal_id!]} />
         ))}
       </div>
     </div>
   );
 }
 
+import { listProjects } from '../api/projects';
+import { listGoals } from '../api/goals';
+
 export default function TaskBoard() {
   const qc = useQueryClient();
   const tasksQ = useQuery({
-    queryKey: ['tasks'],
+    queryKey: ['tasks', STATUS_ORDER],
     queryFn: () => listTasks(STATUS_ORDER),
     select: (data) => data.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)),
   });
+  const projectsQ = useQuery({ queryKey: ['projects'], queryFn: listProjects });
+  const goalsQ = useQuery({ queryKey: ['goals'], queryFn: listGoals });
+
+  const projectsById = useMemo(() => {
+    if (!projectsQ.data) return {};
+    return projectsQ.data.reduce((acc, p) => ({ ...acc, [p.id]: p }), {});
+  }, [projectsQ.data]);
+  const goalsById = useMemo(() => {
+    if (!goalsQ.data) return {};
+    return goalsQ.data.reduce((acc, g) => ({ ...acc, [g.id]: g }), {});
+  }, [goalsQ.data]);
 
   const tasks = tasksQ.data || [];
 
@@ -118,7 +132,7 @@ export default function TaskBoard() {
   const patchM = useMutation({
     mutationFn: ({ id, ...input }: { id: string } & Partial<Task>) => patchTask(id, input),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['tasks'] });
+      qc.invalidateQueries({ queryKey: ['tasks', STATUS_ORDER] });
     },
   });
 
@@ -136,10 +150,14 @@ export default function TaskBoard() {
     });
   }
 
+  if (tasksQ.isLoading || projectsQ.isLoading || goalsQ.isLoading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="flex gap-6 overflow-x-auto pb-4">
       {Array.from(columns.entries()).map(([status, tasks]) => (
-        <TaskColumn key={status} status={status} tasks={tasks} onTaskDrop={handleTaskDrop} />
+        <TaskColumn key={status} status={status} tasks={tasks} onTaskDrop={handleTaskDrop} projectsById={projectsById} goalsById={goalsById} />
       ))}
     </div>
   );

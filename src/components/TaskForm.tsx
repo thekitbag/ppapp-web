@@ -74,20 +74,26 @@ export default function TaskForm({ onSubmit, disabled }: { onSubmit: (values: Ta
           <option value="">No goal</option>
           {goalsQ.data?.map(g => <option key={g.id} value={g.id}>{g.title}</option>)}
         </select>
-        <input
-          type="datetime-local"
-          className="border rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary"
-          placeholder="Soft due date"
-          value={softDue}
-          onChange={(e) => setSoftDue(e.target.value)}
-        />
-        <input
-          type="datetime-local"
-          className="border rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary"
-          placeholder="Hard due date"
-          value={hardDue}
-          onChange={(e) => setHardDue(e.target.value)}
-        />
+        <div>
+          <label htmlFor="soft-due" className="block text-sm font-medium text-gray-700">Soft Due Date</label>
+          <input
+            id="soft-due"
+            type="datetime-local"
+            className="border rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary w-full"
+            value={softDue}
+            onChange={(e) => setSoftDue(e.target.value)}
+          />
+        </div>
+        <div>
+          <label htmlFor="hard-due" className="block text-sm font-medium text-gray-700">Hard Due Date</label>
+          <input
+            id="hard-due"
+            type="datetime-local"
+            className="border rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary w-full"
+            value={hardDue}
+            onChange={(e) => setHardDue(e.target.value)}
+          />
+        </div>
       </div>
       <div className="flex justify-end">
         <button type="submit" disabled={disabled} className="px-5 py-2 rounded-xl bg-primary text-white font-medium shadow hover:bg-blue-700 disabled:opacity-50">
