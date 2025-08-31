@@ -7,6 +7,16 @@ import { BUCKETS, midpoint } from '../constants';
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import { Briefcase, Calendar, Flag, Target } from 'lucide-react';
+
+function InfoBadge({ icon: Icon, label, colorClass }: { icon: React.ElementType, label: string, colorClass?: string }) {
+  return (
+    <div className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-full ${colorClass || 'bg-gray-200 text-gray-700'}`}>
+      <Icon size={14} />
+      <span>{label}</span>
+    </div>
+  );
+}
 
 function TaskCard({ task, project, goal, index, isPending, onTaskDrop }: { task: Task, project: any, goal: any, index: number, isPending?: boolean, onTaskDrop: (task: Task, newStatus: TaskStatus, targetIndex: number) => void }) {
   const ref = useRef(null);
@@ -30,7 +40,7 @@ function TaskCard({ task, project, goal, index, isPending, onTaskDrop }: { task:
           const rect = element.getBoundingClientRect();
           const midY = rect.top + rect.height / 2;
           const insertBefore = input.clientY < midY;
-          return { 
+          return {
             task,
             index,
             insertBefore
@@ -64,33 +74,45 @@ function TaskCard({ task, project, goal, index, isPending, onTaskDrop }: { task:
   return (
     <div className="relative">
       {dropPosition === 'before' && (
-        <div className="absolute -top-1 left-0 right-0 h-0.5 bg-blue-400 rounded z-10" />
+        <div className="absolute -top-1.5 left-0 right-0 h-1 bg-blue-500 rounded-full z-10" />
       )}
       <div
         ref={ref}
-        className={`bg-white p-3 rounded-lg shadow-sm border transition-all ${
-          isDragging ? 'opacity-50' : ''
-        } ${isPending ? 'opacity-75 border-blue-300' : ''} ${
-          dropPosition ? 'ring-2 ring-blue-200' : ''
+        className={`bg-white p-4 rounded-xl shadow-md border border-gray-200/80 transition-all flex flex-col gap-3 ${
+          isDragging ? 'opacity-40 scale-95' : ''
+        } ${isPending ? 'opacity-75 border-blue-400' : ''} ${
+          dropPosition ? 'ring-2 ring-blue-300' : ''
         }`}
       >
-        <p className="font-medium text-sm">
+        <p className="font-semibold text-base text-gray-800 leading-tight truncate">
           {task.title}
-          {isPending && <span className="ml-2 text-xs text-blue-500">Reordering…</span>}
+          {isPending && <span className="ml-2 text-xs text-blue-600 font-normal">Updating...</span>}
         </p>
-        <div className="text-xs text-gray-500 mt-2 space-y-1">
-          {project && <div>Project: {project.name}</div>}
-          {goal && <div>Goal: {goal.title}</div>}
-          {task.soft_due_at && <div>Soft due: {formatDate(task.soft_due_at)}</div>}
-          {task.hard_due_at && (
-            <div className="font-semibold text-red-600">
-              Due: {formatDate(task.hard_due_at)} (hard)
-            </div>
-          )}
+
+        <div className="flex flex-wrap items-center gap-2">
+          {project && <InfoBadge icon={Briefcase} label={project.name} colorClass="bg-blue-100 text-blue-800" />}
+          {goal && <InfoBadge icon={Target} label={goal.title} colorClass="bg-green-100 text-green-800" />}
         </div>
+
+        {(task.soft_due_at || task.hard_due_at) && (
+          <div className="border-t border-gray-200/80 pt-3 flex flex-col gap-2">
+            {task.soft_due_at && (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <Calendar size={16} />
+                <span>{formatDate(task.soft_due_at)} (soft)</span>
+              </div>
+            )}
+            {task.hard_due_at && (
+              <div className="flex items-center gap-2 text-sm font-semibold text-red-600">
+                <Flag size={16} />
+                <span>{formatDate(task.hard_due_at)} (hard)</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
       {dropPosition === 'after' && (
-        <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-blue-400 rounded z-10" />
+        <div className="absolute -bottom-1.5 left-0 right-0 h-1 bg-blue-500 rounded-full z-10" />
       )}
     </div>
   );
@@ -119,11 +141,11 @@ function EmptyColumnDropZone({ status, onTaskDrop }: { status: TaskStatus, onTas
   return (
     <div
       ref={ref}
-      className={`h-20 border-2 border-dashed rounded-lg flex items-center justify-center text-sm transition-all ${
-        isDraggedOver ? 'border-blue-400 bg-blue-50 text-blue-600' : 'border-gray-300 text-gray-500'
+      className={`h-full border-2 border-dashed rounded-xl flex items-center justify-center text-sm transition-all ${
+        isDraggedOver ? 'border-blue-400 bg-blue-100/50 text-blue-700' : 'border-gray-300/80 text-gray-500'
       }`}
     >
-      Drop tasks here
+      Drop task here
     </div>
   );
 }
@@ -151,8 +173,8 @@ function EndOfListDropZone({ status, index, onTaskDrop }: { status: TaskStatus, 
   return (
     <div
       ref={ref}
-      className={`h-3 transition-all ${
-        isDraggedOver ? 'bg-blue-400 h-1 rounded' : ''
+      className={`h-2 transition-all rounded-full ${
+        isDraggedOver ? 'bg-blue-500 h-1' : ''
       }`}
     />
   );
@@ -162,12 +184,17 @@ function TaskColumn({ status, tasks, onTaskDrop, projectsById, goalsById, patchM
 
   return (
     <div
-      className="bg-gray-100 rounded-xl p-4 flex-1 min-w-[250px]"
+      className="bg-gray-100/80 rounded-2xl p-2 flex flex-col flex-shrink-0 w-80"
     >
-      <h3 className="font-semibold capitalize mb-4 px-1">
-        {status} ({tasks.length})
-      </h3>
-      <div className="space-y-3">
+      <div className="flex items-center justify-between px-2 py-1 mb-2">
+        <h3 className="font-semibold capitalize text-lg text-gray-800">
+          {status}
+        </h3>
+        <span className="text-sm font-medium bg-gray-200/80 text-gray-600 rounded-full px-2.5 py-0.5">
+          {tasks.length}
+        </span>
+      </div>
+      <div className="space-y-3 p-1 overflow-y-auto h-full">
         {tasks.length === 0 && (
           <EmptyColumnDropZone status={status} onTaskDrop={onTaskDrop} />
         )}
@@ -302,18 +329,20 @@ export default function TaskBoard() {
   }
 
   return (
-    <div className="flex gap-6 overflow-x-auto pb-4">
-      {Array.from(columns.entries()).map(([status, tasks]) => (
-        <TaskColumn 
-          key={status} 
-          status={status} 
-          tasks={tasks} 
-          onTaskDrop={handleTaskDrop} 
-          projectsById={projectsById} 
-          goalsById={goalsById}
-          patchMutation={patchM}
-        />
-      ))}
+    <div className="p-4 sm:p-6 lg:p-8 h-screen bg-gray-50">
+      <div className="flex gap-6 h-full overflow-x-auto">
+        {Array.from(columns.entries()).map(([status, tasks]) => (
+          <TaskColumn
+            key={status}
+            status={status}
+            tasks={tasks}
+            onTaskDrop={handleTaskDrop}
+            projectsById={projectsById}
+            goalsById={goalsById}
+            patchMutation={patchM}
+          />
+        ))}
+      </div>
     </div>
   );
 }
