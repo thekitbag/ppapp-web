@@ -38,12 +38,14 @@ export default function App() {
           <div className="text-lg font-semibold">Personal Chief of Staff</div>
         </div>
       </header>
-      <main className="max-w-7xl mx-auto p-6 space-y-8">
-        <div className="max-w-2xl">
+      <main className="p-6 space-y-8">
+        <div>
           <h2 className="text-xl font-semibold mb-3">Add a new task</h2>
           <TaskForm onSubmit={(v) => createM.mutate(v)} disabled={createM.isPending} />
         </div>
-        <TaskBoard />
+        <div className="max-w-7xl mx-auto">
+          <TaskBoard />
+        </div>
       </main>
       <Toaster toasts={t.toasts} onClose={t.remove} />
       <footer className="mt-8 py-4 border-t text-center text-sm text-gray-500">© 2025 Personal Productivity App</footer>
