@@ -84,7 +84,7 @@ function TaskCard({ task, project, goal, index, isPending, onTaskDrop }: { task:
           dropPosition ? 'ring-2 ring-blue-300' : ''
         }`}
       >
-        <p className="font-semibold text-base text-gray-800 leading-tight">
+        <p className="font-semibold text-base text-gray-800 leading-tight truncate">
           {task.title}
           {isPending && <span className="ml-2 text-xs text-blue-600 font-normal">Updating...</span>}
         </p>

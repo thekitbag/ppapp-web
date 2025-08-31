@@ -44,62 +44,84 @@ export default function TaskForm({ onSubmit, disabled }: { onSubmit: (values: Ta
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3 p-4 bg-white rounded-2xl shadow-md">
-      <input
-        className="flex-1 border rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary"
-        placeholder="Task title*"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        required
-      />
-      <div className="grid grid-cols-2 gap-2">
-        <input
-          className="border rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary"
-          placeholder="tags (comma-separated)"
-          value={tags}
-          onChange={(e) => setTags(e.target.value)}
-        />
-        <select
-          className="border rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary"
-          value={projectId}
-          onChange={(e) => setProjectId(e.target.value)}
-        >
-          <option value="">No project</option>
-          {projectsQ.data?.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-        </select>
-        <select
-          className="border rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary"
-          value={goalId}
-          onChange={(e) => setGoalId(e.target.value)}
-        >
-          <option value="">No goal</option>
-          {goalsQ.data?.map(g => <option key={g.id} value={g.id}>{g.title}</option>)}
-        </select>
+    <form onSubmit={handleSubmit} className="p-4 bg-white rounded-2xl shadow-md">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="md:col-span-2">
+          <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">Task Title*</label>
+          <input
+            id="title"
+            className="w-full border rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary"
+            placeholder="Enter a descriptive title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+          />
+        </div>
+
         <div>
-          <label htmlFor="soft-due" className="block text-sm font-medium text-gray-700">Soft Due Date</label>
+          <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
+          <input
+            id="tags"
+            className="w-full border rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary"
+            placeholder="e.g. frontend, bug"
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="project" className="block text-sm font-medium text-gray-700 mb-1">Project</label>
+          <select
+            id="project"
+            className="w-full border rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary"
+            value={projectId}
+            onChange={(e) => setProjectId(e.target.value)}
+          >
+            <option value="">No project</option>
+            {projectsQ.data?.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="goal" className="block text-sm font-medium text-gray-700 mb-1">Goal</label>
+          <select
+            id="goal"
+            className="w-full border rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary"
+            value={goalId}
+            onChange={(e) => setGoalId(e.target.value)}
+          >
+            <option value="">No goal</option>
+            {goalsQ.data?.map(g => <option key={g.id} value={g.id}>{g.title}</option>)}
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="soft-due" className="block text-sm font-medium text-gray-700 mb-1">Soft Due Date</label>
           <input
             id="soft-due"
             type="datetime-local"
-            className="border rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary w-full"
+            className="w-full border rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary"
             value={softDue}
             onChange={(e) => setSoftDue(e.target.value)}
           />
         </div>
+
         <div>
-          <label htmlFor="hard-due" className="block text-sm font-medium text-gray-700">Hard Due Date</label>
+          <label htmlFor="hard-due" className="block text-sm font-medium text-gray-700 mb-1">Hard Due Date</label>
           <input
             id="hard-due"
             type="datetime-local"
-            className="border rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary w-full"
+            className="w-full border rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary"
             value={hardDue}
             onChange={(e) => setHardDue(e.target.value)}
           />
         </div>
-      </div>
-      <div className="flex justify-end">
-        <button type="submit" disabled={disabled} className="px-5 py-2 rounded-xl bg-primary text-white font-medium shadow hover:bg-blue-700 disabled:opacity-50">
-          Add Task
-        </button>
+
+        <div className="md:col-span-2 flex justify-end">
+          <button type="submit" disabled={disabled} className="px-6 py-2 rounded-xl bg-primary text-white font-medium shadow hover:bg-blue-700 disabled:opacity-50 transition-colors">
+            Add Task
+          </button>
+        </div>
       </div>
     </form>
   )

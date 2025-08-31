@@ -24,11 +24,15 @@ export default function App() {
         status: 'backlog',
       })
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Task created successfully:', data);
       t.push('Task created')
       qc.invalidateQueries({ queryKey: qk.tasks.byStatuses(STATUS_ORDER) })
     },
-    onError: () => t.push('Failed to create task', 'error'),
+    onError: (error) => {
+      console.error('Failed to create task:', error);
+      t.push('Failed to create task', 'error')
+    },
   })
 
   return (
@@ -39,7 +43,7 @@ export default function App() {
         </div>
       </header>
       <main className="max-w-7xl mx-auto p-6 space-y-8">
-        <div className="max-w-2xl">
+        <div>
           <h2 className="text-xl font-semibold mb-3">Add a new task</h2>
           <TaskForm onSubmit={(v) => createM.mutate(v)} disabled={createM.isPending} />
         </div>
