@@ -1,14 +1,5 @@
 export type TaskStatus = 'backlog' | 'doing' | 'week' | 'done' | 'waiting' | 'today'
 
-export const BUCKETS: TaskStatus[] = ['backlog', 'week', 'today', 'doing', 'waiting', 'done']
-
-export function midpoint(prev?: number, next?: number): number {
-  if (prev === undefined && next === undefined) return 1000;
-  if (prev === undefined) return next! - 1;
-  if (next === undefined) return prev + 1;
-  return (prev + next) / 2;
-}
-
 export interface Task {
   id: string
   title: string

@@ -1,11 +1,12 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { qk } from '../lib/queryKeys';
 import { listTasks, patchTask } from '../api/tasks';
-import { Task, TaskStatus, BUCKETS, midpoint } from '../types';
+import { Task, TaskStatus } from '../types';
+import { BUCKETS, midpoint } from '../constants';
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-
 
 function TaskCard({ task, project, goal, index, isPending, onTaskDrop }: { task: Task, project: any, goal: any, index: number, isPending?: boolean, onTaskDrop: (task: Task, newStatus: TaskStatus, targetIndex: number) => void }) {
   const ref = useRef(null);
@@ -195,12 +196,12 @@ import { listGoals } from '../api/goals';
 export default function TaskBoard() {
   const qc = useQueryClient();
   const tasksQ = useQuery({
-    queryKey: ['tasks', BUCKETS],
+    queryKey: qk.tasks.byStatuses(BUCKETS),
     queryFn: () => listTasks(BUCKETS),
     select: (data) => data.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)),
   });
-  const projectsQ = useQuery({ queryKey: ['projects'], queryFn: listProjects });
-  const goalsQ = useQuery({ queryKey: ['goals'], queryFn: listGoals });
+  const projectsQ = useQuery({ queryKey: qk.projects.all, queryFn: listProjects });
+  const goalsQ = useQuery({ queryKey: qk.goals.all, queryFn: listGoals });
 
   const projectsById = useMemo(() => {
     if (!projectsQ.data) return {};
@@ -230,13 +231,13 @@ export default function TaskBoard() {
     mutationFn: ({ id, ...input }: { id: string } & Partial<Task>) => patchTask(id, input),
     onMutate: async (variables) => {
       // Cancel any outgoing refetches
-      await qc.cancelQueries({ queryKey: ['tasks', BUCKETS] });
+      await qc.cancelQueries({ queryKey: qk.tasks.byStatuses(BUCKETS) });
       
       // Snapshot the previous value
-      const previousTasks = qc.getQueryData(['tasks', BUCKETS]);
+      const previousTasks = qc.getQueryData(qk.tasks.byStatuses(BUCKETS));
       
       // Optimistically update to the new value
-      qc.setQueryData(['tasks', BUCKETS], (old: Task[] | undefined) => {
+      qc.setQueryData(qk.tasks.byStatuses(BUCKETS), (old: Task[] | undefined) => {
         if (!old) return old;
         return old.map(task => 
           task.id === variables.id ? { ...task, ...variables } : task
@@ -249,11 +250,11 @@ export default function TaskBoard() {
     onError: (err, variables, context) => {
       // If the mutation fails, use the context returned from onMutate to roll back
       if (context?.previousTasks) {
-        qc.setQueryData(['tasks', BUCKETS], context.previousTasks);
+        qc.setQueryData(qk.tasks.byStatuses(BUCKETS), context.previousTasks);
       }
     },
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: ['tasks', BUCKETS] });
+      qc.invalidateQueries({ queryKey: qk.tasks.byStatuses(BUCKETS) });
     },
   });
 

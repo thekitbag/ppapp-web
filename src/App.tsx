@@ -1,5 +1,7 @@
 import React from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { qk } from './lib/queryKeys'
+import { STATUS_ORDER } from './constants'
 import Toaster, { useToaster } from './components/Toaster'
 import TaskBoard from './components/TaskBoard'
 import TaskForm, { TaskFormValues } from './components/TaskForm'
@@ -24,7 +26,7 @@ export default function App() {
     },
     onSuccess: () => {
       t.push('Task created')
-      qc.invalidateQueries({ queryKey: ['tasks', ['backlog', 'week', 'today', 'doing', 'waiting', 'done']] })
+      qc.invalidateQueries({ queryKey: qk.tasks.byStatuses(STATUS_ORDER) })
     },
     onError: () => t.push('Failed to create task', 'error'),
   })
