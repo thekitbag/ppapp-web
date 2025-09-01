@@ -25,7 +25,12 @@ export async function updateTaskOrder(id: string | number, sort_order: number): 
   return data as Task
 }
 
-export async function promoteTasksToWeek(task_ids: Array<string | number>): Promise<{ moved: number } | any> {
+export async function getBacklogTasks(): Promise<Task[]> {
+  const { data } = await api.get('/api/v1/tasks', { params: { status: 'backlog' } })
+  return data as Task[]
+}
+
+export async function promoteTasksToWeek(task_ids: Array<string | number>): Promise<string[]> {
   const { data } = await api.post('/api/v1/tasks/promote-week', { task_ids })
-  return data
+  return data as string[]
 }

@@ -1,13 +1,15 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { qk } from '../lib/queryKeys';
-import { listTasks, patchTask } from '../api/tasks';
+import { listTasks, patchTask, getBacklogTasks, promoteTasksToWeek } from '../api/tasks';
+import { suggestWeek } from '../api/recommendations';
 import { Task, TaskStatus } from '../types';
 import { BUCKETS, midpoint } from '../constants';
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import { Briefcase, Calendar, Flag, Target } from 'lucide-react';
+import { Briefcase, Calendar, Flag, Target, Sparkles } from 'lucide-react';
+import SuggestWeekModal from './SuggestWeekModal';
 
 function InfoBadge({ icon: Icon, label, colorClass }: { icon: React.ElementType, label: string, colorClass?: string }) {
   return (
@@ -285,6 +287,38 @@ export default function TaskBoard() {
     },
   });
 
+  // Modal state and functionality
+  const [showSuggestModal, setShowSuggestModal] = useState(false);
+  
+  const suggestedTasksQ = useQuery({
+    queryKey: ['suggested-tasks'],
+    queryFn: () => suggestWeek(20), // Get more recommendations to choose from
+    enabled: showSuggestModal, // Only fetch when modal is open
+  });
+
+  const promoteMutation = useMutation({
+    mutationFn: promoteTasksToWeek,
+    onSuccess: (promotedIds) => {
+      qc.invalidateQueries({ queryKey: qk.tasks.byStatuses(BUCKETS) });
+      setShowSuggestModal(false);
+      // Could add a toast notification here
+    },
+    onError: (error) => {
+      console.error('Failed to promote tasks:', error);
+      // Could add error toast here
+    }
+  });
+
+  const handleSuggestWeek = () => {
+    setShowSuggestModal(true);
+  };
+
+  const handlePromoteTasks = (taskIds: string[]) => {
+    if (taskIds.length > 0) {
+      promoteMutation.mutate(taskIds);
+    }
+  };
+
   function handleTaskDrop(task: Task, newStatus: TaskStatus, targetIndex?: number) {
     const oldStatus = task.status;
     const tasksInNewCol = columns.get(newStatus) || [];
@@ -329,8 +363,21 @@ export default function TaskBoard() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 h-screen bg-gray-50">
-      <div className="flex gap-6 h-full overflow-x-auto">
+    <div className="p-4 sm:p-6 lg:p-8 h-screen bg-gray-50 flex flex-col">
+      {/* Header with Suggest Week button */}
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-semibold text-gray-800">Task Board</h1>
+        <button 
+          onClick={handleSuggestWeek}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <Sparkles size={16} />
+          Suggest Tasks for Week
+        </button>
+      </div>
+
+      {/* Task columns */}
+      <div className="flex gap-6 flex-1 overflow-x-auto">
         {Array.from(columns.entries()).map(([status, tasks]) => (
           <TaskColumn
             key={status}
@@ -343,6 +390,15 @@ export default function TaskBoard() {
           />
         ))}
       </div>
+
+      {/* Suggest Week Modal */}
+      <SuggestWeekModal 
+        open={showSuggestModal}
+        tasks={suggestedTasksQ.data?.map(item => item.task) || []}
+        onClose={() => setShowSuggestModal(false)}
+        onConfirm={handlePromoteTasks}
+        isLoading={suggestedTasksQ.isLoading}
+      />
     </div>
   );
 }
