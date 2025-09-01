@@ -1,0 +1,201 @@
+import { http, HttpResponse } from 'msw'
+
+const API_BASE = 'http://127.0.0.1:8000'
+
+// Mock API handlers for testing
+export const handlers = [
+  // Tasks endpoints
+  http.get(`${API_BASE}/api/v1/tasks`, ({ request }) => {
+    const url = new URL(request.url)
+    const status = url.searchParams.getAll('status')
+    
+    const mockTasks = [
+      {
+        id: '1',
+        title: 'Test Task 1',
+        status: 'backlog',
+        sort_order: 1000,
+        tags: ['test'],
+        project_id: null,
+        goal_id: null,
+        hard_due_at: null,
+        soft_due_at: null,
+        effort_minutes: null,
+        created_at: '2023-01-01T00:00:00Z',
+        updated_at: '2023-01-01T00:00:00Z',
+      },
+      {
+        id: '2', 
+        title: 'Test Task 2',
+        status: 'week',
+        sort_order: 2000,
+        tags: [],
+        project_id: '1',
+        goal_id: null,
+        hard_due_at: null,
+        soft_due_at: '2023-12-31T23:59:59Z',
+        effort_minutes: 30,
+        created_at: '2023-01-01T00:00:00Z',
+        updated_at: '2023-01-01T00:00:00Z',
+      }
+    ]
+
+    if (status.length > 0) {
+      const filteredTasks = mockTasks.filter(task => status.includes(task.status))
+      return HttpResponse.json(filteredTasks)
+    }
+    
+    return HttpResponse.json(mockTasks)
+  }),
+
+  http.post(`${API_BASE}/api/v1/tasks`, async ({ request }) => {
+    const body = await request.json() as any
+    const newTask = {
+      id: '3',
+      ...body,
+      sort_order: 3000,
+      created_at: '2023-01-01T00:00:00Z',
+      updated_at: '2023-01-01T00:00:00Z',
+    }
+    return HttpResponse.json(newTask, { status: 201 })
+  }),
+
+  http.patch(`${API_BASE}/api/v1/tasks/:id`, async ({ params, request }) => {
+    const body = await request.json() as any
+    const updatedTask = {
+      id: params.id,
+      title: 'Updated Task',
+      status: 'week',
+      sort_order: body.sort_order || 2000,
+      tags: [],
+      project_id: null,
+      goal_id: null,
+      hard_due_at: null,
+      soft_due_at: null,
+      effort_minutes: null,
+      created_at: '2023-01-01T00:00:00Z',
+      updated_at: new Date().toISOString(),
+      ...body,
+    }
+    return HttpResponse.json(updatedTask)
+  }),
+
+  http.post(`${API_BASE}/api/v1/tasks/promote-week`, async ({ request }) => {
+    const body = await request.json() as any
+    return HttpResponse.json(body.task_ids)
+  }),
+
+  // Projects endpoints
+  http.get(`${API_BASE}/api/v1/projects`, () => {
+    return HttpResponse.json([
+      {
+        id: '1',
+        name: 'Test Project',
+        color: '#3b82f6',
+        created_at: '2023-01-01T00:00:00Z',
+      }
+    ])
+  }),
+
+  http.post(`${API_BASE}/api/v1/projects`, async ({ request }) => {
+    const body = await request.json() as any
+    return HttpResponse.json({
+      id: '2',
+      ...body,
+      created_at: '2023-01-01T00:00:00Z',
+    }, { status: 201 })
+  }),
+
+  // Goals endpoints
+  http.get(`${API_BASE}/api/v1/goals`, () => {
+    return HttpResponse.json([
+      {
+        id: '1',
+        title: 'Test Goal',
+        type: 'learning',
+        created_at: '2023-01-01T00:00:00Z',
+      }
+    ])
+  }),
+
+  http.post(`${API_BASE}/api/v1/goals`, async ({ request }) => {
+    const body = await request.json() as any
+    return HttpResponse.json({
+      id: '2',
+      ...body,
+      created_at: '2023-01-01T00:00:00Z',
+    }, { status: 201 })
+  }),
+
+  // Recommendations endpoints
+  http.get(`${API_BASE}/api/v1/recommendations/next`, () => {
+    return HttpResponse.json({
+      items: [
+        {
+          task: {
+            id: '1',
+            title: 'High Priority Task',
+            status: 'backlog',
+            sort_order: 1000,
+            tags: ['urgent'],
+            project_id: null,
+            goal_id: null,
+            hard_due_at: '2023-12-31T23:59:59Z',
+            soft_due_at: null,
+            effort_minutes: 15,
+            created_at: '2023-01-01T00:00:00Z',
+            updated_at: '2023-01-01T00:00:00Z',
+          },
+          score: 0.95,
+          factors: { urgency: 0.8, effort: 0.9 },
+          why: 'Due soon and low effort'
+        }
+      ]
+    })
+  }),
+
+  http.post(`${API_BASE}/api/v1/recommendations/suggest-week`, () => {
+    return HttpResponse.json({
+      items: [
+        {
+          task: {
+            id: '1',
+            title: 'Recommended Task 1',
+            status: 'backlog',
+            sort_order: 1000,
+            tags: ['important'],
+            project_id: null,
+            goal_id: null,
+            hard_due_at: null,
+            soft_due_at: '2023-12-31T23:59:59Z',
+            effort_minutes: 45,
+            created_at: '2023-01-01T00:00:00Z',
+            updated_at: '2023-01-01T00:00:00Z',
+          },
+          score: 0.9,
+          factors: { priority: 0.8, deadline: 0.7 },
+          why: 'High priority with upcoming soft deadline'
+        },
+        {
+          task: {
+            id: '2',
+            title: 'Recommended Task 2',
+            status: 'backlog',
+            sort_order: 2000,
+            tags: [],
+            project_id: '1',
+            goal_id: null,
+            hard_due_at: null,
+            soft_due_at: null,
+            effort_minutes: 20,
+            created_at: '2023-01-01T00:00:00Z',
+            updated_at: '2023-01-01T00:00:00Z',
+          },
+          score: 0.8,
+          factors: { effort: 0.9, project: 0.7 },
+          why: 'Quick win for active project'
+        }
+      ]
+    })
+  }),
+]
