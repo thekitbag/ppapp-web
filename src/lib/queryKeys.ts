@@ -5,7 +5,9 @@ export const qk = {
     byId: (id: string) => ['tasks', { id }] as const,
   },
   recs: {
+    all: ['recs'] as const,
     week: ['recs', 'week'] as const,
+    suggestWeek: ['recs', 'suggest-week'] as const,
   },
   projects: {
     all: ['projects'] as const,

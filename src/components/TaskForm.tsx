@@ -78,7 +78,16 @@ export default function TaskForm({ onSubmit, disabled }: { onSubmit: (values: Ta
             onChange={(e) => setProjectId(e.target.value)}
           >
             <option value="">No project</option>
-            {projectsQ.data?.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            {projectsQ.data?.map(p => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+                {p.milestone_title && p.milestone_due_at && 
+                  ` — Milestone: ${new Date(p.milestone_due_at).toLocaleDateString(undefined, { 
+                    weekday: 'short', month: 'short', day: 'numeric' 
+                  })}`
+                }
+              </option>
+            ))}
           </select>
         </div>
 

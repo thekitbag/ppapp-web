@@ -1,12 +1,15 @@
+import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { qk } from './lib/queryKeys'
 import { STATUS_ORDER } from './constants'
 import Toaster, { useToaster } from './components/Toaster'
 import TaskBoard from './components/TaskBoard'
 import TaskForm, { TaskFormValues } from './components/TaskForm'
+import ProjectsPage from './components/ProjectsPage'
 import { createTask } from './api/tasks'
 
 export default function App() {
+  const [currentView, setCurrentView] = useState<'tasks' | 'projects'>('tasks')
   const t = useToaster()
   const qc = useQueryClient()
 
@@ -33,19 +36,52 @@ export default function App() {
   return (
     <div className="min-h-dvh bg-gray-100 font-sans">
       <header className="px-6 py-4 border-b bg-primary text-white shadow">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="text-lg font-semibold">Personal Chief of Staff</div>
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-lg font-semibold">Personal Chief of Staff</div>
+          </div>
+          
+          <nav className="flex space-x-1">
+            <button
+              onClick={() => setCurrentView('tasks')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                currentView === 'tasks' 
+                  ? 'bg-white/20 text-white' 
+                  : 'text-white/70 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              Tasks
+            </button>
+            <button
+              onClick={() => setCurrentView('projects')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                currentView === 'projects' 
+                  ? 'bg-white/20 text-white' 
+                  : 'text-white/70 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              Projects
+            </button>
+          </nav>
         </div>
       </header>
+      
       <main className="p-6 space-y-8">
-        <div>
-          <h2 className="text-xl font-semibold mb-3">Add a new task</h2>
-          <TaskForm onSubmit={(v) => createM.mutate(v)} disabled={createM.isPending} />
-        </div>
-        <div className="max-w-7xl mx-auto">
-          <TaskBoard />
-        </div>
+        {currentView === 'tasks' ? (
+          <>
+            <div>
+              <h2 className="text-xl font-semibold mb-3">Add a new task</h2>
+              <TaskForm onSubmit={(v) => createM.mutate(v)} disabled={createM.isPending} />
+            </div>
+            <div className="max-w-7xl mx-auto">
+              <TaskBoard />
+            </div>
+          </>
+        ) : (
+          <ProjectsPage />
+        )}
       </main>
+      
       <Toaster toasts={t.toasts} onClose={t.remove} />
       <footer className="mt-8 py-4 border-t text-center text-sm text-gray-500">© 2025 Personal Productivity App</footer>
     </div>

@@ -8,7 +8,7 @@ import { BUCKETS, midpoint } from '../constants';
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import { Briefcase, Calendar, Flag, Target, Sparkles } from 'lucide-react';
+import { Calendar, Flag, Target, Sparkles } from 'lucide-react';
 import SuggestWeekModal from './SuggestWeekModal';
 
 function InfoBadge({ icon: Icon, label, colorClass }: { icon: React.ElementType, label: string, colorClass?: string }) {
@@ -16,6 +16,28 @@ function InfoBadge({ icon: Icon, label, colorClass }: { icon: React.ElementType,
     <div className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-full ${colorClass || 'bg-gray-200 text-gray-700'}`}>
       <Icon size={14} />
       <span>{label}</span>
+    </div>
+  );
+}
+
+function ProjectChip({ project, colorClass }: { project: any, colorClass?: string }) {
+  const daysUntilMilestone = project?.milestone_due_at ? 
+    Math.ceil((new Date(project.milestone_due_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : null
+
+  return (
+    <div className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-full ${colorClass || 'bg-blue-100 text-blue-800'}`}>
+      <div 
+        className="w-2.5 h-2.5 rounded-full"
+        style={{ backgroundColor: project?.color || '#3B82F6' }}
+      />
+      <span>{project?.name || 'Unknown Project'}</span>
+      {daysUntilMilestone !== null && daysUntilMilestone <= 14 && daysUntilMilestone >= 0 && (
+        <span className="text-xs bg-orange-500 text-white px-1.5 py-0.5 rounded-full ml-1">
+          {daysUntilMilestone === 0 ? 'Today' : 
+           daysUntilMilestone === 1 ? '1d' : 
+           `${daysUntilMilestone}d`}
+        </span>
+      )}
     </div>
   );
 }
@@ -92,7 +114,7 @@ function TaskCard({ task, project, goal, index, isPending, onTaskDrop }: { task:
         </p>
 
         <div className="flex flex-wrap items-center gap-2">
-          {project && <InfoBadge icon={Briefcase} label={project.name} colorClass="bg-blue-100 text-blue-800" />}
+          {project && <ProjectChip project={project} />}
           {goal && <InfoBadge icon={Target} label={goal.title} colorClass="bg-green-100 text-green-800" />}
         </div>
 
@@ -291,7 +313,7 @@ export default function TaskBoard() {
   const [showSuggestModal, setShowSuggestModal] = useState(false);
   
   const suggestedTasksQ = useQuery({
-    queryKey: ['suggested-tasks'],
+    queryKey: qk.recs.suggestWeek,
     queryFn: () => suggestWeek(20), // Get more recommendations to choose from
     enabled: showSuggestModal, // Only fetch when modal is open
   });
@@ -300,6 +322,7 @@ export default function TaskBoard() {
     mutationFn: promoteTasksToWeek,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.tasks.byStatuses(BUCKETS) });
+      qc.invalidateQueries({ queryKey: qk.recs.suggestWeek });
       setShowSuggestModal(false);
       // Could add a toast notification here
     },

@@ -92,6 +92,8 @@ export const handlers = [
         id: '1',
         name: 'Test Project',
         color: '#3b82f6',
+        milestone_title: null,
+        milestone_due_at: null,
         created_at: '2023-01-01T00:00:00Z',
       }
     ])
@@ -104,6 +106,19 @@ export const handlers = [
       ...body,
       created_at: '2023-01-01T00:00:00Z',
     }, { status: 201 })
+  }),
+
+  http.patch(`${API_BASE}/api/v1/projects/:id`, async ({ params, request }) => {
+    const body = await request.json() as any
+    return HttpResponse.json({
+      id: params.id,
+      name: 'Test Project',
+      color: '#3b82f6',
+      milestone_title: null,
+      milestone_due_at: null,
+      created_at: '2023-01-01T00:00:00Z',
+      ...body,
+    })
   }),
 
   // Goals endpoints
