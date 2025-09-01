@@ -1,12 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { describe, it, expect, beforeEach } from 'vitest'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import ProjectsPage from '../ProjectsPage'
 import { server } from '../../test/mocks/server'
-import { http, HttpResponse } from 'msw'
-
-const API_BASE = 'http://127.0.0.1:8000'
 
 function createWrapper() {
   const queryClient = new QueryClient({

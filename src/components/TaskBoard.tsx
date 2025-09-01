@@ -8,7 +8,7 @@ import { BUCKETS, midpoint } from '../constants';
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import { Briefcase, Calendar, Flag, Target, Sparkles } from 'lucide-react';
+import { Calendar, Flag, Target, Sparkles } from 'lucide-react';
 import SuggestWeekModal from './SuggestWeekModal';
 
 function InfoBadge({ icon: Icon, label, colorClass }: { icon: React.ElementType, label: string, colorClass?: string }) {

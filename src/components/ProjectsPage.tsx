@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { qk } from '../lib/queryKeys'
 import { listProjects, createProject, patchProject, type CreateProjectInput } from '../api/projects'
 import { Plus, Calendar, Target, Clock } from 'lucide-react'
-import { BUCKETS } from '../constants'
 
 interface ProjectFormData {
   name: string
