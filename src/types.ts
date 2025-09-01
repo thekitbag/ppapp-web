@@ -19,6 +19,8 @@ export interface Project {
   id: string
   name: string
   color?: string | null
+  milestone_title?: string | null
+  milestone_due_at?: string | null
   created_at: string
 }
 

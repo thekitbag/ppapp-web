@@ -6,6 +6,7 @@ export const qk = {
   },
   recs: {
     week: ['recs', 'week'] as const,
+    suggestWeek: ['recs', 'suggest-week'] as const,
   },
   projects: {
     all: ['projects'] as const,
