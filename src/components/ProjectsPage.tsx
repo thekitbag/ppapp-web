@@ -167,8 +167,7 @@ export default function ProjectsPage() {
     mutationFn: createProject,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.projects.all })
-      qc.invalidateQueries({ queryKey: qk.recs.week })
-      qc.invalidateQueries({ queryKey: qk.recs.suggestWeek })
+      qc.invalidateQueries({ queryKey: qk.recs.all })
       setShowModal(false)
     }
   })
@@ -178,8 +177,7 @@ export default function ProjectsPage() {
       patchProject(id, input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.projects.all })
-      qc.invalidateQueries({ queryKey: qk.recs.week })
-      qc.invalidateQueries({ queryKey: qk.recs.suggestWeek })
+      qc.invalidateQueries({ queryKey: qk.recs.all })
       setEditingProject(null)
     }
   })
@@ -188,7 +186,7 @@ export default function ProjectsPage() {
     if (!projectsQ.data) return []
     
     return [...projectsQ.data].sort((a, b) => {
-      // Sort by soonest milestone first, then by name
+      // Sort by soonest milestone first; null milestones pushed to end, then by name
       if (a.milestone_due_at && b.milestone_due_at) {
         return new Date(a.milestone_due_at).getTime() - new Date(b.milestone_due_at).getTime()
       }
