@@ -1,8 +1,7 @@
-import React from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '../../test/utils'
 import userEvent from '@testing-library/user-event'
-import TaskForm, { type TaskFormValues } from '../TaskForm'
+import TaskForm from '../TaskForm'
 
 describe('TaskForm', () => {
   const mockOnSubmit = vi.fn()

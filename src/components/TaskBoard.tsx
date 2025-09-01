@@ -1,7 +1,7 @@
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { qk } from '../lib/queryKeys';
-import { listTasks, patchTask, getBacklogTasks, promoteTasksToWeek } from '../api/tasks';
+import { listTasks, patchTask, promoteTasksToWeek } from '../api/tasks';
 import { suggestWeek } from '../api/recommendations';
 import { Task, TaskStatus } from '../types';
 import { BUCKETS, midpoint } from '../constants';
@@ -276,7 +276,7 @@ export default function TaskBoard() {
       // Return a context object with the snapshotted value
       return { previousTasks };
     },
-    onError: (err, variables, context) => {
+    onError: (_err, _variables, context) => {
       // If the mutation fails, use the context returned from onMutate to roll back
       if (context?.previousTasks) {
         qc.setQueryData(qk.tasks.byStatuses(BUCKETS), context.previousTasks);
@@ -298,7 +298,7 @@ export default function TaskBoard() {
 
   const promoteMutation = useMutation({
     mutationFn: promoteTasksToWeek,
-    onSuccess: (promotedIds) => {
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.tasks.byStatuses(BUCKETS) });
       setShowSuggestModal(false);
       // Could add a toast notification here

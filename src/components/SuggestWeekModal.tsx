@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react'
-import { Briefcase, Calendar, Flag, Target } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Calendar, Flag } from 'lucide-react'
 import type { Task } from '../types'
 
 export default function SuggestWeekModal({ open, tasks, onClose, onConfirm, isLoading }: {

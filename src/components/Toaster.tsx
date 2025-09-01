@@ -1,4 +1,3 @@
-import React from 'react';
 import { useEffect, useState } from 'react'
 
 type Toast = { id: number; message: string; type?: 'success' | 'error' }

@@ -1,4 +1,4 @@
-import React, { FormEvent, useState } from 'react'
+import { FormEvent, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { qk } from '../lib/queryKeys'
 import { listProjects } from '../api/projects'

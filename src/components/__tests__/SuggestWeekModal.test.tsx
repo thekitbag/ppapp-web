@@ -1,6 +1,5 @@
-import React from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '../../test/utils'
+import { render, screen } from '../../test/utils'
 import userEvent from '@testing-library/user-event'
 import SuggestWeekModal from '../SuggestWeekModal'
 import type { Task } from '../../types'
@@ -138,11 +137,11 @@ describe('SuggestWeekModal', () => {
     expect(screen.getByText('backend')).toBeInTheDocument()
 
     // Check deadline display - flexible date matching for different locales
-    expect(screen.getAllByText((content, element) => {
-      return element?.textContent?.includes('31') && element?.textContent?.includes('Dec')
+    expect(screen.getAllByText((_content, element) => {
+      return Boolean(element?.textContent?.includes('31') && element?.textContent?.includes('Dec'))
     }).length).toBeGreaterThan(0) // hard deadline exists
-    expect(screen.getAllByText((content, element) => {
-      return element?.textContent?.includes('25') && element?.textContent?.includes('Dec')
+    expect(screen.getAllByText((_content, element) => {
+      return Boolean(element?.textContent?.includes('25') && element?.textContent?.includes('Dec'))
     }).length).toBeGreaterThan(0) // soft deadline exists
     expect(screen.getByText(/\(hard\)/)).toBeInTheDocument()
     expect(screen.getByText(/\(soft\)/)).toBeInTheDocument()
@@ -358,11 +357,11 @@ describe('SuggestWeekModal', () => {
       />
     )
 
-    expect(screen.getAllByText((content, element) => {
-      return element?.textContent?.includes('15') && element?.textContent?.includes('Jun')
+    expect(screen.getAllByText((_content, element) => {
+      return Boolean(element?.textContent?.includes('15') && element?.textContent?.includes('Jun'))
     }).length).toBeGreaterThan(0)
-    expect(screen.getAllByText((content, element) => {
-      return element?.textContent?.includes('22') && element?.textContent?.includes('Mar')
+    expect(screen.getAllByText((_content, element) => {
+      return Boolean(element?.textContent?.includes('22') && element?.textContent?.includes('Mar'))
     }).length).toBeGreaterThan(0)
   })
 })

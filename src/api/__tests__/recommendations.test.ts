@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { server } from '../../test/mocks/server'
 import { http, HttpResponse } from 'msw'
-import { listRecommendations, suggestWeek, type RecommendationItem } from '../recommendations'
+import { listRecommendations, suggestWeek } from '../recommendations'
 
 describe('Recommendations API', () => {
   describe('listRecommendations', () => {
