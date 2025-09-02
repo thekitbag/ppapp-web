@@ -100,7 +100,12 @@ export default function TaskForm({ onSubmit, disabled }: { onSubmit: (values: Ta
             onChange={(e) => setGoalId(e.target.value)}
           >
             <option value="">No goal</option>
-            {goalsQ.data?.map(g => <option key={g.id} value={g.id}>{g.title}</option>)}
+            {goalsQ.data?.map(g => (
+              <option key={g.id} value={g.id}>
+                {g.title}
+                {g.type && ` (${g.type})`}
+              </option>
+            ))}
           </select>
         </div>
 

@@ -30,7 +30,7 @@ describe('TaskForm', () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByText('Test Goal')).toBeInTheDocument()
+      expect(screen.getByText(/Test Goal/)).toBeInTheDocument()
     })
   })
 
@@ -72,7 +72,7 @@ describe('TaskForm', () => {
 
     // Wait for goals to load before selecting
     await waitFor(() => {
-      expect(screen.getByText('Test Goal')).toBeInTheDocument()
+      expect(screen.getByText(/Test Goal/)).toBeInTheDocument()
     })
     await user.selectOptions(goalSelect, '1')
 

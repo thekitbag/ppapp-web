@@ -8,6 +8,7 @@ export interface Task {
   sort_order: number
   project_id?: string | null
   goal_id?: string | null
+  goals?: { id: string; title: string }[]
   hard_due_at?: string | null
   soft_due_at?: string | null
   effort_minutes?: number | null
@@ -27,6 +28,23 @@ export interface Project {
 export interface Goal {
   id: string
   title: string
+  description?: string | null
   type?: string | null
   created_at: string
+}
+
+export interface KeyResult {
+  id: string
+  goal_id: string
+  name: string
+  target_value: number
+  unit: string
+  baseline_value?: number | null
+  created_at: string
+}
+
+export interface GoalDetail {
+  goal: Goal
+  krs: KeyResult[]
+  tasks: Task[]
 }

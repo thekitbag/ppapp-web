@@ -6,10 +6,13 @@ import Toaster, { useToaster } from './components/Toaster'
 import TaskBoard from './components/TaskBoard'
 import TaskForm, { TaskFormValues } from './components/TaskForm'
 import ProjectsPage from './components/ProjectsPage'
+import GoalsPage from './components/GoalsPage'
+import GoalDetailPage from './components/GoalDetailPage'
 import { createTask } from './api/tasks'
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'tasks' | 'projects'>('tasks')
+  const [currentView, setCurrentView] = useState<'tasks' | 'projects' | 'goals'>('tasks')
+  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null)
   const t = useToaster()
   const qc = useQueryClient()
 
@@ -62,6 +65,19 @@ export default function App() {
             >
               Projects
             </button>
+            <button
+              onClick={() => {
+                setCurrentView('goals')
+                setSelectedGoalId(null)
+              }}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                currentView === 'goals' 
+                  ? 'bg-white/20 text-white' 
+                  : 'text-white/70 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              Goals
+            </button>
           </nav>
         </div>
       </header>
@@ -77,8 +93,18 @@ export default function App() {
               <TaskBoard />
             </div>
           </>
-        ) : (
+        ) : currentView === 'projects' ? (
           <ProjectsPage />
+        ) : currentView === 'goals' && selectedGoalId ? (
+          <GoalDetailPage 
+            goalId={selectedGoalId} 
+            onBack={() => setSelectedGoalId(null)} 
+          />
+        ) : (
+          <GoalsPage 
+            selectedGoalId={selectedGoalId}
+            onSelectGoal={setSelectedGoalId}
+          />
         )}
       </main>
       
