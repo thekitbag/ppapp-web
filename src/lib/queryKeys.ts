@@ -14,5 +14,6 @@ export const qk = {
   },
   goals: {
     all: ['goals'] as const,
+    detail: (id: string) => ['goals', id] as const,
   },
 };

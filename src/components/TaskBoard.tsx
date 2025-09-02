@@ -116,6 +116,16 @@ function TaskCard({ task, project, goal, index, isPending, onTaskDrop }: { task:
         <div className="flex flex-wrap items-center gap-2">
           {project && <ProjectChip project={project} />}
           {goal && <InfoBadge icon={Target} label={goal.title} colorClass="bg-green-100 text-green-800" />}
+          {task.goals && task.goals.length > 0 && (
+            <div className="flex items-center gap-1">
+              {task.goals.slice(0, 1).map(g => (
+                <InfoBadge key={g.id} icon={Target} label={g.title} colorClass="bg-purple-100 text-purple-800" />
+              ))}
+              {task.goals.length > 1 && (
+                <InfoBadge icon={Target} label={`+${task.goals.length - 1}`} colorClass="bg-purple-100 text-purple-800" />
+              )}
+            </div>
+          )}
         </div>
 
         {(task.soft_due_at || task.hard_due_at) && (
