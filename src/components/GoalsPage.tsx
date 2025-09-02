@@ -157,8 +157,9 @@ export default function GoalsPage({
   const updateM = useMutation({
     mutationFn: ({ id, ...input }: { id: string } & Partial<CreateGoalInput>) => 
       updateGoal(id, input),
-    onSuccess: () => {
+    onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: qk.goals.all })
+      qc.invalidateQueries({ queryKey: qk.goals.detail(id) })
       setEditingGoal(null)
     }
   })
