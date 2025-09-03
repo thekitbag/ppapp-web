@@ -8,8 +8,9 @@ import { BUCKETS, midpoint } from '../constants';
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import { Calendar, Flag, Target, Sparkles } from 'lucide-react';
+import { Calendar, Flag, Target, Sparkles, Archive, Upload } from 'lucide-react';
 import SuggestWeekModal from './SuggestWeekModal';
+import TrelloImportModal from './TrelloImportModal';
 
 function InfoBadge({ icon: Icon, label, colorClass }: { icon: React.ElementType, label: string, colorClass?: string }) {
   return (
@@ -42,7 +43,7 @@ function ProjectChip({ project, colorClass }: { project: any, colorClass?: strin
   );
 }
 
-function TaskCard({ task, project, goal, index, isPending, onTaskDrop }: { task: Task, project: any, goal: any, index: number, isPending?: boolean, onTaskDrop: (task: Task, newStatus: TaskStatus, targetIndex: number) => void }) {
+function TaskCard({ task, project, goal, index, isPending, onTaskDrop, onArchive }: { task: Task, project: any, goal: any, index: number, isPending?: boolean, onTaskDrop: (task: Task, newStatus: TaskStatus, targetIndex: number) => void, onArchive: (taskId: string) => void }) {
   const ref = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dropPosition, setDropPosition] = useState<'before' | 'after' | null>(null);
@@ -108,10 +109,22 @@ function TaskCard({ task, project, goal, index, isPending, onTaskDrop }: { task:
           dropPosition ? 'ring-2 ring-blue-300' : ''
         }`}
       >
-        <p className="font-semibold text-base text-gray-800 leading-tight truncate">
-          {task.title}
-          {isPending && <span className="ml-2 text-xs text-blue-600 font-normal">Updating...</span>}
-        </p>
+        <div className="flex items-start justify-between">
+          <p className="font-semibold text-base text-gray-800 leading-tight truncate flex-1 mr-2">
+            {task.title}
+            {isPending && <span className="ml-2 text-xs text-blue-600 font-normal">Updating...</span>}
+          </p>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onArchive(task.id)
+            }}
+            className="text-gray-400 hover:text-gray-600 p-1 rounded transition-colors flex-shrink-0"
+            title="Archive task"
+          >
+            <Archive size={16} />
+          </button>
+        </div>
 
         <div className="flex flex-wrap items-center gap-2">
           {project && <ProjectChip project={project} />}
@@ -214,7 +227,10 @@ function EndOfListDropZone({ status, index, onTaskDrop }: { status: TaskStatus, 
   );
 }
 
-function TaskColumn({ status, tasks, onTaskDrop, projectsById, goalsById, patchMutation }: { status: TaskStatus; tasks: Task[]; onTaskDrop: (task: Task, newStatus: TaskStatus, targetIndex?: number) => void; projectsById: any, goalsById: any, patchMutation: any }) {
+function TaskColumn({ status, tasks, onTaskDrop, projectsById, goalsById, patchMutation, onShowImport }: { status: TaskStatus; tasks: Task[]; onTaskDrop: (task: Task, newStatus: TaskStatus, targetIndex?: number) => void; projectsById: any, goalsById: any, patchMutation: any, onShowImport?: () => void }) {
+  const handleArchive = (taskId: string) => {
+    patchMutation.mutate({ id: taskId, status: 'archived' as TaskStatus })
+  }
 
   return (
     <div
@@ -222,11 +238,22 @@ function TaskColumn({ status, tasks, onTaskDrop, projectsById, goalsById, patchM
     >
       <div className="flex items-center justify-between px-2 py-1 mb-2">
         <h3 className="font-semibold capitalize text-lg text-gray-800">
-          {status}
+          {status === 'week' ? 'This Week' : status}
         </h3>
-        <span className="text-sm font-medium bg-gray-200/80 text-gray-600 rounded-full px-2.5 py-0.5">
-          {tasks.length}
-        </span>
+        <div className="flex items-center gap-2">
+          {status === 'backlog' && onShowImport && (
+            <button
+              onClick={onShowImport}
+              className="text-gray-600 hover:text-gray-800 p-1 rounded transition-colors"
+              title="Import from Trello"
+            >
+              <Upload size={16} />
+            </button>
+          )}
+          <span className="text-sm font-medium bg-gray-200/80 text-gray-600 rounded-full px-2.5 py-0.5">
+            {tasks.length}
+          </span>
+        </div>
       </div>
       <div className="space-y-3 p-1 overflow-y-auto h-full">
         {tasks.length === 0 && (
@@ -241,6 +268,7 @@ function TaskColumn({ status, tasks, onTaskDrop, projectsById, goalsById, patchM
             index={index}
             isPending={patchMutation.isPending && patchMutation.variables?.id === task.id}
             onTaskDrop={onTaskDrop}
+            onArchive={handleArchive}
           />
         ))}
         {tasks.length > 0 && (
@@ -316,11 +344,13 @@ export default function TaskBoard() {
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: qk.tasks.byStatuses(BUCKETS) });
+      qc.invalidateQueries({ queryKey: qk.tasks.byStatuses(['archived']) });
     },
   });
 
   // Modal state and functionality
   const [showSuggestModal, setShowSuggestModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   
   const suggestedTasksQ = useQuery({
     queryKey: qk.recs.suggestWeek,
@@ -420,6 +450,7 @@ export default function TaskBoard() {
             projectsById={projectsById}
             goalsById={goalsById}
             patchMutation={patchM}
+            onShowImport={status === 'backlog' ? () => setShowImportModal(true) : undefined}
           />
         ))}
       </div>
@@ -431,6 +462,12 @@ export default function TaskBoard() {
         onClose={() => setShowSuggestModal(false)}
         onConfirm={handlePromoteTasks}
         isLoading={suggestedTasksQ.isLoading}
+      />
+
+      {/* Trello Import Modal */}
+      <TrelloImportModal 
+        open={showImportModal}
+        onClose={() => setShowImportModal(false)}
       />
     </div>
   );

@@ -1,4 +1,6 @@
-export type TaskStatus = 'backlog' | 'doing' | 'week' | 'done' | 'waiting' | 'today'
+export type TaskStatus = 'backlog' | 'doing' | 'week' | 'done' | 'waiting' | 'today' | 'archived'
+
+export type GoalCadence = 'annual' | 'quarterly' | 'weekly'
 
 export interface Task {
   id: string
@@ -29,7 +31,7 @@ export interface Goal {
   id: string
   title: string
   description?: string | null
-  type?: string | null
+  type?: GoalCadence | null
   created_at: string
 }
 

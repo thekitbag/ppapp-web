@@ -338,7 +338,7 @@ export default function GoalDetailPage({
               <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${{
                 'annual': 'bg-purple-100 text-purple-800',
                 'quarterly': 'bg-blue-100 text-blue-800',
-                'monthly': 'bg-green-100 text-green-800'
+                'weekly': 'bg-green-100 text-green-800'
               }[goal.type] || 'bg-gray-100 text-gray-800'}`}>
                 {goal.type}
               </span>
