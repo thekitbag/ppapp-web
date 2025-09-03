@@ -20,6 +20,8 @@ export default function TrelloImportModal({
     mutationFn: importTrello,
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: qk.tasks.byStatuses(BUCKETS) })
+      qc.invalidateQueries({ queryKey: qk.recs.all })
+      qc.invalidateQueries({ queryKey: qk.recs.suggestWeek })
       // Show success and close modal after a brief delay
       setTimeout(() => {
         onClose()
