@@ -8,10 +8,11 @@ import TaskForm, { TaskFormValues } from './components/TaskForm'
 import ProjectsPage from './components/ProjectsPage'
 import GoalsPage from './components/GoalsPage'
 import GoalDetailPage from './components/GoalDetailPage'
+import ArchivePage from './components/ArchivePage'
 import { createTask } from './api/tasks'
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'tasks' | 'projects' | 'goals'>('tasks')
+  const [currentView, setCurrentView] = useState<'tasks' | 'projects' | 'goals' | 'archive'>('tasks')
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null)
   const t = useToaster()
   const qc = useQueryClient()
@@ -26,7 +27,7 @@ export default function App() {
         goal_id: vals.goal_id,
         hard_due_at: vals.hard_due_at ? new Date(vals.hard_due_at).toISOString() : null,
         soft_due_at: vals.soft_due_at ? new Date(vals.soft_due_at).toISOString() : null,
-        status: 'backlog',
+        status: 'week',
       })
     },
     onSuccess: () => {
@@ -78,6 +79,16 @@ export default function App() {
             >
               Goals
             </button>
+            <button
+              onClick={() => setCurrentView('archive')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                currentView === 'archive' 
+                  ? 'bg-white/20 text-white' 
+                  : 'text-white/70 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              Archive
+            </button>
           </nav>
         </div>
       </header>
@@ -95,6 +106,8 @@ export default function App() {
           </>
         ) : currentView === 'projects' ? (
           <ProjectsPage />
+        ) : currentView === 'archive' ? (
+          <ArchivePage />
         ) : currentView === 'goals' && selectedGoalId ? (
           <GoalDetailPage 
             goalId={selectedGoalId} 

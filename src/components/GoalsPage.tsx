@@ -94,7 +94,7 @@ function GoalModal({
             >
               <option value="quarterly">Quarterly</option>
               <option value="annual">Annual</option>
-              <option value="monthly">Monthly</option>
+              <option value="weekly">Weekly</option>
             </select>
           </div>
 
@@ -125,7 +125,7 @@ function getTypeColor(type: string) {
   switch (type) {
     case 'annual': return 'bg-purple-100 text-purple-800'
     case 'quarterly': return 'bg-blue-100 text-blue-800'
-    case 'monthly': return 'bg-green-100 text-green-800'
+    case 'weekly': return 'bg-green-100 text-green-800'
     default: return 'bg-gray-100 text-gray-800'
   }
 }
