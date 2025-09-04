@@ -1,5 +1,5 @@
 import { api } from './client'
-import type { Goal, KeyResult, GoalDetail } from '../types'
+import type { Goal, KeyResult, GoalDetail, GoalCadence } from '../types'
 
 export async function listGoals(): Promise<Goal[]> {
   const { data } = await api.get('/api/v1/goals')
@@ -9,7 +9,7 @@ export async function listGoals(): Promise<Goal[]> {
 export interface CreateGoalInput {
   title: string
   description?: string | null
-  type?: string | null
+  type?: GoalCadence | null
 }
 
 export async function createGoal(input: CreateGoalInput): Promise<Goal> {

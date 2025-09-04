@@ -92,8 +92,8 @@ function GoalModal({
               value={formData.type}
               onChange={(e) => setFormData({ ...formData, type: e.target.value })}
             >
-              <option value="quarterly">Quarterly</option>
               <option value="annual">Annual</option>
+              <option value="quarterly">Quarterly</option>
               <option value="weekly">Weekly</option>
             </select>
           </div>
