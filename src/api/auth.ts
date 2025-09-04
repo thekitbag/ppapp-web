@@ -7,7 +7,7 @@ export interface User {
 }
 
 export async function getCurrentUser(): Promise<User> {
-  const { data } = await api.get('/api/v1/me')
+  const { data } = await api.get('/me')
   return data as User
 }
 
@@ -17,5 +17,5 @@ export function getMicrosoftLoginUrl(): string {
 }
 
 export async function logout(): Promise<void> {
-  await api.post('/api/v1/auth/logout')
+  await api.post('/auth/logout')
 }

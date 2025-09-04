@@ -2,7 +2,7 @@ import { api } from './client'
 import type { Project } from '../types'
 
 export async function listProjects(): Promise<Project[]> {
-  const { data } = await api.get('/api/v1/projects')
+  const { data } = await api.get('/projects')
   return data as Project[]
 }
 
@@ -14,11 +14,11 @@ export interface CreateProjectInput {
 }
 
 export async function createProject(input: CreateProjectInput): Promise<Project> {
-  const { data } = await api.post('/api/v1/projects', input)
+  const { data } = await api.post('/projects', input)
   return data as Project
 }
 
 export async function patchProject(id: string, input: Partial<CreateProjectInput>): Promise<Project> {
-  const { data } = await api.patch(`/api/v1/projects/${id}`, input)
+  const { data } = await api.patch(`/projects/${id}`, input)
   return data as Project
 }
