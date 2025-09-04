@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { qk } from './lib/queryKeys'
 import { STATUS_ORDER } from './constants'
+import { useAuth } from './hooks/useAuth'
 import Toaster, { useToaster } from './components/Toaster'
 import TaskBoard from './components/TaskBoard'
 import TaskForm, { TaskFormValues } from './components/TaskForm'
@@ -9,13 +10,32 @@ import ProjectsPage from './components/ProjectsPage'
 import GoalsPage from './components/GoalsPage'
 import GoalDetailPage from './components/GoalDetailPage'
 import ArchivePage from './components/ArchivePage'
+import LoginPage from './components/LoginPage'
 import { createTask } from './api/tasks'
 
 export default function App() {
+  const { isAuthenticated, isLoading, user, logout } = useAuth()
   const [currentView, setCurrentView] = useState<'tasks' | 'projects' | 'goals' | 'archive'>('tasks')
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null)
   const t = useToaster()
   const qc = useQueryClient()
+
+  // Show loading spinner while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show login page if not authenticated
+  if (!isAuthenticated) {
+    return <LoginPage />
+  }
 
   const createM = useMutation({
     mutationFn: (vals: TaskFormValues) => {
@@ -42,7 +62,18 @@ export default function App() {
       <header className="px-6 py-4 border-b bg-primary text-white shadow">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-4">
-            <div className="text-lg font-semibold">Personal Chief of Staff</div>
+            <div className="text-lg font-semibold">EigenTask</div>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-white/80">
+                {user?.name || user?.email}
+              </span>
+              <button
+                onClick={logout}
+                className="text-sm text-white/70 hover:text-white transition-colors"
+              >
+                Sign Out
+              </button>
+            </div>
           </div>
           
           <nav className="flex space-x-1">
