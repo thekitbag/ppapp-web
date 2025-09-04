@@ -12,7 +12,7 @@ export async function getCurrentUser(): Promise<User> {
 }
 
 export function getMicrosoftLoginUrl(): string {
-  const baseUrl = import.meta.env.VITE_OAUTH_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+  const baseUrl = import.meta.env.VITE_OAUTH_BASE_URL
   return `${baseUrl}/auth/ms/login`
 }
 

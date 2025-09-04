@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     // Redirect to logout endpoint which will clear cookies and redirect back
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+    const baseUrl = import.meta.env.VITE_API_BASE_URL
     window.location.href = `${baseUrl}/api/v1/auth/logout`
   }
 
