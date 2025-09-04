@@ -4,7 +4,7 @@ export async function importTrello(file: File): Promise<{ imported: number; skip
   const formData = new FormData()
   formData.append('file', file)
   
-  const { data } = await api.post('/api/v1/import/trello', formData, {
+  const { data } = await api.post('/import/trello', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },

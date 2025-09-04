@@ -9,13 +9,13 @@ export interface RecommendationItem {
 }
 
 export async function listRecommendations(limit = 10): Promise<RecommendationItem[]> {
-  const { data } = await api.get('/api/v1/recommendations/next', { params: { limit } })
+  const { data } = await api.get('/recommendations/next', { params: { limit } })
   if (data && Array.isArray((data as any).items)) return (data as any).items as RecommendationItem[]
   return []
 }
 
 export async function suggestWeek(limit = 5): Promise<RecommendationItem[]> {
-  const { data } = await api.post('/api/v1/recommendations/suggest-week', { limit })
+  const { data } = await api.post('/recommendations/suggest-week', { limit })
   if (data && Array.isArray((data as any).items)) return (data as any).items as RecommendationItem[]
   return []
 }
