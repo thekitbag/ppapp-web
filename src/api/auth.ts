@@ -7,12 +7,12 @@ export interface User {
 }
 
 export async function getCurrentUser(): Promise<User> {
-  const { data } = await api.get('/me')
+  const { data } = await api.get('/auth/me')
   return data as User
 }
 
 export function getMicrosoftLoginUrl(): string {
-  const baseUrl = import.meta.env.VITE_OAUTH_BASE_URL
+  const baseUrl = import.meta.env.VITE_OAUTH_BASE_URL || import.meta.env.VITE_API_BASE_URL
   return `${baseUrl}/auth/ms/login`
 }
 
