@@ -293,11 +293,11 @@ export default function TaskBoard() {
   const goalsQ = useQuery({ queryKey: qk.goals.all, queryFn: listGoals });
 
   const projectsById = useMemo(() => {
-    if (!projectsQ.data) return {};
+    if (!projectsQ.data || !Array.isArray(projectsQ.data)) return {};
     return projectsQ.data.reduce((acc, p) => ({ ...acc, [p.id]: p }), {});
   }, [projectsQ.data]);
   const goalsById = useMemo(() => {
-    if (!goalsQ.data) return {};
+    if (!goalsQ.data || !Array.isArray(goalsQ.data)) return {};
     return goalsQ.data.reduce((acc, g) => ({ ...acc, [g.id]: g }), {});
   }, [goalsQ.data]);
 
