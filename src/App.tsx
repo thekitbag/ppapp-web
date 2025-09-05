@@ -14,29 +14,13 @@ import LoginPage from './components/LoginPage'
 import { createTask } from './api/tasks'
 
 export default function App() {
+  // All hooks must be called before any early returns
   const { isAuthenticated, isLoading, user, logout } = useAuth()
   const [currentView, setCurrentView] = useState<'tasks' | 'projects' | 'goals' | 'archive'>('tasks')
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null)
   const t = useToaster()
   const qc = useQueryClient()
-
-  // Show loading spinner while checking authentication
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Show login page if not authenticated
-  if (!isAuthenticated) {
-    return <LoginPage />
-  }
-
+  
   const createM = useMutation({
     mutationFn: (vals: TaskFormValues) => {
       const tags = vals.tags.split(',').map(s => s.trim()).filter(Boolean)
@@ -56,6 +40,23 @@ export default function App() {
     },
     onError: () => t.push('Failed to create task', 'error'),
   })
+
+  // Show loading spinner while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show login page if not authenticated
+  if (!isAuthenticated) {
+    return <LoginPage />
+  }
 
   return (
     <div className="min-h-dvh bg-gray-100 font-sans">
