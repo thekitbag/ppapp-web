@@ -15,7 +15,7 @@ import { createTask } from './api/tasks'
 
 export default function App() {
   // All hooks must be called before any early returns
-  const { isAuthenticated, isLoading, user, logout } = useAuth()
+  const { isAuthenticated, isLoading, user, logout, requiresLogin, login, devLogin } = useAuth()
   const [currentView, setCurrentView] = useState<'tasks' | 'projects' | 'goals' | 'archive'>('tasks')
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null)
   const t = useToaster()
@@ -53,9 +53,59 @@ export default function App() {
     )
   }
 
-  // Show login page if not authenticated
-  if (!isAuthenticated) {
+  // Show login page if not authenticated and login is required
+  if (!isAuthenticated && requiresLogin) {
     return <LoginPage />
+  }
+
+  // Show login options if not authenticated but login is optional (local dev)
+  if (!isAuthenticated && !requiresLogin) {
+    const isLocalDev = import.meta.env.VITE_ENV === 'local'
+    
+    // Debug environment variables (can be removed in production)
+    if (import.meta.env.VITE_ENV === 'local') {
+      console.log('Local dev environment debug:', {
+        VITE_API_BASE: import.meta.env.VITE_API_BASE,
+        VITE_ENV: import.meta.env.VITE_ENV,
+        VITE_REQUIRE_LOGIN: import.meta.env.VITE_REQUIRE_LOGIN,
+        isLocalDev,
+        requiresLogin
+      })
+    }
+    
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="bg-white rounded-2xl p-8 w-full max-w-md text-center shadow-lg">
+          <h1 className="text-2xl font-semibold mb-6">EigenTask</h1>
+          <p className="text-gray-600 mb-6">You are not authenticated. Choose an option to continue:</p>
+          
+          <div className="space-y-4">
+            <button
+              onClick={login}
+              className="w-full px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+            >
+              Sign in with Microsoft
+            </button>
+            
+            {isLocalDev && (
+              <button
+                onClick={devLogin}
+                className="w-full px-4 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-colors"
+              >
+                Dev Login (Local Only)
+              </button>
+            )}
+            
+            <p className="text-sm text-gray-500 mt-4">
+              {isLocalDev ? 'Local development mode' : 'Production mode'}
+            </p>
+            <p className="text-xs text-gray-400 mt-2">
+              API: {import.meta.env.VITE_API_BASE}
+            </p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

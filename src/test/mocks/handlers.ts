@@ -1,11 +1,10 @@
 import { http, HttpResponse } from 'msw'
 
-const API_BASE = 'http://127.0.0.1:8000'
-
 // Mock API handlers for testing
+// Using relative paths to match API client requests (baseURL: '/api/v1')
 export const handlers = [
   // Tasks endpoints
-  http.get(`${API_BASE}/api/v1/tasks`, ({ request }) => {
+  http.get('/api/v1/tasks', ({ request }) => {
     const url = new URL(request.url)
     const status = url.searchParams.getAll('status')
     
@@ -48,7 +47,7 @@ export const handlers = [
     return HttpResponse.json(mockTasks)
   }),
 
-  http.post(`${API_BASE}/api/v1/tasks`, async ({ request }) => {
+  http.post('/api/v1/tasks', async ({ request }) => {
     const body = await request.json() as any
     const newTask = {
       id: '3',
@@ -60,7 +59,7 @@ export const handlers = [
     return HttpResponse.json(newTask, { status: 201 })
   }),
 
-  http.patch(`${API_BASE}/api/v1/tasks/:id`, async ({ params, request }) => {
+  http.patch('/api/v1/tasks/:id', async ({ params, request }) => {
     const body = await request.json() as any
     const updatedTask = {
       id: params.id,
@@ -80,13 +79,13 @@ export const handlers = [
     return HttpResponse.json(updatedTask)
   }),
 
-  http.post(`${API_BASE}/api/v1/tasks/promote-week`, async ({ request }) => {
+  http.post('/api/v1/tasks/promote-week', async ({ request }) => {
     const body = await request.json() as any
     return HttpResponse.json(body.task_ids)
   }),
 
   // Projects endpoints
-  http.get(`${API_BASE}/api/v1/projects`, () => {
+  http.get('/api/v1/projects', () => {
     return HttpResponse.json([
       {
         id: '1',
@@ -99,7 +98,7 @@ export const handlers = [
     ])
   }),
 
-  http.post(`${API_BASE}/api/v1/projects`, async ({ request }) => {
+  http.post('/api/v1/projects', async ({ request }) => {
     const body = await request.json() as any
     return HttpResponse.json({
       id: '2',
@@ -108,7 +107,7 @@ export const handlers = [
     }, { status: 201 })
   }),
 
-  http.patch(`${API_BASE}/api/v1/projects/:id`, async ({ params, request }) => {
+  http.patch('/api/v1/projects/:id', async ({ params, request }) => {
     const body = await request.json() as any
     return HttpResponse.json({
       id: params.id,
@@ -122,7 +121,7 @@ export const handlers = [
   }),
 
   // Goals endpoints
-  http.get(`${API_BASE}/api/v1/goals`, () => {
+  http.get('/api/v1/goals', () => {
     return HttpResponse.json([
       {
         id: '1',
@@ -133,7 +132,7 @@ export const handlers = [
     ])
   }),
 
-  http.post(`${API_BASE}/api/v1/goals`, async ({ request }) => {
+  http.post('/api/v1/goals', async ({ request }) => {
     const body = await request.json() as any
     return HttpResponse.json({
       id: '2',
@@ -143,7 +142,7 @@ export const handlers = [
   }),
 
   // Recommendations endpoints
-  http.get(`${API_BASE}/api/v1/recommendations/next`, () => {
+  http.get('/api/v1/recommendations/next', () => {
     return HttpResponse.json({
       items: [
         {
@@ -169,7 +168,7 @@ export const handlers = [
     })
   }),
 
-  http.post(`${API_BASE}/api/v1/recommendations/suggest-week`, () => {
+  http.post('/api/v1/recommendations/suggest-week', () => {
     return HttpResponse.json({
       items: [
         {

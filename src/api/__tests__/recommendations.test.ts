@@ -22,10 +22,8 @@ describe('Recommendations API', () => {
     })
 
     it('fetches recommendations with custom limit', async () => {
-      const API_BASE = 'http://127.0.0.1:8000'
-      
       server.use(
-        http.get(`${API_BASE}/api/v1/recommendations/next`, ({ request }) => {
+        http.get('/api/v1/recommendations/next', ({ request }) => {
           const url = new URL(request.url)
           const limit = url.searchParams.get('limit')
           
@@ -62,10 +60,8 @@ describe('Recommendations API', () => {
     })
 
     it('handles empty response gracefully', async () => {
-      const API_BASE = 'http://127.0.0.1:8000'
-      
       server.use(
-        http.get(`${API_BASE}/api/v1/recommendations/next`, () => {
+        http.get('/api/v1/recommendations/next', () => {
           return HttpResponse.json({ items: [] })
         })
       )
@@ -77,10 +73,8 @@ describe('Recommendations API', () => {
     })
 
     it('handles malformed response gracefully', async () => {
-      const API_BASE = 'http://127.0.0.1:8000'
-      
       server.use(
-        http.get(`${API_BASE}/api/v1/recommendations/next`, () => {
+        http.get('/api/v1/recommendations/next', () => {
           return HttpResponse.json({})
         })
       )
@@ -92,10 +86,8 @@ describe('Recommendations API', () => {
     })
 
     it('handles non-array items in response', async () => {
-      const API_BASE = 'http://127.0.0.1:8000'
-      
       server.use(
-        http.get(`${API_BASE}/api/v1/recommendations/next`, () => {
+        http.get('/api/v1/recommendations/next', () => {
           return HttpResponse.json({ items: null })
         })
       )
@@ -123,10 +115,8 @@ describe('Recommendations API', () => {
     })
 
     it('fetches suggestions with custom limit', async () => {
-      const API_BASE = 'http://127.0.0.1:8000'
-      
       server.use(
-        http.post(`${API_BASE}/api/v1/recommendations/suggest-week`, async ({ request }) => {
+        http.post('/api/v1/recommendations/suggest-week', async ({ request }) => {
           const body = await request.json() as any
           
           expect(body.limit).toBe(3)
@@ -165,10 +155,8 @@ describe('Recommendations API', () => {
     })
 
     it('handles empty response gracefully', async () => {
-      const API_BASE = 'http://127.0.0.1:8000'
-      
       server.use(
-        http.post(`${API_BASE}/api/v1/recommendations/suggest-week`, () => {
+        http.post('/api/v1/recommendations/suggest-week', () => {
           return HttpResponse.json({ items: [] })
         })
       )
@@ -180,10 +168,8 @@ describe('Recommendations API', () => {
     })
 
     it('handles malformed response gracefully', async () => {
-      const API_BASE = 'http://127.0.0.1:8000'
-      
       server.use(
-        http.post(`${API_BASE}/api/v1/recommendations/suggest-week`, () => {
+        http.post('/api/v1/recommendations/suggest-week', () => {
           return HttpResponse.json({})
         })
       )
