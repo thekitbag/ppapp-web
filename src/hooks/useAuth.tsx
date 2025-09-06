@@ -17,8 +17,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const requireLogin = import.meta.env.VITE_REQUIRE_LOGIN !== 'false'
-  const env = import.meta.env.VITE_ENV
-  const isLocalDev = env === 'local'
+  const isLocalDev = import.meta.env.DEV
 
   const userQuery = useQuery({
     queryKey: ['auth', 'user'],
@@ -57,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('Attempting dev login...', {
         isLocalDev,
-        baseURL: import.meta.env.VITE_API_BASE,
+        baseURL: '/api/v1',
         endpoint: '/auth/dev-login'
       })
       

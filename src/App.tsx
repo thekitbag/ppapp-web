@@ -60,13 +60,13 @@ export default function App() {
 
   // Show login options if not authenticated but login is optional (local dev)
   if (!isAuthenticated && !requiresLogin) {
-    const isLocalDev = import.meta.env.VITE_ENV === 'local'
+    const isLocalDev = import.meta.env.DEV
     
     // Debug environment variables (can be removed in production)
-    if (import.meta.env.VITE_ENV === 'local') {
+    if (import.meta.env.DEV) {
       console.log('Local dev environment debug:', {
-        VITE_API_BASE: import.meta.env.VITE_API_BASE,
-        VITE_ENV: import.meta.env.VITE_ENV,
+        VITE_API_BASE: '/api/v1',
+        VITE_ENV: 'dev',
         VITE_REQUIRE_LOGIN: import.meta.env.VITE_REQUIRE_LOGIN,
         isLocalDev,
         requiresLogin
@@ -99,9 +99,7 @@ export default function App() {
             <p className="text-sm text-gray-500 mt-4">
               {isLocalDev ? 'Local development mode' : 'Production mode'}
             </p>
-            <p className="text-xs text-gray-400 mt-2">
-              API: {import.meta.env.VITE_API_BASE}
-            </p>
+            <p className="text-xs text-gray-400 mt-2">API: /api/v1</p>
           </div>
         </div>
       </div>
