@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getCurrentUser, getMicrosoftLoginUrl, devLogin as apiDevLogin, type User } from '../api/auth'
+import { api } from '../api/client'
 
 interface AuthContextType {
   user: User | null
@@ -37,8 +38,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Only auto-redirect to login if VITE_REQUIRE_LOGIN is not explicitly false
     if (userQuery.error && !isLoading && requireLogin) {
       const error = userQuery.error as any
+      
+      // Debug logging to distinguish between CORS and auth errors
+      console.log('Auth error detected:', {
+        error: error,
+        status: error.response?.status,
+        message: error.message,
+        code: error.code,
+        isCors: error.message?.includes('CORS') || error.code === 'ERR_NETWORK'
+      })
+      
+      // Only redirect on actual 401 auth errors, not CORS errors
       if (error.response?.status === 401) {
+        console.log('Redirecting to Microsoft login due to 401 status')
         window.location.href = getMicrosoftLoginUrl()
+      } else if (error.code === 'ERR_NETWORK' || error.message?.includes('CORS')) {
+        console.warn('CORS or network error detected - API server needs CORS configuration for https://www.eigentask.co.uk')
       }
     }
   }, [userQuery.error, isLoading, requireLogin])
@@ -70,19 +85,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const logout = () => {
-    // Redirect to logout endpoint which will clear cookies and redirect back
-    if (isLocalDev) {
-      // Use relative URL for local dev (proxy handles routing)
-      window.location.href = '/api/v1/auth/logout'
-    } else {
-      const baseUrl = import.meta.env.VITE_OAUTH_BASE_URL || import.meta.env.VITE_API_BASE_URL
-      if (!baseUrl) {
-        console.error('No OAuth or API base URL configured for logout')
-        return
-      }
-      window.location.href = `${baseUrl}/api/v1/auth/logout`
+  const logout = async () => {
+    try {
+      // Call logout API to clear server-side session/cookies
+      await api.post('/auth/logout')
+    } catch (error) {
+      console.warn('Logout API call failed:', error)
+      // Continue with logout even if API call fails
     }
+    
+    // Clear local user data
+    userQuery.refetch()
+    
+    // Redirect to home page - auth system will handle login redirect if needed
+    window.location.href = '/'
   }
 
   const value: AuthContextType = {

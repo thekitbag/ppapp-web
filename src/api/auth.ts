@@ -15,6 +15,17 @@ export function getMicrosoftLoginUrl(): string {
   if (import.meta.env.DEV) return '/api/v1/auth/ms/login'
 
   const baseUrl = import.meta.env.VITE_OAUTH_BASE_URL || import.meta.env.VITE_API_BASE_URL
+  
+  // Debug logging to help troubleshoot production issues
+  console.log('OAuth URL debug:', {
+    isDev: import.meta.env.DEV,
+    mode: import.meta.env.MODE,
+    oauthBaseUrl: import.meta.env.VITE_OAUTH_BASE_URL,
+    apiBaseUrl: import.meta.env.VITE_API_BASE_URL,
+    finalBaseUrl: baseUrl,
+    finalUrl: `${baseUrl}/auth/ms/login`
+  })
+  
   if (!baseUrl) {
     throw new Error(
       'Neither VITE_OAUTH_BASE_URL nor VITE_API_BASE_URL environment variable is set. '
