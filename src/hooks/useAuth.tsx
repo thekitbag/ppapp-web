@@ -39,21 +39,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (userQuery.error && !isLoading && requireLogin) {
       const error = userQuery.error as any
       
-      // Debug logging to distinguish between CORS and auth errors
-      console.log('Auth error detected:', {
-        error: error,
-        status: error.response?.status,
-        message: error.message,
-        code: error.code,
-        isCors: error.message?.includes('CORS') || error.code === 'ERR_NETWORK'
-      })
-      
       // Only redirect on actual 401 auth errors, not CORS errors
       if (error.response?.status === 401) {
-        console.log('Redirecting to Microsoft login due to 401 status')
         window.location.href = getMicrosoftLoginUrl()
-      } else if (error.code === 'ERR_NETWORK' || error.message?.includes('CORS')) {
-        console.warn('CORS or network error detected - API server needs CORS configuration for https://www.eigentask.co.uk')
       }
     }
   }, [userQuery.error, isLoading, requireLogin])
@@ -64,40 +52,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const devLogin = async () => {
     if (!isLocalDev) {
-      console.warn('Dev login is only available in local development')
       return
     }
     
     try {
-      console.log('Attempting dev login...', {
-        isLocalDev,
-        baseURL: '/api/v1',
-        endpoint: '/auth/dev-login'
-      })
-      
       await apiDevLogin('dev@eigentask.co.uk', 'Local Developer')
-      
-      console.log('Dev login successful, refetching user data')
-      // Refetch user data after successful dev login
       await userQuery.refetch()
     } catch (error) {
-      console.error('Dev login error:', error)
+      console.error('Dev login failed:', error)
     }
   }
 
   const logout = async () => {
     try {
-      // Call logout API to clear server-side session/cookies
       await api.post('/auth/logout')
     } catch (error) {
-      console.warn('Logout API call failed:', error)
       // Continue with logout even if API call fails
     }
     
-    // Clear local user data
     userQuery.refetch()
-    
-    // Redirect to home page - auth system will handle login redirect if needed
     window.location.href = '/'
   }
 
