@@ -62,16 +62,6 @@ export default function App() {
   if (!isAuthenticated && !requiresLogin) {
     const isLocalDev = import.meta.env.DEV
     
-    // Debug environment variables (can be removed in production)
-    if (import.meta.env.DEV) {
-      console.log('Local dev environment debug:', {
-        VITE_API_BASE: '/api/v1',
-        VITE_ENV: 'dev',
-        VITE_REQUIRE_LOGIN: import.meta.env.VITE_REQUIRE_LOGIN,
-        isLocalDev,
-        requiresLogin
-      })
-    }
     
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
