@@ -4,10 +4,12 @@ import { qk } from '../lib/queryKeys'
 import { listGoals, createGoal, updateGoal, type CreateGoalInput } from '../api/goals'
 import { Plus, Target, Flag } from 'lucide-react'
 
+import type { GoalCadence } from '../types'
+
 interface GoalFormData {
   title: string
   description: string
-  type: string
+  type: GoalCadence
 }
 
 function GoalModal({ 
@@ -26,7 +28,7 @@ function GoalModal({
   const [formData, setFormData] = useState<GoalFormData>({
     title: goal?.title || '',
     description: goal?.description || '',
-    type: goal?.type || 'quarterly'
+    type: (goal?.type as GoalCadence) || 'quarterly'
   })
 
   if (!open) return null
@@ -90,7 +92,7 @@ function GoalModal({
               id="type"
               className="w-full border rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500"
               value={formData.type}
-              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, type: e.target.value as GoalCadence })}
             >
               <option value="annual">Annual</option>
               <option value="quarterly">Quarterly</option>

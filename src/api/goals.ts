@@ -9,7 +9,8 @@ export async function listGoals(): Promise<Goal[]> {
 export interface CreateGoalInput {
   title: string
   description?: string | null
-  type?: GoalCadence | null
+  // Accept broader string for tests/backward-compat, UI restricts to GoalCadence
+  type?: GoalCadence | string | null
 }
 
 export async function createGoal(input: CreateGoalInput): Promise<Goal> {

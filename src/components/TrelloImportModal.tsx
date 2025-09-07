@@ -18,7 +18,7 @@ export default function TrelloImportModal({
 
   const importM = useMutation({
     mutationFn: importTrello,
-    onSuccess: (result) => {
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.tasks.byStatuses(BUCKETS) })
       qc.invalidateQueries({ queryKey: qk.recs.all })
       qc.invalidateQueries({ queryKey: qk.recs.suggestWeek })

@@ -226,7 +226,8 @@ function TaskLinkModal({
                         'today': 'bg-green-100 text-green-800',
                         'doing': 'bg-yellow-100 text-yellow-800',
                         'waiting': 'bg-orange-100 text-orange-800',
-                        'done': 'bg-purple-100 text-purple-800'
+                        'done': 'bg-purple-100 text-purple-800',
+                        'archived': 'bg-gray-200 text-gray-700',
                       }[task.status] || 'bg-gray-100 text-gray-800'}`}>
                         {task.status}
                       </span>
@@ -426,7 +427,8 @@ export default function GoalDetailPage({
                       'today': 'bg-green-100 text-green-800',
                       'doing': 'bg-yellow-100 text-yellow-800',
                       'waiting': 'bg-orange-100 text-orange-800',
-                      'done': 'bg-purple-100 text-purple-800'
+                      'done': 'bg-purple-100 text-purple-800',
+                      'archived': 'bg-gray-200 text-gray-700',
                     }[task.status] || 'bg-gray-100 text-gray-800'}`}>
                       {task.status}
                     </span>
