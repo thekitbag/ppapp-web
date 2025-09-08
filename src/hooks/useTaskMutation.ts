@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { updateTask } from '../api/tasks'
-import { qk } from '../lib/queryKeys'
 import type { Task } from '../types'
 
 type UpdateTaskPayload = {
@@ -41,7 +40,7 @@ export function useTaskUpdateMutation() {
       return { previousData }
     },
     
-    onError: (error, variables, context) => {
+    onError: (_error, _variables, context) => {
       // Rollback optimistic updates on error
       if (context?.previousData) {
         context.previousData.forEach(([queryKey, data]) => {

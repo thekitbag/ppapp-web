@@ -169,11 +169,11 @@ describe('TaskEditDrawer', () => {
     
     render(<TaskEditDrawer task={taskWithoutHard} isOpen={true} onClose={mockOnClose} />)
     
-    const hardDeadlineToggle = screen.getByRole('checkbox', { name: /make this a hard deadline/i })
-    expect(hardDeadlineToggle).not.toBeChecked()
+    const toggle = screen.getByRole('checkbox', { name: /make this a hard deadline/i })
+    expect(toggle).not.toBeChecked()
     
-    await user.click(hardDeadlineToggle)
-    expect(hardDeadlineToggle).toBeChecked()
+    await user.click(toggle)
+    expect(toggle).toBeChecked()
   })
 
   it('focuses first input when opened', () => {

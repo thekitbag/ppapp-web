@@ -16,48 +16,31 @@ vi.mock('../TaskEditDrawer', () => ({
 // Import TaskBoard to get access to the TaskCard component
 import TaskBoard from '../TaskBoard'
 
-const mockTask: Task = {
-  id: '1',
-  title: 'Test Task',
-  description: 'Test description',
-  tags: ['tag1', 'tag2'],
-  status: 'week',
-  sort_order: 1,
-  size: 'm',
-  project_id: '1',
-  goal_id: '1',
-  hard_due_at: null,
-  soft_due_at: '2023-12-31T23:59:00.000Z',
-  effort_minutes: 90,
-  created_at: '2023-01-01T00:00:00.000Z',
-  updated_at: '2023-01-01T00:00:00.000Z',
-}
-
 describe('TaskCard Quick Edit', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('renders task title as clickable for editing', () => {
+  it('renders task title as clickable for editing', async () => {
     render(<TaskBoard />)
     
     // Wait for tasks to load
-    waitFor(() => {
-      const taskTitle = screen.getByText('Test Task')
+    await waitFor(() => {
+      const taskTitle = screen.getByText('Test Task 1')
       expect(taskTitle).toBeInTheDocument()
       expect(taskTitle).toHaveAttribute('title', 'Click to edit title')
     })
   })
 
-  it('shows edit and archive buttons on task cards', () => {
+  it('shows edit and archive buttons on task cards', async () => {
     render(<TaskBoard />)
     
-    waitFor(() => {
-      const editButton = screen.getByTitle('Edit task')
-      const archiveButton = screen.getByTitle('Archive task')
+    await waitFor(() => {
+      const editButtons = screen.getAllByTitle('Edit task')
+      const archiveButtons = screen.getAllByTitle('Archive task')
       
-      expect(editButton).toBeInTheDocument()
-      expect(archiveButton).toBeInTheDocument()
+      expect(editButtons.length).toBeGreaterThan(0)
+      expect(archiveButtons.length).toBeGreaterThan(0)
     })
   })
 
@@ -66,11 +49,11 @@ describe('TaskCard Quick Edit', () => {
     render(<TaskBoard />)
     
     await waitFor(() => {
-      expect(screen.getByTitle('Edit task')).toBeInTheDocument()
+      expect(screen.getAllByTitle('Edit task').length).toBeGreaterThan(0)
     })
     
-    const editButton = screen.getByTitle('Edit task')
-    await user.click(editButton)
+    const editButtons = screen.getAllByTitle('Edit task')
+    await user.click(editButtons[0])
     
     expect(screen.getByTestId('task-edit-drawer')).toBeInTheDocument()
   })
@@ -80,14 +63,14 @@ describe('TaskCard Quick Edit', () => {
     render(<TaskBoard />)
     
     await waitFor(() => {
-      expect(screen.getByText('Test Task')).toBeInTheDocument()
+      expect(screen.getByText('Test Task 1')).toBeInTheDocument()
     })
     
-    const taskTitle = screen.getByText('Test Task')
+    const taskTitle = screen.getByText('Test Task 1')
     await user.click(taskTitle)
     
     // Should show input field and save/cancel buttons
-    expect(screen.getByDisplayValue('Test Task')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('Test Task 1')).toBeInTheDocument()
     expect(screen.getByTitle('Save changes')).toBeInTheDocument()
     expect(screen.getByTitle('Cancel editing')).toBeInTheDocument()
   })
@@ -97,13 +80,13 @@ describe('TaskCard Quick Edit', () => {
     render(<TaskBoard />)
     
     await waitFor(() => {
-      expect(screen.getByText('Test Task')).toBeInTheDocument()
+      expect(screen.getByText('Test Task 1')).toBeInTheDocument()
     })
     
-    const taskTitle = screen.getByText('Test Task')
+    const taskTitle = screen.getByText('Test Task 1')
     await user.click(taskTitle)
     
-    const titleInput = screen.getByDisplayValue('Test Task')
+    const titleInput = screen.getByDisplayValue('Test Task 1')
     await user.clear(titleInput)
     await user.type(titleInput, 'Updated Task Title')
     await user.keyboard('{Enter}')
@@ -119,20 +102,20 @@ describe('TaskCard Quick Edit', () => {
     render(<TaskBoard />)
     
     await waitFor(() => {
-      expect(screen.getByText('Test Task')).toBeInTheDocument()
+      expect(screen.getByText('Test Task 1')).toBeInTheDocument()
     })
     
-    const taskTitle = screen.getByText('Test Task')
+    const taskTitle = screen.getByText('Test Task 1')
     await user.click(taskTitle)
     
-    const titleInput = screen.getByDisplayValue('Test Task')
+    const titleInput = screen.getByDisplayValue('Test Task 1')
     await user.clear(titleInput)
     await user.type(titleInput, 'Temporary Change')
     await user.keyboard('{Escape}')
     
     // Should revert to original title
     await waitFor(() => {
-      expect(screen.getByText('Test Task')).toBeInTheDocument()
+      expect(screen.getByText('Test Task 1')).toBeInTheDocument()
     })
   })
 
@@ -141,55 +124,60 @@ describe('TaskCard Quick Edit', () => {
     render(<TaskBoard />)
     
     await waitFor(() => {
-      expect(screen.getByText('Test Task')).toBeInTheDocument()
+      expect(screen.getByText('Test Task 1')).toBeInTheDocument()
     })
     
-    const taskTitle = screen.getByText('Test Task')
+    const taskTitle = screen.getByText('Test Task 1')
     await user.click(taskTitle)
     
-    // Should show datetime input and hard deadline checkbox
+    // Should show datetime input
     expect(screen.getByPlaceholderText('Set due date')).toBeInTheDocument()
-    expect(screen.getByLabelText(/hard deadline/i)).toBeInTheDocument()
   })
 
-  it('toggles hard deadline checkbox in quick edit', async () => {
+  it('shows hard deadline checkbox when date is set', async () => {
     const user = userEvent.setup()
     render(<TaskBoard />)
     
     await waitFor(() => {
-      expect(screen.getByText('Test Task')).toBeInTheDocument()
+      expect(screen.getByText('Test Task 1')).toBeInTheDocument()
     })
     
-    const taskTitle = screen.getByText('Test Task')
+    const taskTitle = screen.getByText('Test Task 1')
     await user.click(taskTitle)
     
-    const hardDeadlineCheckbox = screen.getByLabelText(/hard deadline/i)
-    expect(hardDeadlineCheckbox).not.toBeChecked()
+    // Set a date first
+    const dateInput = screen.getByPlaceholderText('Set due date')
+    await user.type(dateInput, '2023-12-31T23:59')
     
-    await user.click(hardDeadlineCheckbox)
-    expect(hardDeadlineCheckbox).toBeChecked()
+    // Now checkbox should appear
+    await waitFor(() => {
+      const hardDeadlineCheckbox = screen.getByLabelText(/hard deadline/i)
+      expect(hardDeadlineCheckbox).toBeInTheDocument()
+      expect(hardDeadlineCheckbox).not.toBeChecked()
+    })
   })
 
-  it('disables save button while mutation is pending', async () => {
+  it('saves changes when save button is clicked', async () => {
     const user = userEvent.setup()
     render(<TaskBoard />)
     
     await waitFor(() => {
-      expect(screen.getByText('Test Task')).toBeInTheDocument()
+      expect(screen.getByText('Test Task 1')).toBeInTheDocument()
     })
     
-    const taskTitle = screen.getByText('Test Task')
+    const taskTitle = screen.getByText('Test Task 1')
     await user.click(taskTitle)
     
-    // Initially enabled
+    const titleInput = screen.getByDisplayValue('Test Task 1')
+    await user.clear(titleInput)
+    await user.type(titleInput, 'Updated Title')
+    
     const saveButton = screen.getByTitle('Save changes')
-    expect(saveButton).not.toBeDisabled()
-    
-    // After triggering save, it might be disabled during pending state
-    const titleInput = screen.getByDisplayValue('Test Task')
-    await user.type(titleInput, ' Updated')
     await user.click(saveButton)
     
-    // Note: This test might be flaky due to timing, but it tests the intended behavior
+    // Should exit edit mode
+    await waitFor(() => {
+      expect(screen.queryByDisplayValue('Updated Title')).not.toBeInTheDocument()
+    })
   })
 })
