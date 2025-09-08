@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { X, Save } from 'lucide-react'
 import { qk } from '../lib/queryKeys'
 import { listProjects } from '../api/projects'
-import { listGoals } from '../api/goals'
+import { getGoalsTree } from '../api/goals'
 import { useTaskUpdateMutation } from '../hooks/useTaskMutation'
 import type { Task, TaskSize } from '../types'
 
@@ -32,8 +32,58 @@ export default function TaskEditDrawer({ task, isOpen, onClose }: TaskEditDrawer
   const firstInputRef = useRef<HTMLInputElement>(null)
   
   const projectsQ = useQuery({ queryKey: qk.projects.all, queryFn: listProjects })
-  const goalsQ = useQuery({ queryKey: qk.goals.all, queryFn: listGoals })
+  const goalsTreeQ = useQuery({ queryKey: qk.goals.tree, queryFn: getGoalsTree })
   const updateMutation = useTaskUpdateMutation()
+  
+  // Get weekly goals with breadcrumb paths
+  const getWeeklyGoalsWithPaths = () => {
+    if (!goalsTreeQ.data) return []
+    
+    const weeklyGoals: Array<{
+      id: string
+      title: string
+      path: string
+    }> = []
+    
+    goalsTreeQ.data.forEach(annual => {
+      annual.children.forEach(quarterly => {
+        quarterly.children.forEach(weekly => {
+          if (weekly.type === 'weekly') {
+            weeklyGoals.push({
+              id: weekly.id,
+              title: weekly.title,
+              path: `${annual.title} › ${quarterly.title}`
+            })
+          }
+        })
+      })
+      // Also check for direct weekly goals under annual
+      annual.children.forEach(child => {
+        if (child.type === 'weekly') {
+          weeklyGoals.push({
+            id: child.id,
+            title: child.title,
+            path: annual.title
+          })
+        }
+      })
+    })
+    
+    // Check for standalone weekly goals
+    goalsTreeQ.data.forEach(goal => {
+      if (goal.type === 'weekly') {
+        weeklyGoals.push({
+          id: goal.id,
+          title: goal.title,
+          path: 'Standalone'
+        })
+      }
+    })
+    
+    return weeklyGoals
+  }
+  
+  const weeklyGoals = getWeeklyGoalsWithPaths()
   
   // Reset form data when task changes
   useEffect(() => {
@@ -130,6 +180,11 @@ export default function TaskEditDrawer({ task, isOpen, onClose }: TaskEditDrawer
     
     if (formData.effort_minutes && (isNaN(Number(formData.effort_minutes)) || Number(formData.effort_minutes) < 0)) {
       newErrors.effort_minutes = 'Effort must be a positive number'
+    }
+    
+    // Validate that goal is weekly if selected
+    if (formData.goal_id && !weeklyGoals.some(g => g.id === formData.goal_id)) {
+      newErrors.goal_id = 'Only weekly goals can have tasks linked to them'
     }
     
     setErrors(newErrors)
@@ -256,22 +311,36 @@ export default function TaskEditDrawer({ task, isOpen, onClose }: TaskEditDrawer
             
             <div>
               <label htmlFor="edit-goal" className="block text-sm font-medium text-gray-700 mb-1">
-                Goal
+                Goal (Weekly Only)
               </label>
               <select
                 id="edit-goal"
-                className="w-full border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary"
+                className={`w-full border rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary ${
+                  errors.goal_id ? 'border-red-500' : 'border-gray-300'
+                }`}
                 value={formData.goal_id}
                 onChange={(e) => handleInputChange('goal_id', e.target.value)}
               >
                 <option value="">No goal</option>
-                {goalsQ.data?.map(g => (
+                {weeklyGoals.map(g => (
                   <option key={g.id} value={g.id}>
                     {g.title}
-                    {g.type && ` (${g.type})`}
                   </option>
                 ))}
               </select>
+              {errors.goal_id && <p className="text-red-500 text-sm mt-1">{errors.goal_id}</p>}
+              {formData.goal_id && (
+                <div className="mt-1">
+                  {(() => {
+                    const selectedGoal = weeklyGoals.find(g => g.id === formData.goal_id)
+                    return selectedGoal ? (
+                      <p className="text-xs text-gray-500">
+                        {selectedGoal.path} › {selectedGoal.title}
+                      </p>
+                    ) : null
+                  })()}
+                </div>
+              )}
             </div>
           </div>
           

@@ -58,7 +58,7 @@ export function useTaskUpdateMutation() {
         queryClient.invalidateQueries({ queryKey: ['projects'] })
       }
       
-      // If task's goal changed, invalidate goals
+      // If task's goal changed, invalidate goals and goals tree
       if (updatedTask.goal_id) {
         queryClient.invalidateQueries({ queryKey: ['goals'] })
       }

@@ -14,6 +14,8 @@ export const qk = {
   },
   goals: {
     all: ['goals'] as const,
+    tree: ['goals', 'tree'] as const,
+    byType: (type: string, parentId?: string) => ['goals', 'type', type, parentId] as const,
     detail: (id: string) => ['goals', id] as const,
   },
 };

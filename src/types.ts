@@ -4,6 +4,8 @@ export type TaskSize = 'xs' | 's' | 'm' | 'l' | 'xl'
 
 export type GoalCadence = 'annual' | 'quarterly' | 'weekly'
 
+export type GoalStatus = 'on_target' | 'at_risk' | 'off_target'
+
 export interface Task {
   id: string
   title: string
@@ -36,7 +38,11 @@ export interface Goal {
   title: string
   description?: string | null
   type?: GoalCadence | null
+  parent_goal_id?: string | null
+  end_date?: string | null
+  status?: GoalStatus | null
   created_at: string
+  updated_at?: string
 }
 
 export interface KeyResult {
@@ -53,4 +59,9 @@ export interface GoalDetail {
   goal: Goal
   krs: KeyResult[]
   tasks: Task[]
+}
+
+export interface GoalNode extends Goal {
+  children: GoalNode[]
+  taskCount?: number
 }

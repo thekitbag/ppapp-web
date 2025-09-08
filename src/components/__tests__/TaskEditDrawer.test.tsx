@@ -58,7 +58,7 @@ describe('TaskEditDrawer', () => {
     expect(hardDeadlineToggle).toBeChecked()
   })
 
-  it('shows projects and goals in select options', async () => {
+  it('shows projects and weekly goals in select options', async () => {
     render(<TaskEditDrawer task={mockTask} isOpen={true} onClose={mockOnClose} />)
     
     await waitFor(() => {
@@ -66,7 +66,7 @@ describe('TaskEditDrawer', () => {
     })
     
     await waitFor(() => {
-      expect(screen.getByText(/Test Goal/)).toBeInTheDocument()
+      expect(screen.getByText('Test Weekly Goal')).toBeInTheDocument()
     })
   })
 
