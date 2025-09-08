@@ -14,6 +14,15 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
   return data as Task
 }
 
+type TaskCreate = Omit<Task, 'id' | 'sort_order' | 'created_at' | 'updated_at'>
+type UpdateTaskInput = Partial<TaskCreate & { status: TaskStatus; sort_order: number }>
+
+export async function updateTask(id: string, body: UpdateTaskInput): Promise<Task> {
+  const { data } = await api.patch(`/tasks/${id}`, body)
+  return data as Task
+}
+
+// Keep legacy function for backward compatibility
 type PatchTaskInput = Partial<Omit<Task, 'id' | 'tags'>>
 export async function patchTask(id: string | number, input: PatchTaskInput): Promise<Task> {
   const { data } = await api.patch(`/tasks/${id}`, input)

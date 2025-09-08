@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react'
-import { render, RenderOptions } from '@testing-library/react'
+import { render, RenderOptions, renderHook as originalRenderHook, RenderHookOptions } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 // Create a custom render function that includes providers
@@ -30,5 +30,10 @@ const customRender = (
   options?: Omit<RenderOptions, 'wrapper'>
 ) => render(ui, { wrapper: AllTheProviders, ...options })
 
+const customRenderHook = <TProps, TResult>(
+  callback: (props: TProps) => TResult,
+  options?: Omit<RenderHookOptions<TProps>, 'wrapper'>
+) => originalRenderHook(callback, { wrapper: AllTheProviders, ...options })
+
 export * from '@testing-library/react'
-export { customRender as render }
+export { customRender as render, customRenderHook as renderHook }

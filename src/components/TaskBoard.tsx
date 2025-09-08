@@ -8,9 +8,11 @@ import { BUCKETS, midpoint } from '../constants';
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import { Calendar, Flag, Target, Sparkles, Archive, Upload } from 'lucide-react';
+import { Calendar, Flag, Target, Sparkles, Archive, Upload, Edit, Check, X } from 'lucide-react';
 import SuggestWeekModal from './SuggestWeekModal';
 import TrelloImportModal from './TrelloImportModal';
+import TaskEditDrawer from './TaskEditDrawer';
+import { useTaskUpdateMutation } from '../hooks/useTaskMutation';
 
 function InfoBadge({ icon: Icon, label, colorClass }: { icon: React.ElementType, label: string, colorClass?: string }) {
   return (
@@ -47,6 +49,15 @@ function TaskCard({ task, project, goal, index, isPending, onTaskDrop, onArchive
   const ref = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dropPosition, setDropPosition] = useState<'before' | 'after' | null>(null);
+  const [isQuickEditing, setIsQuickEditing] = useState(false);
+  const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
+  const [quickEditTitle, setQuickEditTitle] = useState(task.title);
+  const [quickEditDate, setQuickEditDate] = useState(
+    task.soft_due_at ? new Date(task.soft_due_at).toISOString().slice(0, 16) : ''
+  );
+  const [isHardDeadlineToggle, setIsHardDeadlineToggle] = useState(!!task.hard_due_at);
+  
+  const updateMutation = useTaskUpdateMutation();
 
   useEffect(() => {
     const el = ref.current;
@@ -96,6 +107,52 @@ function TaskCard({ task, project, goal, index, isPending, onTaskDrop, onArchive
     return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   };
 
+  const handleQuickEditSave = () => {
+    if (!quickEditTitle.trim()) return;
+    
+    const patch = {
+      title: quickEditTitle.trim(),
+      soft_due_at: quickEditDate ? new Date(quickEditDate).toISOString() : null,
+      hard_due_at: isHardDeadlineToggle && quickEditDate 
+        ? new Date(quickEditDate).toISOString() 
+        : null,
+    };
+    
+    updateMutation.mutate({ id: task.id, patch }, {
+      onSuccess: () => {
+        setIsQuickEditing(false);
+      },
+      onError: () => {
+        // Reset to original values on error
+        setQuickEditTitle(task.title);
+        setQuickEditDate(task.soft_due_at ? new Date(task.soft_due_at).toISOString().slice(0, 16) : '');
+        setIsHardDeadlineToggle(!!task.hard_due_at);
+      }
+    });
+  };
+
+  const handleQuickEditCancel = () => {
+    setQuickEditTitle(task.title);
+    setQuickEditDate(task.soft_due_at ? new Date(task.soft_due_at).toISOString().slice(0, 16) : '');
+    setIsHardDeadlineToggle(!!task.hard_due_at);
+    setIsQuickEditing(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleQuickEditSave();
+    } else if (e.key === 'Escape') {
+      handleQuickEditCancel();
+    }
+  };
+
+  // Update local state when task changes
+  useEffect(() => {
+    setQuickEditTitle(task.title);
+    setQuickEditDate(task.soft_due_at ? new Date(task.soft_due_at).toISOString().slice(0, 16) : '');
+    setIsHardDeadlineToggle(!!task.hard_due_at);
+  }, [task.title, task.soft_due_at, task.hard_due_at]);
+
   return (
     <div className="relative">
       {dropPosition === 'before' && (
@@ -110,20 +167,81 @@ function TaskCard({ task, project, goal, index, isPending, onTaskDrop, onArchive
         }`}
       >
         <div className="flex items-start justify-between">
-          <p className="font-semibold text-base text-gray-800 leading-tight truncate flex-1 mr-2">
-            {task.title}
-            {isPending && <span className="ml-2 text-xs text-blue-600 font-normal">Updating...</span>}
-          </p>
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onArchive(task.id)
-            }}
-            className="text-gray-400 hover:text-gray-600 p-1 rounded transition-colors flex-shrink-0"
-            title="Archive task"
-          >
-            <Archive size={16} />
-          </button>
+          {isQuickEditing ? (
+            <div className="flex-1 mr-2">
+              <input
+                type="text"
+                value={quickEditTitle}
+                onChange={(e) => setQuickEditTitle(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="w-full font-semibold text-base text-gray-800 bg-transparent border border-primary rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+                autoFocus
+              />
+            </div>
+          ) : (
+            <p 
+              className="font-semibold text-base text-gray-800 leading-tight truncate flex-1 mr-2 cursor-pointer hover:text-blue-600 transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsQuickEditing(true);
+              }}
+              title="Click to edit title"
+            >
+              {task.title}
+              {isPending && <span className="ml-2 text-xs text-blue-600 font-normal">Updating...</span>}
+            </p>
+          )}
+          
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {isQuickEditing ? (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleQuickEditSave();
+                  }}
+                  className="text-green-600 hover:text-green-800 p-1 rounded transition-colors"
+                  title="Save changes"
+                  disabled={updateMutation.isPending}
+                >
+                  <Check size={16} />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleQuickEditCancel();
+                  }}
+                  className="text-gray-400 hover:text-gray-600 p-1 rounded transition-colors"
+                  title="Cancel editing"
+                >
+                  <X size={16} />
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsEditDrawerOpen(true);
+                  }}
+                  className="text-gray-400 hover:text-blue-600 p-1 rounded transition-colors"
+                  title="Edit task"
+                >
+                  <Edit size={16} />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onArchive(task.id);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 p-1 rounded transition-colors"
+                  title="Archive task"
+                >
+                  <Archive size={16} />
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -141,19 +259,51 @@ function TaskCard({ task, project, goal, index, isPending, onTaskDrop, onArchive
           )}
         </div>
 
-        {(task.soft_due_at || task.hard_due_at) && (
+        {(task.soft_due_at || task.hard_due_at || isQuickEditing) && (
           <div className="border-t border-gray-200/80 pt-3 flex flex-col gap-2">
-            {task.soft_due_at && (
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Calendar size={16} />
-                <span>{formatDate(task.soft_due_at)} (soft)</span>
+            {isQuickEditing ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Calendar size={16} />
+                  <input
+                    type="datetime-local"
+                    value={quickEditDate}
+                    onChange={(e) => setQuickEditDate(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+                    placeholder="Set due date"
+                  />
+                </div>
+                {quickEditDate && (
+                  <div className="flex items-center gap-2 ml-6">
+                    <input
+                      type="checkbox"
+                      id={`hard-deadline-${task.id}`}
+                      checked={isHardDeadlineToggle}
+                      onChange={(e) => setIsHardDeadlineToggle(e.target.checked)}
+                      className="w-4 h-4 text-primary bg-gray-100 border-gray-300 rounded focus:ring-primary focus:ring-2"
+                    />
+                    <label htmlFor={`hard-deadline-${task.id}`} className="text-sm text-gray-700">
+                      Hard deadline
+                    </label>
+                  </div>
+                )}
               </div>
-            )}
-            {task.hard_due_at && (
-              <div className="flex items-center gap-2 text-sm font-semibold text-red-600">
-                <Flag size={16} />
-                <span>{formatDate(task.hard_due_at)} (hard)</span>
-              </div>
+            ) : (
+              <>
+                {task.soft_due_at && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Calendar size={16} />
+                    <span>{formatDate(task.soft_due_at)} (soft)</span>
+                  </div>
+                )}
+                {task.hard_due_at && (
+                  <div className="flex items-center gap-2 text-sm font-semibold text-red-600">
+                    <Flag size={16} />
+                    <span>{formatDate(task.hard_due_at)} (hard)</span>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
@@ -161,6 +311,12 @@ function TaskCard({ task, project, goal, index, isPending, onTaskDrop, onArchive
       {dropPosition === 'after' && (
         <div className="absolute -bottom-1.5 left-0 right-0 h-1 bg-blue-500 rounded-full z-10" />
       )}
+      
+      <TaskEditDrawer
+        task={task}
+        isOpen={isEditDrawerOpen}
+        onClose={() => setIsEditDrawerOpen(false)}
+      />
     </div>
   );
 }

@@ -1,13 +1,17 @@
 export type TaskStatus = 'backlog' | 'doing' | 'week' | 'done' | 'waiting' | 'today' | 'archived'
 
+export type TaskSize = 'xs' | 's' | 'm' | 'l' | 'xl'
+
 export type GoalCadence = 'annual' | 'quarterly' | 'weekly'
 
 export interface Task {
   id: string
   title: string
+  description?: string | null
   tags: string[]
   status: TaskStatus
   sort_order: number
+  size?: TaskSize | null
   project_id?: string | null
   goal_id?: string | null
   goals?: { id: string; title: string }[]
