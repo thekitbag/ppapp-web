@@ -30,7 +30,9 @@ describe('TaskForm', () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByText(/Test Goal/)).toBeInTheDocument()
+      const goalSelect = screen.getByLabelText(/goal/i)
+      const options = Array.from(goalSelect.querySelectorAll('option'))
+      expect(options.some(o => o.textContent?.includes('Test Weekly Goal'))).toBe(true)
     })
   })
 
@@ -70,11 +72,12 @@ describe('TaskForm', () => {
     })
     await user.selectOptions(projectSelect, '1')
 
-    // Wait for goals to load before selecting
+    // Wait for goals to load before selecting (weekly goals shown)
     await waitFor(() => {
-      expect(screen.getByText(/Test Goal/)).toBeInTheDocument()
+      const goalOptions = Array.from(goalSelect.querySelectorAll('option'))
+      expect(goalOptions.some(o => o.textContent?.includes('Test Weekly Goal'))).toBe(true)
     })
-    await user.selectOptions(goalSelect, '1')
+    await user.selectOptions(goalSelect, '3')
 
     await user.type(softDueInput, '2023-12-31T23:59')
     await user.type(hardDueInput, '2023-12-25T23:59')
@@ -85,7 +88,7 @@ describe('TaskForm', () => {
       title: 'Test Task',
       tags: 'test,frontend',
       project_id: '1',
-      goal_id: '1',
+      goal_id: '3',
       hard_due_at: '2023-12-25T23:59',
       soft_due_at: '2023-12-31T23:59',
     })

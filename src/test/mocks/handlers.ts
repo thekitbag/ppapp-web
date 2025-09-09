@@ -30,7 +30,7 @@ export const handlers = [
         sort_order: 2000,
         tags: [],
         project_id: '1',
-        goal_id: null,
+        goal_id: '3',
         hard_due_at: null,
         soft_due_at: '2023-12-31T23:59:59Z',
         effort_minutes: 30,
@@ -125,9 +125,76 @@ export const handlers = [
     return HttpResponse.json([
       {
         id: '1',
-        title: 'Test Goal',
-        type: 'learning',
+        title: 'Test Annual Goal',
+        type: 'annual',
+        parent_goal_id: null,
+        end_date: '2024-12-31T23:59:59Z',
+        status: 'on_target',
         created_at: '2023-01-01T00:00:00Z',
+        updated_at: '2023-01-01T00:00:00Z',
+      },
+      {
+        id: '2', 
+        title: 'Test Quarterly Goal',
+        type: 'quarterly',
+        parent_goal_id: '1',
+        end_date: '2024-03-31T23:59:59Z',
+        status: 'at_risk',
+        created_at: '2023-01-01T00:00:00Z',
+        updated_at: '2023-01-01T00:00:00Z',
+      },
+      {
+        id: '3',
+        title: 'Test Weekly Goal',
+        type: 'weekly',
+        parent_goal_id: '2',
+        end_date: '2024-01-07T23:59:59Z',
+        status: 'on_target',
+        created_at: '2023-01-01T00:00:00Z',
+        updated_at: '2023-01-01T00:00:00Z',
+      }
+    ])
+  }),
+
+  http.get('/api/v1/goals/tree', () => {
+    return HttpResponse.json([
+      {
+        id: '1',
+        title: 'Test Annual Goal',
+        type: 'annual',
+        parent_goal_id: null,
+        end_date: '2024-12-31T23:59:59Z',
+        status: 'on_target',
+        created_at: '2023-01-01T00:00:00Z',
+        updated_at: '2023-01-01T00:00:00Z',
+        taskCount: 1,
+        children: [
+          {
+            id: '2',
+            title: 'Test Quarterly Goal',
+            type: 'quarterly',
+            parent_goal_id: '1',
+            end_date: '2024-03-31T23:59:59Z',
+            status: 'at_risk',
+            created_at: '2023-01-01T00:00:00Z',
+            updated_at: '2023-01-01T00:00:00Z',
+            taskCount: 1,
+            children: [
+              {
+                id: '3',
+                title: 'Test Weekly Goal',
+                type: 'weekly',
+                parent_goal_id: '2',
+                end_date: '2024-01-07T23:59:59Z',
+                status: 'on_target',
+                created_at: '2023-01-01T00:00:00Z',
+                updated_at: '2023-01-01T00:00:00Z',
+                taskCount: 1,
+                children: []
+              }
+            ]
+          }
+        ]
       }
     ])
   }),
@@ -135,10 +202,26 @@ export const handlers = [
   http.post('/api/v1/goals', async ({ request }) => {
     const body = await request.json() as any
     return HttpResponse.json({
-      id: '2',
-      ...body,
+      id: String(Date.now()),
       created_at: '2023-01-01T00:00:00Z',
+      updated_at: '2023-01-01T00:00:00Z',
+      ...body,
     }, { status: 201 })
+  }),
+
+  http.patch('/api/v1/goals/:id', async ({ params, request }) => {
+    const body = await request.json() as any
+    return HttpResponse.json({
+      id: params.id,
+      title: 'Updated Goal',
+      type: 'weekly',
+      parent_goal_id: null,
+      end_date: '2024-01-07T23:59:59Z',
+      status: 'on_target',
+      created_at: '2023-01-01T00:00:00Z',
+      updated_at: new Date().toISOString(),
+      ...body,
+    })
   }),
 
   // Recommendations endpoints
