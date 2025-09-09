@@ -60,6 +60,16 @@ function GoalModal({
     }
   }, [open, goal, defaultType])
 
+  // Close on Escape key when modal is open
+  useEffect(() => {
+    if (!open) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [open, onClose])
+
   if (!open) return null
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -82,12 +92,14 @@ function GoalModal({
     setErrors(newErrors)
     if (Object.keys(newErrors).length > 0) return
 
+    const isoEndDate = formData.end_date ? new Date(formData.end_date).toISOString() : null
+
     onSubmit({
       title: formData.title!.trim(),
       description: formData.description?.trim() || null,
       type: formData.type || null,
       parent_goal_id: formData.parent_goal_id,
-      end_date: formData.end_date || null,
+      end_date: isoEndDate,
       status: formData.status || null
     })
   }
@@ -304,6 +316,7 @@ function GoalRow({ goal, level = 0, isExpanded, onToggle, onEdit }: {
         {hasChildren && (
           <button
             onClick={onToggle}
+            aria-label={isExpanded ? 'Collapse' : 'Expand'}
             className="text-gray-400 hover:text-gray-600 p-1"
           >
             {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
@@ -346,6 +359,7 @@ function GoalRow({ goal, level = 0, isExpanded, onToggle, onEdit }: {
 
         <button
           onClick={() => onEdit(goal)}
+          aria-label="Edit goal"
           className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600 p-1"
         >
           ✏️
