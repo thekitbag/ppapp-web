@@ -11,7 +11,11 @@ vi.mock('../client', () => ({
   }
 }))
 
-const mockApi = vi.mocked(api)
+const mockApi = {
+  get: vi.mocked(api.get),
+  post: vi.mocked(api.post),
+  patch: vi.mocked(api.patch),
+}
 
 describe('Goals Hierarchy API', () => {
   beforeEach(() => {

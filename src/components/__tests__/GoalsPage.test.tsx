@@ -329,9 +329,9 @@ describe('GoalsPage', () => {
     })
 
     // The weekly goal has end date in 2024-01-07 which is in the past
-    // Should show warning icon
-    const warningIcons = screen.getAllByTitle('Past end date')
-    expect(warningIcons.length).toBeGreaterThan(0)
+    // Should show warning icon (AlertTriangle SVG with amber color)
+    const warningElements = document.querySelectorAll('svg.text-amber-500')
+    expect(warningElements.length).toBeGreaterThan(0)
   })
 
   it('closes modal on escape key', async () => {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { qk } from '../lib/queryKeys'
-import { getGoalsTree, listGoalsByType, createGoal, updateGoal, type CreateGoalInput } from '../api/goals'
+import { getGoalsTree, createGoal, updateGoal, type CreateGoalInput } from '../api/goals'
 import { Plus, Target, ChevronDown, ChevronRight, Calendar, AlertTriangle } from 'lucide-react'
 
 import type { GoalCadence, GoalNode, GoalStatus } from '../types'
@@ -328,7 +328,7 @@ function GoalRow({ goal, level = 0, isExpanded, onToggle, onEdit }: {
           <div className="flex items-center gap-2 mb-1">
             <h3 className="font-medium text-gray-900 truncate">{goal.title}</h3>
             {isOverdue(goal.end_date) && (
-              <AlertTriangle size={16} className="text-amber-500" title="Past end date" />
+              <AlertTriangle size={16} className="text-amber-500" />
             )}
           </div>
           
@@ -395,29 +395,13 @@ function GoalRowContainer({ goal, level, onEdit }: {
   )
 }
 
-function EmptyState({ type, parentName }: { type: GoalCadence, parentName?: string }) {
-  const messages = {
-    annual: 'No annual goals yet',
-    quarterly: parentName ? `No quarterly goals under "${parentName}"` : 'No quarterly goals yet',
-    weekly: parentName ? `No weekly goals under "${parentName}"` : 'No weekly goals yet'
-  }
 
-  const actions = {
-    annual: 'Add Annual Goal',
-    quarterly: 'Add Quarterly Goal',
-    weekly: 'Add Weekly Goal'
-  }
-
-  return (
-    <div className="text-center py-8 text-gray-500">
-      <Target size={32} className="mx-auto mb-2 opacity-50" />
-      <p className="text-sm mb-2">{messages[type]}</p>
-      <p className="text-xs">{actions[type]}</p>
-    </div>
-  )
+interface GoalsPageProps {
+  selectedGoalId?: string | null
+  onSelectGoal?: (goalId: string | null) => void
 }
 
-export default function GoalsPage() {
+export default function GoalsPage({ selectedGoalId, onSelectGoal }: GoalsPageProps = {}) {
   const qc = useQueryClient()
   const [activeTab, setActiveTab] = useState<TabType>('all')
   const [showModal, setShowModal] = useState(false)

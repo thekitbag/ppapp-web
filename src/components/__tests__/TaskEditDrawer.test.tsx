@@ -118,7 +118,6 @@ describe('TaskEditDrawer', () => {
     render(<TaskEditDrawer task={mockTask} isOpen={true} onClose={mockOnClose} />)
     
     const dateInput = screen.getByLabelText(/due date/i)
-    const hardDeadlineToggle = screen.getByRole('checkbox', { name: /make this a hard deadline/i })
     const saveButton = screen.getByRole('button', { name: /save/i })
     
     // Clear date but keep hard deadline checked

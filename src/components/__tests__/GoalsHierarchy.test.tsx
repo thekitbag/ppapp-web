@@ -53,7 +53,6 @@ describe('TaskEditDrawer - Goals Hierarchy Integration', () => {
   })
 
   it('shows goal breadcrumb when weekly goal is selected', async () => {
-    const user = userEvent.setup()
     const taskWithGoal = { ...mockTask, goal_id: '3' }
     
     render(<TaskEditDrawer task={taskWithGoal} isOpen={true} onClose={mockOnClose} />)
@@ -133,7 +132,6 @@ describe('TaskEditDrawer - Goals Hierarchy Integration', () => {
   })
 
   it('shows "No goal" option and allows clearing goal selection', async () => {
-    const user = userEvent.setup()
     const taskWithGoal = { ...mockTask, goal_id: null } // Start without goal
     
     render(<TaskEditDrawer task={taskWithGoal} isOpen={true} onClose={mockOnClose} />)
