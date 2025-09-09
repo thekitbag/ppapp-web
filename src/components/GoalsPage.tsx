@@ -401,7 +401,7 @@ interface GoalsPageProps {
   onSelectGoal?: (goalId: string | null) => void
 }
 
-export default function GoalsPage({ selectedGoalId, onSelectGoal }: GoalsPageProps = {}) {
+export default function GoalsPage({ selectedGoalId: _selectedGoalId, onSelectGoal: _onSelectGoal }: GoalsPageProps = {}) {
   const qc = useQueryClient()
   const [activeTab, setActiveTab] = useState<TabType>('all')
   const [showModal, setShowModal] = useState(false)
