@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
 
       - name: Install dependencies
@@ -36,7 +36,7 @@ jobs:
     
     strategy:
       matrix:
-        node-version: [18, 20]
+        node-version: [20, 22]
     
     steps:
       - name: Checkout code
@@ -55,11 +55,11 @@ jobs:
         run: npm run test:run
 
       - name: Generate coverage report
-        if: matrix.node-version == 18
+        if: matrix.node-version == 20
         run: npm run test:coverage
 
       - name: Upload coverage reports to Codecov
-        if: matrix.node-version == 18
+        if: matrix.node-version == 20
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -79,7 +79,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
 
       - name: Install dependencies

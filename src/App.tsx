@@ -77,6 +77,13 @@ export default function App() {
               Sign in with Microsoft
             </button>
             
+            <button
+              onClick={() => window.location.href = '/api/v1/auth/google/login'}
+              className="w-full px-4 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors"
+            >
+              Sign in with Google
+            </button>
+            
             {isLocalDev && (
               <button
                 onClick={devLogin}
@@ -103,9 +110,16 @@ export default function App() {
           <div className="flex items-center justify-between mb-4">
             <div className="text-lg font-semibold">EigenTask</div>
             <div className="flex items-center gap-4">
-              <span className="text-sm text-white/80">
-                {user?.name || user?.email}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-white/80">
+                  {user?.name || user?.email}
+                </span>
+                {user?.provider && (
+                  <span className="text-xs px-2 py-1 bg-white/20 rounded-full text-white/70">
+                    {user.provider === 'microsoft' ? 'MS' : user.provider === 'google' ? 'Google' : 'Dev'}
+                  </span>
+                )}
+              </div>
               <button
                 onClick={logout}
                 className="text-sm text-white/70 hover:text-white transition-colors"

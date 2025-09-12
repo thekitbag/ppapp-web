@@ -4,8 +4,16 @@ import { render, screen } from '@testing-library/react'
 // We need to extract the ProjectChip component to test it separately
 // For now, let's create a simple test component that mimics the ProjectChip functionality
 function ProjectChip({ project, colorClass }: { project: any, colorClass?: string }) {
-  const daysUntilMilestone = project?.milestone_due_at ? 
-    Math.ceil((new Date(project.milestone_due_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : null
+  const daysUntilMilestone = project?.milestone_due_at ? (() => {
+    const today = new Date()
+    const milestone = new Date(project.milestone_due_at)
+    
+    // Reset both dates to midnight for accurate day comparison
+    today.setHours(0, 0, 0, 0)
+    milestone.setHours(0, 0, 0, 0)
+    
+    return Math.floor((milestone.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  })() : null
 
   return (
     <div className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-full ${colorClass || 'bg-blue-100 text-blue-800'}`}>
