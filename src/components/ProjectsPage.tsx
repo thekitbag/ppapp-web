@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { qk } from '../lib/queryKeys'
 import { listProjects, createProject, patchProject, type CreateProjectInput } from '../api/projects'
@@ -30,12 +30,58 @@ function ProjectModal({
     milestone_title: project?.milestone_title || '',
     milestone_due_at: project?.milestone_due_at ? project.milestone_due_at.slice(0, 16) : ''
   })
+  
+  const [errors, setErrors] = useState<Partial<ProjectFormData>>({})
+  
+  const nameInputRef = useRef<HTMLInputElement>(null)
+  const backdropRef = useRef<HTMLDivElement>(null)
+
+  // Focus management
+  useEffect(() => {
+    if (open && nameInputRef.current) {
+      nameInputRef.current.focus()
+    }
+  }, [open])
+
+  // Escape key handling
+  useEffect(() => {
+    if (!open) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [open, onClose])
+
+  // Backdrop click handling
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === backdropRef.current) {
+      onClose()
+    }
+  }
 
   if (!open) return null
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.name.trim()) return
+    
+    // Clear previous errors
+    setErrors({})
+    
+    // Validate required fields
+    const newErrors: Partial<ProjectFormData> = {}
+    if (!formData.name.trim()) {
+      newErrors.name = 'Project name is required'
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors)
+      return
+    }
 
     onSubmit({
       name: formData.name.trim(),
@@ -45,13 +91,26 @@ function ProjectModal({
     })
   }
 
+  const handleInputChange = (field: keyof ProjectFormData, value: string) => {
+    setFormData({ ...formData, [field]: value })
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors({ ...errors, [field]: undefined })
+    }
+  }
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div 
+      ref={backdropRef}
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      onClick={handleBackdropClick}
+    >
       <div 
         className="bg-white rounded-2xl p-6 w-full max-w-md"
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
+        onClick={(e) => e.stopPropagation()}
       >
         <h2 id="modal-title" className="text-xl font-semibold mb-4">
           {project ? 'Edit Project' : 'Create New Project'}
@@ -63,12 +122,21 @@ function ProjectModal({
             </label>
             <input
               id="name"
+              ref={nameInputRef}
               type="text"
               required
-              className="w-full border rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500"
+              className={`w-full border rounded-xl px-3 py-2 focus:ring-2 ${
+                errors.name ? 'border-red-300 focus:ring-red-500' : 'focus:ring-blue-500'
+              }`}
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) => handleInputChange('name', e.target.value)}
+              aria-describedby={errors.name ? 'name-error' : undefined}
             />
+            {errors.name && (
+              <div id="name-error" className="text-sm text-red-600 mt-1">
+                {errors.name}
+              </div>
+            )}
           </div>
 
           <div>
@@ -80,7 +148,7 @@ function ProjectModal({
               type="color"
               className="w-full border rounded-xl px-3 py-2 h-12 focus:ring-2 focus:ring-blue-500"
               value={formData.color}
-              onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+              onChange={(e) => handleInputChange('color', e.target.value)}
             />
           </div>
 
@@ -93,7 +161,7 @@ function ProjectModal({
               type="text"
               className="w-full border rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500"
               value={formData.milestone_title}
-              onChange={(e) => setFormData({ ...formData, milestone_title: e.target.value })}
+              onChange={(e) => handleInputChange('milestone_title', e.target.value)}
             />
           </div>
 
@@ -106,7 +174,7 @@ function ProjectModal({
               type="datetime-local"
               className="w-full border rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500"
               value={formData.milestone_due_at}
-              onChange={(e) => setFormData({ ...formData, milestone_due_at: e.target.value })}
+              onChange={(e) => handleInputChange('milestone_due_at', e.target.value)}
               aria-describedby="date-format"
             />
             <div id="date-format" className="text-xs text-gray-500 mt-1">
@@ -267,6 +335,7 @@ export default function ProjectsPage() {
                         <div 
                           className="w-4 h-4 rounded-full"
                           style={{ backgroundColor: project.color || '#3B82F6' }}
+                          title={`Project color: ${project.color || '#3B82F6'}`}
                         />
                         <span className="font-medium">{project.name}</span>
                       </div>

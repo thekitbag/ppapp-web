@@ -6,7 +6,7 @@ import { Archive, Target } from 'lucide-react'
 export default function ArchivePage() {
   const archivedTasksQ = useQuery({
     queryKey: qk.tasks.byStatuses(['archived']),
-    queryFn: () => listTasks(['archived'])
+    queryFn: () => listTasks({ statuses: ['archived'] })
   })
 
   if (archivedTasksQ.isLoading) {

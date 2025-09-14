@@ -49,3 +49,9 @@ Thumbs.db
 # Temporary files
 tmp/
 temp/
+
+#code review bundles
+/review_bundle
+
+# Test coverage output
+coverage/

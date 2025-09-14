@@ -1,11 +1,38 @@
 import { api } from './client'
 import type { Task, TaskStatus } from '../types'
 
-export async function listTasks(statuses: TaskStatus[]): Promise<Task[]> {
+export interface TaskFilters {
+  statuses?: TaskStatus[]
+  project_id?: string
+  goal_id?: string
+  search?: string
+  tags?: string[]
+  due_date_start?: string
+  due_date_end?: string
+}
+
+export async function listTasks(filters: TaskFilters = {}): Promise<Task[]> {
   const params = new URLSearchParams()
+  
+  // Add status filters (default to all statuses if none provided)
+  const statuses = filters.statuses || ['backlog', 'week', 'doing', 'done']
   statuses.forEach(s => params.append('status', s))
+  
+  // Add other filters
+  if (filters.project_id) params.append('project_id', filters.project_id)
+  if (filters.goal_id) params.append('goal_id', filters.goal_id)
+  if (filters.search) params.append('search', filters.search)
+  if (filters.tags?.length) filters.tags.forEach(tag => params.append('tags', tag))
+  if (filters.due_date_start) params.append('due_date_start', filters.due_date_start)
+  if (filters.due_date_end) params.append('due_date_end', filters.due_date_end)
+  
   const { data } = await api.get('/tasks', { params })
   return data as Task[]
+}
+
+// Keep backward compatibility
+export async function listTasksByStatuses(statuses: TaskStatus[]): Promise<Task[]> {
+  return listTasks({ statuses })
 }
 
 type CreateTaskInput = Omit<Task, 'id' | 'sort_order' | 'created_at' | 'updated_at'> & { status: TaskStatus }

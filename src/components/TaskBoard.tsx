@@ -1,7 +1,7 @@
-import { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { qk } from '../lib/queryKeys';
-import { listTasks, patchTask, promoteTasksToWeek } from '../api/tasks';
+import { listTasks, patchTask, promoteTasksToWeek, type TaskFilters } from '../api/tasks';
 import { suggestWeek } from '../api/recommendations';
 import { Task, TaskStatus } from '../types';
 import { BUCKETS, midpoint } from '../constants';
@@ -12,6 +12,7 @@ import { Calendar, Flag, Target, Sparkles, Archive, Upload, Edit, Check, X } fro
 import SuggestWeekModal from './SuggestWeekModal';
 import TrelloImportModal from './TrelloImportModal';
 import TaskEditDrawer from './TaskEditDrawer';
+import TaskFiltersComponent from './TaskFilters';
 import { useTaskUpdateMutation } from '../hooks/useTaskMutation';
 
 function InfoBadge({ icon: Icon, label, colorClass }: { icon: React.ElementType, label: string, colorClass?: string }) {
@@ -185,7 +186,7 @@ function TaskCard({ task, project, goal, index, isPending, onTaskDrop, onArchive
                 e.stopPropagation();
                 setIsQuickEditing(true);
               }}
-              title="Click to edit title"
+              title={task.title.length > 40 ? `${task.title} (Click to edit)` : "Click to edit title"}
             >
               {task.title}
               {isPending && <span className="ml-2 text-xs text-blue-600 font-normal">Updating...</span>}
@@ -440,11 +441,26 @@ import { listGoals } from '../api/goals';
 
 export default function TaskBoard() {
   const qc = useQueryClient();
+  const [filters, setFilters] = useState<TaskFilters>({ statuses: BUCKETS });
+  const [debouncedFilters, setDebouncedFilters] = useState<TaskFilters>({ statuses: BUCKETS });
+  
+  // Debounce the filters to prevent re-renders during typing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedFilters(filters);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [filters]);
+  
   const tasksQ = useQuery({
-    queryKey: qk.tasks.byStatuses(BUCKETS),
-    queryFn: () => listTasks(BUCKETS),
+    queryKey: ['tasks', 'filtered', debouncedFilters],
+    queryFn: () => listTasks(debouncedFilters),
     select: (data) => data.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)),
   });
+  
+  const handleFiltersChange = useCallback((newFilters: TaskFilters) => {
+    setFilters(newFilters);
+  }, []);
   const projectsQ = useQuery({ queryKey: qk.projects.all, queryFn: listProjects });
   const goalsQ = useQuery({ queryKey: qk.goals.all, queryFn: listGoals });
 
@@ -458,6 +474,14 @@ export default function TaskBoard() {
   }, [goalsQ.data]);
 
   const tasks = tasksQ.data || [];
+
+  const allTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    tasks.forEach(task => {
+      task.tags.forEach(tag => tagSet.add(tag));
+    });
+    return Array.from(tagSet).sort();
+  }, [tasks]);
 
   const columns = useMemo(() => {
     const grouped = new Map<TaskStatus, Task[]>();
@@ -499,6 +523,7 @@ export default function TaskBoard() {
       }
     },
     onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['tasks', 'filtered'] });
       qc.invalidateQueries({ queryKey: qk.tasks.byStatuses(BUCKETS) });
       qc.invalidateQueries({ queryKey: qk.tasks.byStatuses(['archived']) });
     },
@@ -517,6 +542,7 @@ export default function TaskBoard() {
   const promoteMutation = useMutation({
     mutationFn: promoteTasksToWeek,
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['tasks', 'filtered'] });
       qc.invalidateQueries({ queryKey: qk.tasks.byStatuses(BUCKETS) });
       qc.invalidateQueries({ queryKey: qk.recs.suggestWeek });
       setShowSuggestModal(false);
@@ -594,6 +620,15 @@ export default function TaskBoard() {
           Suggest Tasks for Week
         </button>
       </div>
+
+      {/* Filters */}
+      <TaskFiltersComponent
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
+        projects={projectsQ.data || []}
+        goals={goalsQ.data || []}
+        allTags={allTags}
+      />
 
       {/* Task columns */}
       <div className="flex gap-6 flex-1 overflow-x-auto">
