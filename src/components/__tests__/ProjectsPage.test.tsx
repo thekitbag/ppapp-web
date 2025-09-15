@@ -55,9 +55,7 @@ describe('ProjectsPage', () => {
 
     await user.click(screen.getByRole('button', { name: 'New Project' }))
 
-    await waitFor(() => {
-      expect(screen.getByRole('dialog')).toBeInTheDocument()
-    })
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
 
     expect(screen.getByText('Create New Project')).toBeInTheDocument()
     expect(screen.getByLabelText('Project Name *')).toBeInTheDocument()
@@ -76,9 +74,7 @@ describe('ProjectsPage', () => {
 
     await user.click(screen.getByRole('button', { name: 'New Project' }))
 
-    await waitFor(() => {
-      expect(screen.getByRole('dialog')).toBeInTheDocument()
-    })
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
 
     expect(screen.getByLabelText('Project Name *')).toBeInTheDocument()
     expect(screen.getByLabelText('Color')).toBeInTheDocument()
@@ -99,14 +95,76 @@ describe('ProjectsPage', () => {
 
     await user.click(screen.getByRole('button', { name: 'New Project' }))
     
-    await waitFor(() => {
-      expect(screen.getByRole('dialog')).toBeInTheDocument()
-    })
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
     
     await waitFor(() => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     })
+  })
+
+  it('closes modal when Escape key is pressed', async () => {
+    const user = userEvent.setup()
+    render(<ProjectsPage />, { wrapper: createWrapper() })
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'New Project' })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: 'New Project' }))
+    
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+
+    await user.keyboard('{Escape}')
+    
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    })
+  })
+
+  it('closes modal when backdrop is clicked but not when dialog content is clicked', async () => {
+    const user = userEvent.setup()
+    render(<ProjectsPage />, { wrapper: createWrapper() })
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'New Project' })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: 'New Project' }))
+    
+    const dialog = await screen.findByRole('dialog')
+    expect(dialog).toBeInTheDocument()
+
+    // Clicking inside dialog should not close it
+    await user.click(dialog)
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+    // Click the backdrop by targeting the container with the backdrop click handler
+    // We need to find the backdrop div which has the fixed positioning and click handler
+    const backdrop = dialog.closest('[class*="fixed"][class*="inset-0"]')
+    if (backdrop) {
+      await user.click(backdrop as HTMLElement)
+    }
+    
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    })
+  })
+
+  it('focuses the name input when modal opens', async () => {
+    const user = userEvent.setup()
+    render(<ProjectsPage />, { wrapper: createWrapper() })
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'New Project' })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: 'New Project' }))
+    
+    await screen.findByRole('dialog')
+    
+    const nameInput = screen.getByLabelText('Project Name *')
+    expect(nameInput).toHaveFocus()
   })
 })

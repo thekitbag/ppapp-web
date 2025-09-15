@@ -13,7 +13,7 @@ import {
 describe('Tasks API', () => {
   describe('listTasks', () => {
     it('fetches tasks with single status', async () => {
-      const tasks = await listTasks(['backlog'])
+      const tasks = await listTasks({ statuses: ['backlog'] })
       
       expect(Array.isArray(tasks)).toBe(true)
       expect(tasks.length).toBeGreaterThan(0)
@@ -23,14 +23,14 @@ describe('Tasks API', () => {
     })
 
     it('fetches tasks with multiple statuses', async () => {
-      const tasks = await listTasks(['backlog', 'week'])
+      const tasks = await listTasks({ statuses: ['backlog', 'week'] })
       
       expect(Array.isArray(tasks)).toBe(true)
       expect(tasks.length).toBeGreaterThan(0)
     })
 
     it('handles empty status array', async () => {
-      const tasks = await listTasks([])
+      const tasks = await listTasks({ statuses: [] })
       
       expect(Array.isArray(tasks)).toBe(true)
     })

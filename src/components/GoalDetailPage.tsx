@@ -157,7 +157,7 @@ function TaskLinkModal({
 
   const tasksQ = useQuery({ 
     queryKey: qk.tasks.byStatuses(BUCKETS), 
-    queryFn: () => listTasks(BUCKETS) 
+    queryFn: () => listTasks({ statuses: BUCKETS }) 
   })
   const projectsQ = useQuery({ 
     queryKey: qk.projects.all, 

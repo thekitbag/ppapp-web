@@ -1,7 +1,7 @@
-import { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { qk } from '../lib/queryKeys';
-import { listTasks, patchTask, promoteTasksToWeek } from '../api/tasks';
+import { listTasks, patchTask, promoteTasksToWeek, type TaskFilters } from '../api/tasks';
 import { suggestWeek } from '../api/recommendations';
 import { Task, TaskStatus } from '../types';
 import { BUCKETS, midpoint } from '../constants';
@@ -12,6 +12,7 @@ import { Calendar, Flag, Target, Sparkles, Archive, Upload, Edit, Check, X } fro
 import SuggestWeekModal from './SuggestWeekModal';
 import TrelloImportModal from './TrelloImportModal';
 import TaskEditDrawer from './TaskEditDrawer';
+import TaskFiltersComponent from './TaskFilters';
 import { useTaskUpdateMutation } from '../hooks/useTaskMutation';
 
 function InfoBadge({ icon: Icon, label, colorClass }: { icon: React.ElementType, label: string, colorClass?: string }) {
@@ -45,7 +46,7 @@ function ProjectChip({ project, colorClass }: { project: any, colorClass?: strin
   );
 }
 
-function TaskCard({ task, project, goal, index, isPending, onTaskDrop, onArchive }: { task: Task, project: any, goal: any, index: number, isPending?: boolean, onTaskDrop: (task: Task, newStatus: TaskStatus, targetIndex: number) => void, onArchive: (taskId: string) => void }) {
+function TaskCard({ task, project, goal, index, isPending, onTaskDrop, onArchive, density = 'comfortable' }: { task: Task, project: any, goal: any, index: number, isPending?: boolean, onTaskDrop: (task: Task, newStatus: TaskStatus, targetIndex: number) => void, onArchive: (taskId: string) => void, density?: 'comfortable' | 'compact' }) {
   const ref = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dropPosition, setDropPosition] = useState<'before' | 'after' | null>(null);
@@ -160,15 +161,18 @@ function TaskCard({ task, project, goal, index, isPending, onTaskDrop, onArchive
       )}
       <div
         ref={ref}
-        className={`bg-white p-4 rounded-xl shadow-md border border-gray-200/80 transition-all flex flex-col gap-3 ${
+        className={`bg-white rounded-xl shadow-md border border-gray-200/80 transition-all flex flex-col ${
+          density === 'compact' ? 'p-3 gap-2' : 'p-4 gap-3'
+        } ${
           isDragging ? 'opacity-40 scale-95' : ''
         } ${isPending ? 'opacity-75 border-blue-400' : ''} ${
           dropPosition ? 'ring-2 ring-blue-300' : ''
         }`}
       >
-        <div className="flex items-start justify-between">
+        {/* Title Row - Always visible with wrapping */}
+        <div className="flex items-start justify-between gap-3">
           {isQuickEditing ? (
-            <div className="flex-1 mr-2">
+            <div className="flex-1">
               <input
                 type="text"
                 value={quickEditTitle}
@@ -180,7 +184,7 @@ function TaskCard({ task, project, goal, index, isPending, onTaskDrop, onArchive
             </div>
           ) : (
             <p 
-              className="font-semibold text-base text-gray-800 leading-tight truncate flex-1 mr-2 cursor-pointer hover:text-blue-600 transition-colors"
+              className="font-semibold text-base text-gray-800 leading-tight whitespace-normal break-words flex-1 cursor-pointer hover:text-blue-600 transition-colors"
               onClick={(e) => {
                 e.stopPropagation();
                 setIsQuickEditing(true);
@@ -244,20 +248,27 @@ function TaskCard({ task, project, goal, index, isPending, onTaskDrop, onArchive
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {project && <ProjectChip project={project} />}
-          {goal && <InfoBadge icon={Target} label={goal.title} colorClass="bg-green-100 text-green-800" />}
-          {task.goals && task.goals.length > 0 && (
-            <div className="flex items-center gap-1">
-              {task.goals.slice(0, 1).map(g => (
-                <InfoBadge key={g.id} icon={Target} label={g.title} colorClass="bg-purple-100 text-purple-800" />
-              ))}
-              {task.goals.length > 1 && (
-                <InfoBadge icon={Target} label={`+${task.goals.length - 1}`} colorClass="bg-purple-100 text-purple-800" />
-              )}
-            </div>
-          )}
-        </div>
+        {/* Metadata Row - Chips wrapped with overflow handling */}
+        {(project || goal || (task.goals && task.goals.length > 0)) && (
+          <div className="flex flex-wrap items-center gap-2">
+            {project && <ProjectChip project={project} />}
+            {goal && <InfoBadge icon={Target} label={goal.title} colorClass="bg-green-100 text-green-800" />}
+            {task.goals && task.goals.length > 0 && (
+              <div className="flex items-center gap-1 flex-wrap">
+                {task.goals.slice(0, density === 'compact' ? 1 : 2).map(g => (
+                  <InfoBadge key={g.id} icon={Target} label={g.title} colorClass="bg-purple-100 text-purple-800" />
+                ))}
+                {task.goals.length > (density === 'compact' ? 1 : 2) && (
+                  <InfoBadge 
+                    icon={Target} 
+                    label={`+${task.goals.length - (density === 'compact' ? 1 : 2)}`} 
+                    colorClass="bg-purple-100 text-purple-800" 
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {(task.soft_due_at || task.hard_due_at || isQuickEditing) && (
           <div className="border-t border-gray-200/80 pt-3 flex flex-col gap-2">
@@ -341,14 +352,39 @@ function EmptyColumnDropZone({ status, onTaskDrop }: { status: TaskStatus, onTas
     });
   }, [status, onTaskDrop]);
 
+  const getEmptyStateContent = () => {
+    switch (status) {
+      case 'week':
+        return {
+          title: 'Your week awaits',
+          subtitle: 'Drag tasks here from Backlog to plan your week'
+        }
+      case 'doing':
+        return {
+          title: 'Ready to focus?',
+          subtitle: 'Move a task here when you start working on it'
+        }
+      default:
+        return {
+          title: 'Drop task here',
+          subtitle: null
+        }
+    }
+  }
+
+  const content = getEmptyStateContent()
+
   return (
     <div
       ref={ref}
-      className={`h-full border-2 border-dashed rounded-xl flex items-center justify-center text-sm transition-all ${
+      className={`h-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center text-center p-6 transition-all min-h-[120px] ${
         isDraggedOver ? 'border-blue-400 bg-blue-100/50 text-blue-700' : 'border-gray-300/80 text-gray-500'
       }`}
     >
-      Drop task here
+      <div className="text-sm font-medium mb-1">{content.title}</div>
+      {content.subtitle && (
+        <div className="text-xs opacity-75">{content.subtitle}</div>
+      )}
     </div>
   );
 }
@@ -383,7 +419,7 @@ function EndOfListDropZone({ status, index, onTaskDrop }: { status: TaskStatus, 
   );
 }
 
-function TaskColumn({ status, tasks, onTaskDrop, projectsById, goalsById, patchMutation, onShowImport }: { status: TaskStatus; tasks: Task[]; onTaskDrop: (task: Task, newStatus: TaskStatus, targetIndex?: number) => void; projectsById: any, goalsById: any, patchMutation: any, onShowImport?: () => void }) {
+function TaskColumn({ status, tasks, onTaskDrop, projectsById, goalsById, patchMutation, onShowImport, density = 'comfortable' }: { status: TaskStatus; tasks: Task[]; onTaskDrop: (task: Task, newStatus: TaskStatus, targetIndex?: number) => void; projectsById: any, goalsById: any, patchMutation: any, onShowImport?: () => void, density?: 'comfortable' | 'compact' }) {
   const handleArchive = (taskId: string) => {
     patchMutation.mutate({ id: taskId, status: 'archived' as TaskStatus })
   }
@@ -425,6 +461,7 @@ function TaskColumn({ status, tasks, onTaskDrop, projectsById, goalsById, patchM
             isPending={patchMutation.isPending && patchMutation.variables?.id === task.id}
             onTaskDrop={onTaskDrop}
             onArchive={handleArchive}
+            density={density}
           />
         ))}
         {tasks.length > 0 && (
@@ -440,11 +477,27 @@ import { listGoals } from '../api/goals';
 
 export default function TaskBoard() {
   const qc = useQueryClient();
+  const [filters, setFilters] = useState<TaskFilters>({ statuses: BUCKETS });
+  const [debouncedFilters, setDebouncedFilters] = useState<TaskFilters>({ statuses: BUCKETS });
+  const [density, setDensity] = useState<'comfortable' | 'compact'>('comfortable');
+  
+  // Debounce the filters to prevent re-renders during typing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedFilters(filters);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [filters]);
+  
   const tasksQ = useQuery({
-    queryKey: qk.tasks.byStatuses(BUCKETS),
-    queryFn: () => listTasks(BUCKETS),
+    queryKey: ['tasks', 'filtered', debouncedFilters],
+    queryFn: () => listTasks(debouncedFilters),
     select: (data) => data.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)),
   });
+  
+  const handleFiltersChange = useCallback((newFilters: TaskFilters) => {
+    setFilters(newFilters);
+  }, []);
   const projectsQ = useQuery({ queryKey: qk.projects.all, queryFn: listProjects });
   const goalsQ = useQuery({ queryKey: qk.goals.all, queryFn: listGoals });
 
@@ -458,6 +511,14 @@ export default function TaskBoard() {
   }, [goalsQ.data]);
 
   const tasks = tasksQ.data || [];
+
+  const allTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    tasks.forEach(task => {
+      task.tags.forEach(tag => tagSet.add(tag));
+    });
+    return Array.from(tagSet).sort();
+  }, [tasks]);
 
   const columns = useMemo(() => {
     const grouped = new Map<TaskStatus, Task[]>();
@@ -499,6 +560,7 @@ export default function TaskBoard() {
       }
     },
     onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['tasks', 'filtered'] });
       qc.invalidateQueries({ queryKey: qk.tasks.byStatuses(BUCKETS) });
       qc.invalidateQueries({ queryKey: qk.tasks.byStatuses(['archived']) });
     },
@@ -517,6 +579,7 @@ export default function TaskBoard() {
   const promoteMutation = useMutation({
     mutationFn: promoteTasksToWeek,
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['tasks', 'filtered'] });
       qc.invalidateQueries({ queryKey: qk.tasks.byStatuses(BUCKETS) });
       qc.invalidateQueries({ queryKey: qk.recs.suggestWeek });
       setShowSuggestModal(false);
@@ -595,6 +658,17 @@ export default function TaskBoard() {
         </button>
       </div>
 
+      {/* Filters */}
+      <TaskFiltersComponent
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
+        projects={projectsQ.data || []}
+        goals={goalsQ.data || []}
+        allTags={allTags}
+        density={density}
+        onDensityChange={setDensity}
+      />
+
       {/* Task columns */}
       <div className="flex gap-6 flex-1 overflow-x-auto">
         {Array.from(columns.entries()).map(([status, tasks]) => (
@@ -607,6 +681,7 @@ export default function TaskBoard() {
             goalsById={goalsById}
             patchMutation={patchM}
             onShowImport={status === 'backlog' ? () => setShowImportModal(true) : undefined}
+            density={density}
           />
         ))}
       </div>
