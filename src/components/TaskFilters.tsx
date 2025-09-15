@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { Search, X, Filter } from 'lucide-react'
+import { useState, useMemo, useEffect, useRef } from 'react'
+import { Search, X, Filter, LayoutGrid, List } from 'lucide-react'
 import type { TaskFilters as TaskFiltersType } from '../api/tasks'
 
 interface TaskFiltersProps {
@@ -8,10 +8,14 @@ interface TaskFiltersProps {
   projects: Array<{ id: string; name: string; color?: string | null }>
   goals: Array<{ id: string; title: string }>
   allTags: string[]
+  density?: 'comfortable' | 'compact'
+  onDensityChange?: (density: 'comfortable' | 'compact') => void
 }
 
-export default function TaskFilters({ filters, onFiltersChange, projects, goals, allTags }: TaskFiltersProps) {
+export default function TaskFilters({ filters, onFiltersChange, projects, goals, allTags, density = 'comfortable', onDensityChange }: TaskFiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false)
+  const filtersPanelRef = useRef<HTMLDivElement>(null)
+  const filtersButtonRef = useRef<HTMLButtonElement>(null)
 
   const handleSearchChange = (search: string) => {
     onFiltersChange({ ...filters, search: search || undefined })
@@ -41,8 +45,123 @@ export default function TaskFilters({ filters, onFiltersChange, projects, goals,
     })
   }
 
+  const getDatePresets = () => {
+    const today = new Date()
+    const thisWeekStart = new Date(today)
+    thisWeekStart.setDate(today.getDate() - today.getDay())
+    const thisWeekEnd = new Date(thisWeekStart)
+    thisWeekEnd.setDate(thisWeekStart.getDate() + 6)
+    
+    const next2WeeksEnd = new Date(today)
+    next2WeeksEnd.setDate(today.getDate() + 14)
+    
+    return {
+      'This week': {
+        start: thisWeekStart.toISOString().split('T')[0],
+        end: thisWeekEnd.toISOString().split('T')[0]
+      },
+      'Next 2 weeks': {
+        start: today.toISOString().split('T')[0],
+        end: next2WeeksEnd.toISOString().split('T')[0]
+      },
+      'Overdue': {
+        start: undefined,
+        end: new Date(today.getTime() - 24*60*60*1000).toISOString().split('T')[0]
+      }
+    }
+  }
+
+  const handleDatePreset = (presetName: string) => {
+    const presets = getDatePresets()
+    const preset = presets[presetName as keyof typeof presets]
+    if (preset) {
+      handleDateRangeChange(preset.start, preset.end)
+    }
+  }
+
+  const formatDateRange = (start?: string, end?: string) => {
+    const today = new Date()
+    const todayStr = today.toISOString().split('T')[0]
+    
+    if (!start && !end) return ''
+    
+    const formatDate = (dateStr: string) => {
+      const date = new Date(dateStr)
+      const diffDays = Math.ceil((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+      
+      if (dateStr === todayStr) return 'today'
+      if (diffDays === -1) return 'yesterday'
+      if (diffDays === 1) return 'tomorrow'
+      if (diffDays >= -7 && diffDays <= 7) {
+        return date.toLocaleDateString(undefined, { weekday: 'long' }).toLowerCase()
+      }
+      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+    }
+    
+    if (!start) return `before ${formatDate(end!)}`
+    if (!end) return `from ${formatDate(start)} onwards`
+    if (start === end) return `on ${formatDate(start)}`
+    
+    return `${formatDate(start)} → ${formatDate(end)}`
+  }
+
   const clearFilters = () => {
     onFiltersChange({ statuses: filters.statuses })
+  }
+
+  // Focus management for expanded filters panel
+  useEffect(() => {
+    if (isExpanded && filtersPanelRef.current) {
+      // Focus the first input in the expanded panel
+      const firstInput = filtersPanelRef.current.querySelector('select, input, button') as HTMLElement
+      if (firstInput) {
+        firstInput.focus()
+      }
+    }
+  }, [isExpanded])
+
+  // Keyboard navigation for filters panel
+  useEffect(() => {
+    if (!isExpanded) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsExpanded(false)
+        filtersButtonRef.current?.focus()
+        return
+      }
+
+      // Focus trap - keep focus within the expanded panel
+      if (e.key === 'Tab' && filtersPanelRef.current) {
+        const focusableElements = filtersPanelRef.current.querySelectorAll(
+          'select, input, button, [href], [tabindex]:not([tabindex="-1"])'
+        )
+        const focusableArray = Array.from(focusableElements) as HTMLElement[]
+        const firstElement = focusableArray[0]
+        const lastElement = focusableArray[focusableArray.length - 1]
+
+        if (e.shiftKey) {
+          // Shift + Tab - go backwards
+          if (document.activeElement === firstElement) {
+            e.preventDefault()
+            lastElement.focus()
+          }
+        } else {
+          // Tab - go forwards
+          if (document.activeElement === lastElement) {
+            e.preventDefault()
+            firstElement.focus()
+          }
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isExpanded])
+
+  const handleToggleExpanded = () => {
+    setIsExpanded(!isExpanded)
   }
 
   const hasActiveFilters = useMemo(() => {
@@ -56,10 +175,21 @@ export default function TaskFilters({ filters, onFiltersChange, projects, goals,
     )
   }, [filters])
 
+  const activeFiltersCount = useMemo(() => {
+    return [
+      !!filters.search,
+      !!filters.project_id,
+      !!filters.goal_id,
+      !!(filters.tags?.length),
+      !!(filters.due_date_start || filters.due_date_end)
+    ].filter(Boolean).length
+  }, [filters])
+
   return (
     <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
-      {/* Search Bar - Always Visible */}
+      {/* Unified Toolbar */}
       <div className="flex items-center gap-4 mb-4">
+        {/* Search - Takes up most space */}
         <div className="flex-1 relative">
           <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <input
@@ -71,30 +201,56 @@ export default function TaskFilters({ filters, onFiltersChange, projects, goals,
           />
         </div>
         
+        {/* Filters Button */}
         <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+          ref={filtersButtonRef}
+          onClick={handleToggleExpanded}
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
             hasActiveFilters ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-gray-50 border-gray-300 text-gray-600'
           }`}
+          aria-expanded={isExpanded}
+          aria-controls="filters-panel"
+          aria-label={`${isExpanded ? 'Collapse' : 'Expand'} filters panel`}
         >
           <Filter size={16} />
-          Filters
-          {hasActiveFilters && (
-            <span className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">
-              {[
-                filters.project_id && 'Project',
-                filters.goal_id && 'Goal', 
-                filters.tags?.length && `${filters.tags.length} Tag${filters.tags.length !== 1 ? 's' : ''}`,
-                (filters.due_date_start || filters.due_date_end) && 'Date'
-              ].filter(Boolean).join(', ')}
-            </span>
-          )}
+          Filters{hasActiveFilters && ` • ${activeFiltersCount}`}
         </button>
 
+        {/* Density Toggle */}
+        {onDensityChange && (
+          <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+            <button
+              onClick={() => onDensityChange('comfortable')}
+              className={`flex items-center gap-1 px-3 py-2 text-sm transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                density === 'comfortable' 
+                  ? 'bg-blue-50 text-blue-700' 
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+              title="Comfortable view"
+            >
+              <LayoutGrid size={14} />
+              Comfortable
+            </button>
+            <button
+              onClick={() => onDensityChange('compact')}
+              className={`flex items-center gap-1 px-3 py-2 text-sm border-l border-gray-300 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                density === 'compact' 
+                  ? 'bg-blue-50 text-blue-700' 
+                  : 'text-gray-600 hover:bg-gray-50'
+              }`}
+              title="Compact view"
+            >
+              <List size={14} />
+              Compact
+            </button>
+          </div>
+        )}
+
+        {/* Clear Filters */}
         {hasActiveFilters && (
           <button
             onClick={clearFilters}
-            className="flex items-center gap-2 px-3 py-2 text-gray-500 hover:text-gray-700 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 text-gray-500 hover:text-gray-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
             title="Clear all filters"
           >
             <X size={16} />
@@ -105,14 +261,20 @@ export default function TaskFilters({ filters, onFiltersChange, projects, goals,
 
       {/* Expanded Filters */}
       {isExpanded && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t">
+        <div 
+          ref={filtersPanelRef}
+          id="filters-panel"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t"
+          role="region"
+          aria-label="Filter options"
+        >
           {/* Project Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Project</label>
             <select
               value={filters.project_id || ''}
               onChange={(e) => handleProjectChange(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:border-transparent"
             >
               <option value="">All Projects</option>
               {projects.map(project => (
@@ -129,7 +291,7 @@ export default function TaskFilters({ filters, onFiltersChange, projects, goals,
             <select
               value={filters.goal_id || ''}
               onChange={(e) => handleGoalChange(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:border-transparent"
             >
               <option value="">All Goals</option>
               {goals.map(goal => (
@@ -143,21 +305,46 @@ export default function TaskFilters({ filters, onFiltersChange, projects, goals,
           {/* Date Range */}
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-2">Due Date Range</label>
+            
+            {/* Quick Presets */}
+            <div className="flex flex-wrap gap-2 mb-3">
+              {Object.keys(getDatePresets()).map(presetName => (
+                <button
+                  key={presetName}
+                  onClick={() => handleDatePreset(presetName)}
+                  className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                >
+                  {presetName}
+                </button>
+              ))}
+            </div>
+            
             <div className="flex gap-2">
               <input
                 type="date"
                 value={filters.due_date_start || ''}
                 onChange={(e) => handleDateRangeChange(e.target.value, filters.due_date_end)}
-                className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:border-transparent"
                 placeholder="From"
               />
               <input
                 type="date"
                 value={filters.due_date_end || ''}
                 onChange={(e) => handleDateRangeChange(filters.due_date_start, e.target.value)}
-                className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:border-transparent"
                 placeholder="To"
               />
+            </div>
+            
+            {/* Date helper text and range summary */}
+            <div className="text-xs text-gray-500 mt-1">
+              {(filters.due_date_start || filters.due_date_end) ? (
+                <div className="font-medium text-gray-700">
+                  Due: {formatDateRange(filters.due_date_start, filters.due_date_end)}
+                </div>
+              ) : (
+                'Dates shown in your locale'
+              )}
             </div>
           </div>
 
@@ -170,7 +357,7 @@ export default function TaskFilters({ filters, onFiltersChange, projects, goals,
                   <button
                     key={tag}
                     onClick={() => handleTagChange(tag)}
-                    className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                    className={`px-3 py-1 rounded-full text-sm transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
                       filters.tags?.includes(tag)
                         ? 'bg-blue-100 text-blue-800 border border-blue-200'
                         : 'bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200'
