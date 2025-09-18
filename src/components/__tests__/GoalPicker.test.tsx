@@ -45,7 +45,7 @@ const mockGoalTree: GoalNode[] = [
         type: 'weekly',
         parent_goal_id: '1',
         end_date: '2024-01-14T23:59:59Z',
-        status: 'completed',
+        status: 'on_target',
         created_at: '2023-01-01T00:00:00Z',
         updated_at: '2023-01-01T00:00:00Z',
         children: []

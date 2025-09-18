@@ -39,7 +39,6 @@ describe('TaskEditor', () => {
   })
 
   it('allows selecting today bucket', async () => {
-    const user = userEvent.setup()
     render(<TaskEditor isOpen={true} onClose={mockOnClose} defaultStatus="today" />)
 
     const bucketSelect = screen.getByLabelText(/bucket/i)

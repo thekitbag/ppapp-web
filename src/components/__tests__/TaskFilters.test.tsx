@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import { server } from '../../test/mocks/server'
-import { http, HttpResponse } from 'msw'
 import TaskFilters from '../TaskFilters'
 import type { TaskFilters as TaskFiltersType } from '../../api/tasks'
 
