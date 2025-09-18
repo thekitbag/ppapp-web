@@ -27,19 +27,19 @@ describe('TaskCard Quick Edit', () => {
     await waitFor(() => {
       const taskTitle = screen.getByText('Test Task 1')
       expect(taskTitle).toBeInTheDocument()
-      expect(taskTitle).toHaveAttribute('title', 'Click to edit title')
+      expect(taskTitle).toHaveAttribute('title', 'Test Task 1 (Click to edit)')
     })
   })
 
-  it('shows edit and archive buttons on task cards', async () => {
+  it('shows edit and complete buttons on task cards', async () => {
     render(<TaskBoard />)
     
     await waitFor(() => {
       const editButtons = screen.getAllByTitle('Edit task')
-      const archiveButtons = screen.getAllByTitle('Archive task')
+      const completeButtons = screen.getAllByTitle('Complete task')
       
       expect(editButtons.length).toBeGreaterThan(0)
-      expect(archiveButtons.length).toBeGreaterThan(0)
+      expect(completeButtons.length).toBeGreaterThan(0)
     })
   })
 

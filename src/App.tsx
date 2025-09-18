@@ -1,45 +1,20 @@
 import { useState } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { qk } from './lib/queryKeys'
-import { STATUS_ORDER } from './constants'
 import { useAuth } from './hooks/useAuth'
 import Toaster, { useToaster } from './components/Toaster'
 import TaskBoard from './components/TaskBoard'
-import TaskForm, { TaskFormValues } from './components/TaskForm'
+import TaskEditor from './components/TaskEditor'
 import ProjectsPage from './components/ProjectsPage'
 import GoalsPage from './components/GoalsPage'
 import GoalDetailPage from './components/GoalDetailPage'
 import ArchivePage from './components/ArchivePage'
 import LoginPage from './components/LoginPage'
-import { createTask } from './api/tasks'
-
 export default function App() {
   // All hooks must be called before any early returns
   const { isAuthenticated, isLoading, user, logout, requiresLogin, login, devLogin } = useAuth()
   const [currentView, setCurrentView] = useState<'tasks' | 'projects' | 'goals' | 'archive'>('tasks')
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null)
+  const [showGlobalTaskEditor, setShowGlobalTaskEditor] = useState(false)
   const t = useToaster()
-  const qc = useQueryClient()
-  
-  const createM = useMutation({
-    mutationFn: (vals: TaskFormValues) => {
-      const tags = vals.tags.split(',').map(s => s.trim()).filter(Boolean)
-      return createTask({
-        title: vals.title,
-        tags,
-        project_id: vals.project_id,
-        goal_id: vals.goal_id,
-        hard_due_at: vals.hard_due_at ? new Date(vals.hard_due_at).toISOString() : null,
-        soft_due_at: vals.soft_due_at ? new Date(vals.soft_due_at).toISOString() : null,
-        status: 'week',
-      })
-    },
-    onSuccess: () => {
-      t.push('Task created')
-      qc.invalidateQueries({ queryKey: qk.tasks.byStatuses(STATUS_ORDER) })
-    },
-    onError: () => t.push('Failed to create task', 'error'),
-  })
 
   // Show loading spinner while checking authentication
   if (isLoading) {
@@ -180,9 +155,17 @@ export default function App() {
       <main className="p-6 space-y-8">
         {currentView === 'tasks' ? (
           <>
-            <div>
-              <h2 className="text-xl font-semibold mb-3">Add a new task</h2>
-              <TaskForm onSubmit={(v) => createM.mutate(v)} disabled={createM.isPending} />
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold">Task Board</h2>
+              <button
+                onClick={() => setShowGlobalTaskEditor(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                Add Task
+              </button>
             </div>
             <div className="max-w-7xl mx-auto">
               <TaskBoard />
@@ -206,6 +189,18 @@ export default function App() {
       </main>
       
       <Toaster toasts={t.toasts} onClose={t.remove} />
+      
+      {/* Global Task Editor */}
+      <TaskEditor
+        isOpen={showGlobalTaskEditor}
+        defaultStatus="week"
+        onClose={() => setShowGlobalTaskEditor(false)}
+        onSuccess={() => {
+          t.push('Task created')
+          setShowGlobalTaskEditor(false)
+        }}
+      />
+      
       <footer className="mt-8 py-4 border-t text-center text-sm text-gray-500">© 2025 Personal Productivity App</footer>
     </div>
   )

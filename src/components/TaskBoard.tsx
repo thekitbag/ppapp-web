@@ -8,10 +8,11 @@ import { BUCKETS, midpoint } from '../constants';
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import { Calendar, Flag, Target, Sparkles, Archive, Upload, Edit, Check, X } from 'lucide-react';
+import { Calendar, Flag, Target, Sparkles, Upload, Edit, Check, X, CheckCircle, Plus } from 'lucide-react';
 import SuggestWeekModal from './SuggestWeekModal';
 import TrelloImportModal from './TrelloImportModal';
 import TaskEditDrawer from './TaskEditDrawer';
+import TaskEditor from './TaskEditor';
 import TaskFiltersComponent from './TaskFilters';
 import { useTaskUpdateMutation } from '../hooks/useTaskMutation';
 
@@ -183,17 +184,22 @@ function TaskCard({ task, project, goal, index, isPending, onTaskDrop, onArchive
               />
             </div>
           ) : (
-            <p 
-              className="font-semibold text-base text-gray-800 leading-tight whitespace-normal break-words flex-1 cursor-pointer hover:text-blue-600 transition-colors"
+            <h3 
+              className="font-medium leading-snug break-words flex-1 cursor-pointer hover:text-blue-600 transition-colors overflow-hidden"
+              style={{
+                display: '-webkit-box',
+                WebkitLineClamp: density === 'compact' ? 2 : 3,
+                WebkitBoxOrient: 'vertical'
+              }}
               onClick={(e) => {
                 e.stopPropagation();
                 setIsQuickEditing(true);
               }}
-              title="Click to edit title"
+              title={`${task.title} (Click to edit)`}
             >
               {task.title}
               {isPending && <span className="ml-2 text-xs text-blue-600 font-normal">Updating...</span>}
-            </p>
+            </h3>
           )}
           
           <div className="flex items-center gap-1 flex-shrink-0">
@@ -226,22 +232,22 @@ function TaskCard({ task, project, goal, index, isPending, onTaskDrop, onArchive
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
+                    onArchive(task.id);
+                  }}
+                  className="text-gray-400 hover:text-green-600 p-1 rounded transition-colors"
+                  title="Complete task"
+                >
+                  <CheckCircle size={16} />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setIsEditDrawerOpen(true);
                   }}
                   className="text-gray-400 hover:text-blue-600 p-1 rounded transition-colors"
                   title="Edit task"
                 >
                   <Edit size={16} />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onArchive(task.id);
-                  }}
-                  className="text-gray-400 hover:text-gray-600 p-1 rounded transition-colors"
-                  title="Archive task"
-                >
-                  <Archive size={16} />
                 </button>
               </>
             )}
@@ -303,13 +309,27 @@ function TaskCard({ task, project, goal, index, isPending, onTaskDrop, onArchive
             ) : (
               <>
                 {task.soft_due_at && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div 
+                    className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-blue-600 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsQuickEditing(true);
+                    }}
+                    title="Click to edit due date"
+                  >
                     <Calendar size={16} />
                     <span>{formatDate(task.soft_due_at)} (soft)</span>
                   </div>
                 )}
                 {task.hard_due_at && (
-                  <div className="flex items-center gap-2 text-sm font-semibold text-red-600">
+                  <div 
+                    className="flex items-center gap-2 text-sm font-semibold text-red-600 cursor-pointer hover:text-red-700 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsQuickEditing(true);
+                    }}
+                    title="Click to edit due date"
+                  >
                     <Flag size={16} />
                     <span>{formatDate(task.hard_due_at)} (hard)</span>
                   </div>
@@ -419,7 +439,7 @@ function EndOfListDropZone({ status, index, onTaskDrop }: { status: TaskStatus, 
   );
 }
 
-function TaskColumn({ status, tasks, onTaskDrop, projectsById, goalsById, patchMutation, onShowImport, density = 'comfortable' }: { status: TaskStatus; tasks: Task[]; onTaskDrop: (task: Task, newStatus: TaskStatus, targetIndex?: number) => void; projectsById: any, goalsById: any, patchMutation: any, onShowImport?: () => void, density?: 'comfortable' | 'compact' }) {
+function TaskColumn({ status, tasks, onTaskDrop, projectsById, goalsById, patchMutation, onShowImport, onCreateTask, density = 'comfortable' }: { status: TaskStatus; tasks: Task[]; onTaskDrop: (task: Task, newStatus: TaskStatus, targetIndex?: number) => void; projectsById: any, goalsById: any, patchMutation: any, onShowImport?: () => void, onCreateTask?: (status: TaskStatus) => void, density?: 'comfortable' | 'compact' }) {
   const handleArchive = (taskId: string) => {
     patchMutation.mutate({ id: taskId, status: 'archived' as TaskStatus })
   }
@@ -433,6 +453,15 @@ function TaskColumn({ status, tasks, onTaskDrop, projectsById, goalsById, patchM
           {status === 'week' ? 'This Week' : status}
         </h3>
         <div className="flex items-center gap-2">
+          {onCreateTask && (
+            <button
+              onClick={() => onCreateTask(status)}
+              className="text-gray-600 hover:text-blue-600 p-1 rounded transition-colors"
+              title={`Add task to ${status === 'week' ? 'This Week' : status}`}
+            >
+              <Plus size={16} />
+            </button>
+          )}
           {status === 'backlog' && onShowImport && (
             <button
               onClick={onShowImport}
@@ -569,6 +598,8 @@ export default function TaskBoard() {
   // Modal state and functionality
   const [showSuggestModal, setShowSuggestModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showTaskEditor, setShowTaskEditor] = useState(false);
+  const [taskEditorDefaultStatus, setTaskEditorDefaultStatus] = useState<TaskStatus>('week');
   
   const suggestedTasksQ = useQuery({
     queryKey: qk.recs.suggestWeek,
@@ -599,6 +630,11 @@ export default function TaskBoard() {
     if (taskIds.length > 0) {
       promoteMutation.mutate(taskIds);
     }
+  };
+
+  const handleCreateTask = (status: TaskStatus) => {
+    setTaskEditorDefaultStatus(status);
+    setShowTaskEditor(true);
   };
 
   function handleTaskDrop(task: Task, newStatus: TaskStatus, targetIndex?: number) {
@@ -670,8 +706,9 @@ export default function TaskBoard() {
       />
 
       {/* Task columns */}
-      <div className="flex gap-6 flex-1 overflow-x-auto">
-        {Array.from(columns.entries()).map(([status, tasks]) => (
+      <div className="overflow-x-auto">
+        <div className="min-w-[1200px] grid grid-flow-col auto-cols-[320px] gap-4 pb-2">
+          {Array.from(columns.entries()).map(([status, tasks]) => (
           <TaskColumn
             key={status}
             status={status}
@@ -681,9 +718,11 @@ export default function TaskBoard() {
             goalsById={goalsById}
             patchMutation={patchM}
             onShowImport={status === 'backlog' ? () => setShowImportModal(true) : undefined}
+            onCreateTask={handleCreateTask}
             density={density}
           />
-        ))}
+          ))}
+        </div>
       </div>
 
       {/* Suggest Week Modal */}
@@ -699,6 +738,13 @@ export default function TaskBoard() {
       <TrelloImportModal 
         open={showImportModal}
         onClose={() => setShowImportModal(false)}
+      />
+
+      {/* Task Editor Modal */}
+      <TaskEditor
+        isOpen={showTaskEditor}
+        defaultStatus={taskEditorDefaultStatus}
+        onClose={() => setShowTaskEditor(false)}
       />
     </div>
   );
