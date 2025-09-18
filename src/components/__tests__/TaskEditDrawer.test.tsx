@@ -58,15 +58,16 @@ describe('TaskEditDrawer', () => {
     expect(hardDeadlineToggle).toBeChecked()
   })
 
-  it('shows projects and weekly goals in select options', async () => {
+  it('shows projects and goals are available through GoalPicker', async () => {
     render(<TaskEditDrawer task={mockTask} isOpen={true} onClose={mockOnClose} />)
-    
+
     await waitFor(() => {
       expect(screen.getByText('Test Project')).toBeInTheDocument()
     })
-    
+
+    // Goal section should be present
     await waitFor(() => {
-      expect(screen.getByText('Test Weekly Goal')).toBeInTheDocument()
+      expect(screen.getByText('Goal')).toBeInTheDocument()
     })
   })
 

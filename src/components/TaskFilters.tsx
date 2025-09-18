@@ -10,9 +10,11 @@ interface TaskFiltersProps {
   allTags: string[]
   density?: 'comfortable' | 'compact'
   onDensityChange?: (density: 'comfortable' | 'compact') => void
+  taskCount?: number
+  isLoading?: boolean
 }
 
-export default function TaskFilters({ filters, onFiltersChange, projects, goals, allTags, density = 'comfortable', onDensityChange }: TaskFiltersProps) {
+export default function TaskFilters({ filters, onFiltersChange, projects, goals, allTags, density = 'comfortable', onDensityChange, taskCount, isLoading }: TaskFiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const filtersPanelRef = useRef<HTMLDivElement>(null)
   const filtersButtonRef = useRef<HTMLButtonElement>(null)
@@ -258,6 +260,29 @@ export default function TaskFilters({ filters, onFiltersChange, projects, goals,
           </button>
         )}
       </div>
+
+      {/* Results Count and Status */}
+      {!isLoading && taskCount !== undefined && (
+        <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+          <div>
+            {taskCount === 0 && hasActiveFilters ? (
+              <span className="text-orange-600">No tasks match your current filters</span>
+            ) : (
+              <span>{taskCount} {taskCount === 1 ? 'task' : 'tasks'} found</span>
+            )}
+          </div>
+          {taskCount === 0 && hasActiveFilters && (
+            <span className="text-xs">Try adjusting your filters or clearing them to see more tasks</span>
+          )}
+        </div>
+      )}
+
+      {isLoading && (
+        <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+          <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+          <span>Loading tasks...</span>
+        </div>
+      )}
 
       {/* Expanded Filters */}
       {isExpanded && (

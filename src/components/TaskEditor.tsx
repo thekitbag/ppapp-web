@@ -5,6 +5,7 @@ import { qk } from '../lib/queryKeys'
 import { listProjects } from '../api/projects'
 import { getGoalsTree } from '../api/goals'
 import { createTask, updateTask } from '../api/tasks'
+import GoalPicker from './GoalPicker'
 import type { Task, TaskStatus, TaskSize } from '../types'
 
 interface TaskEditorProps {
@@ -184,16 +185,17 @@ export default function TaskEditor({ task, defaultStatus = 'week', isOpen, onClo
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col" role="dialog" aria-modal="true" aria-labelledby="task-editor-title">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-semibold">
+          <h2 id="task-editor-title" className="text-xl font-semibold">
             {isEditing ? 'Edit Task' : 'Create New Task'}
           </h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 p-1 rounded transition-colors"
             disabled={isLoading}
+            aria-label="Close dialog"
           >
             <X size={20} />
           </button>
@@ -252,6 +254,7 @@ export default function TaskEditor({ task, defaultStatus = 'week', isOpen, onClo
               >
                 <option value="backlog">Backlog</option>
                 <option value="week">This Week</option>
+                <option value="today">Today</option>
                 <option value="doing">Doing</option>
               </select>
             </div>
@@ -282,19 +285,13 @@ export default function TaskEditor({ task, defaultStatus = 'week', isOpen, onClo
               <label htmlFor="goal" className="block text-sm font-medium text-gray-700 mb-2">
                 Goal
               </label>
-              <select
-                id="goal"
+              <GoalPicker
+                tree={goalsQ.data || []}
                 value={formData.goal_id}
-                onChange={(e) => handleInputChange('goal_id', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">No goal</option>
-                {goalsQ.data?.map(goal => (
-                  <option key={goal.id} value={goal.id}>
-                    {goal.title}
-                  </option>
-                ))}
-              </select>
+                onChange={(goalId) => handleInputChange('goal_id', goalId)}
+                placeholder="Select a goal..."
+                className="w-full"
+              />
             </div>
           </div>
 

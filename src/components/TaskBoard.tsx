@@ -703,6 +703,8 @@ export default function TaskBoard() {
         allTags={allTags}
         density={density}
         onDensityChange={setDensity}
+        taskCount={tasks.length}
+        isLoading={tasksQ.isLoading}
       />
 
       {/* Task columns */}
