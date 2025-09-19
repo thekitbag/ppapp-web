@@ -11,7 +11,7 @@ interface OptimisticCreateRequest {
     title: string
     status: TaskStatus
     description?: string | null
-    tags?: string[]
+    tags: string[]
     project_id?: string | null
     goal_id?: string | null
     size?: string | null
@@ -222,7 +222,7 @@ export function useOptimisticCreate(config: OptimisticCreateConfig = {}) {
         title: optimisticTask.title,
         status: optimisticTask.status,
         description: optimisticTask.description,
-        tags: optimisticTask.tags,
+        tags: optimisticTask.tags || [],
         project_id: optimisticTask.project_id,
         goal_id: optimisticTask.goal_id,
         size: optimisticTask.size,

@@ -42,9 +42,6 @@ describe.skip('TaskBoard Optimistic Creation Integration', () => {
     vi.useRealTimers()
   })
 
-  // Increase timeout for integration tests
-  const TEST_TIMEOUT = 15000
-
   it('creates optimistic task instantly when Quick Add is used', async () => {
     const user = userEvent.setup()
     render(<TaskBoard />)

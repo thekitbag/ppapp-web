@@ -26,7 +26,7 @@ export default function OptimisticTaskCard({
     setShowEditRetry(true)
   }
 
-  const handleTaskEditorSuccess = (updatedTask: Task) => {
+  const handleTaskEditorSuccess = (_updatedTask: Task) => {
     // When task editor saves successfully, we want to cancel the optimistic task
     // since TaskEditor creates a new proper task
     if (tempId) {

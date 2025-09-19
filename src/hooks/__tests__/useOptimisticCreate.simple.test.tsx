@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { renderHook, act } from '../../test/utils'
+import { renderHook as originalRenderHook, act } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import React from 'react'
 import { createTask } from '../../api/tasks'
@@ -33,17 +33,17 @@ describe('useOptimisticCreate - Basic Functionality', () => {
     })
   })
 
-  const createWrapper = () => ({ children }: { children: React.ReactNode }) => (
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>
       {children}
     </QueryClientProvider>
   )
 
+
   const filters = { statuses: ['backlog', 'week', 'today', 'doing'] as TaskStatus[] }
 
   it('exposes the expected API methods', () => {
-    const wrapper = createWrapper()
-    const { result } = renderHook(() => useOptimisticCreate(), { wrapper })
+    const { result } = originalRenderHook(() => useOptimisticCreate(), { wrapper })
 
     expect(typeof result.current.quickAdd).toBe('function')
     expect(typeof result.current.retry).toBe('function')
@@ -54,8 +54,7 @@ describe('useOptimisticCreate - Basic Functionality', () => {
   })
 
   it('creates optimistic task and inserts into cache', () => {
-    const wrapper = createWrapper()
-    const { result } = renderHook(() => useOptimisticCreate(), { wrapper })
+    const { result } = originalRenderHook(() => useOptimisticCreate(), { wrapper })
 
     queryClient.setQueryData(['tasks', 'filtered', filters], [])
 
@@ -75,8 +74,7 @@ describe('useOptimisticCreate - Basic Functionality', () => {
   })
 
   it('computes correct sort order for top insertion', () => {
-    const wrapper = createWrapper()
-    const { result } = renderHook(() => useOptimisticCreate(), { wrapper })
+    const { result } = originalRenderHook(() => useOptimisticCreate(), { wrapper })
 
     const existingTasks: Task[] = [
       {
@@ -114,8 +112,7 @@ describe('useOptimisticCreate - Basic Functionality', () => {
   })
 
   it('handles state tracking correctly', () => {
-    const wrapper = createWrapper()
-    const { result } = renderHook(() => useOptimisticCreate(), { wrapper })
+    const { result } = originalRenderHook(() => useOptimisticCreate(), { wrapper })
 
     queryClient.setQueryData(['tasks', 'filtered', filters], [])
 
@@ -133,8 +130,7 @@ describe('useOptimisticCreate - Basic Functionality', () => {
   })
 
   it('cancels task and removes from cache', () => {
-    const wrapper = createWrapper()
-    const { result } = renderHook(() => useOptimisticCreate(), { wrapper })
+    const { result } = originalRenderHook(() => useOptimisticCreate(), { wrapper })
 
     queryClient.setQueryData(['tasks', 'filtered', filters], [])
 
@@ -166,8 +162,7 @@ describe('useOptimisticCreate - Basic Functionality', () => {
   })
 
   it('calls createTask API with correct parameters', () => {
-    const wrapper = createWrapper()
-    const { result } = renderHook(() => useOptimisticCreate(), { wrapper })
+    const { result } = originalRenderHook(() => useOptimisticCreate(), { wrapper })
 
     queryClient.setQueryData(['tasks', 'filtered', filters], [])
 
@@ -193,8 +188,7 @@ describe('useOptimisticCreate - Basic Functionality', () => {
   })
 
   it('handles retry functionality', () => {
-    const wrapper = createWrapper()
-    const { result } = renderHook(() => useOptimisticCreate(), { wrapper })
+    const { result } = originalRenderHook(() => useOptimisticCreate(), { wrapper })
 
     queryClient.setQueryData(['tasks', 'filtered', filters], [])
 
