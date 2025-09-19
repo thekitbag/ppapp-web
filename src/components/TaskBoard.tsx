@@ -15,6 +15,9 @@ import TaskEditDrawer from './TaskEditDrawer';
 import TaskEditor from './TaskEditor';
 import TaskFiltersComponent from './TaskFilters';
 import { useTaskUpdateMutation } from '../hooks/useTaskMutation';
+import { useOptimisticCreate } from '../hooks/useOptimisticCreate';
+import QuickAdd from './QuickAdd';
+import OptimisticTaskCard from './OptimisticTaskCard';
 
 function InfoBadge({ icon: Icon, label, colorClass }: { icon: React.ElementType, label: string, colorClass?: string }) {
   return (
@@ -439,9 +442,39 @@ function EndOfListDropZone({ status, index, onTaskDrop }: { status: TaskStatus, 
   );
 }
 
-function TaskColumn({ status, tasks, onTaskDrop, projectsById, goalsById, patchMutation, onShowImport, onCreateTask, density = 'comfortable' }: { status: TaskStatus; tasks: Task[]; onTaskDrop: (task: Task, newStatus: TaskStatus, targetIndex?: number) => void; projectsById: any, goalsById: any, patchMutation: any, onShowImport?: () => void, onCreateTask?: (status: TaskStatus) => void, density?: 'comfortable' | 'compact' }) {
+function TaskColumn({
+  status,
+  tasks,
+  onTaskDrop,
+  projectsById,
+  goalsById,
+  patchMutation,
+  onShowImport,
+  onCreateTask,
+  density = 'comfortable',
+  onQuickAdd,
+  onOptimisticRetry,
+  onOptimisticCancel
+}: {
+  status: TaskStatus;
+  tasks: Task[];
+  onTaskDrop: (task: Task, newStatus: TaskStatus, targetIndex?: number) => void;
+  projectsById: any,
+  goalsById: any,
+  patchMutation: any,
+  onShowImport?: () => void,
+  onCreateTask?: (status: TaskStatus) => void,
+  density?: 'comfortable' | 'compact',
+  onQuickAdd?: (status: TaskStatus, title: string) => void,
+  onOptimisticRetry?: (tempId: string) => void,
+  onOptimisticCancel?: (tempId: string) => void
+}) {
   const handleArchive = (taskId: string) => {
     patchMutation.mutate({ id: taskId, status: 'archived' as TaskStatus })
+  }
+
+  const handleQuickAdd = (title: string) => {
+    onQuickAdd?.(status, title)
   }
 
   return (
@@ -476,23 +509,50 @@ function TaskColumn({ status, tasks, onTaskDrop, projectsById, goalsById, patchM
           </span>
         </div>
       </div>
+
+      {/* Quick Add Component */}
+      {onQuickAdd && (
+        <div className="px-1 mb-3">
+          <QuickAdd status={status} onSubmit={handleQuickAdd} />
+        </div>
+      )}
+
       <div className="space-y-3 p-1 overflow-y-auto h-full">
-        {tasks.length === 0 && (
+        {tasks.length === 0 && !onQuickAdd && (
           <EmptyColumnDropZone status={status} onTaskDrop={onTaskDrop} />
         )}
-        {tasks.map((task, index) => (
-          <TaskCard 
-            key={task.id}
-            task={task} 
-            project={projectsById[task.project_id!]} 
-            goal={goalsById[task.goal_id!]} 
-            index={index}
-            isPending={patchMutation.isPending && patchMutation.variables?.id === task.id}
-            onTaskDrop={onTaskDrop}
-            onArchive={handleArchive}
-            density={density}
-          />
-        ))}
+        {tasks.map((task, index) => {
+          // Handle optimistic tasks separately
+          if (task.__optimistic) {
+            return (
+              <OptimisticTaskCard
+                key={task.id}
+                task={task}
+                onRetry={onOptimisticRetry || (() => {})}
+                onCancel={onOptimisticCancel || (() => {})}
+                density={density}
+              />
+            )
+          }
+
+          // Regular tasks
+          return (
+            <TaskCard
+              key={task.id}
+              task={task}
+              project={projectsById[task.project_id!]}
+              goal={goalsById[task.goal_id!]}
+              index={index}
+              isPending={patchMutation.isPending && patchMutation.variables?.id === task.id}
+              onTaskDrop={onTaskDrop}
+              onArchive={handleArchive}
+              density={density}
+            />
+          )
+        })}
+        {(tasks.length === 0 && onQuickAdd) && (
+          <EmptyColumnDropZone status={status} onTaskDrop={onTaskDrop} />
+        )}
         {tasks.length > 0 && (
           <EndOfListDropZone status={status} index={tasks.length} onTaskDrop={onTaskDrop} />
         )}
@@ -509,6 +569,9 @@ export default function TaskBoard() {
   const [filters, setFilters] = useState<TaskFilters>({ statuses: BUCKETS });
   const [debouncedFilters, setDebouncedFilters] = useState<TaskFilters>({ statuses: BUCKETS });
   const [density, setDensity] = useState<'comfortable' | 'compact'>('comfortable');
+
+  // Optimistic creation hook
+  const optimisticCreate = useOptimisticCreate();
   
   // Debounce the filters to prevent re-renders during typing
   useEffect(() => {
@@ -637,6 +700,18 @@ export default function TaskBoard() {
     setShowTaskEditor(true);
   };
 
+  const handleQuickAdd = (status: TaskStatus, title: string) => {
+    optimisticCreate.quickAdd(status, title, debouncedFilters);
+  };
+
+  const handleOptimisticRetry = (tempId: string) => {
+    optimisticCreate.retry(tempId);
+  };
+
+  const handleOptimisticCancel = (tempId: string) => {
+    optimisticCreate.cancel(tempId);
+  };
+
   function handleTaskDrop(task: Task, newStatus: TaskStatus, targetIndex?: number) {
     const oldStatus = task.status;
     const tasksInNewCol = columns.get(newStatus) || [];
@@ -721,6 +796,9 @@ export default function TaskBoard() {
             patchMutation={patchM}
             onShowImport={status === 'backlog' ? () => setShowImportModal(true) : undefined}
             onCreateTask={handleCreateTask}
+            onQuickAdd={handleQuickAdd}
+            onOptimisticRetry={handleOptimisticRetry}
+            onOptimisticCancel={handleOptimisticCancel}
             density={density}
           />
           ))}

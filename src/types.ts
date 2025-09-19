@@ -22,6 +22,11 @@ export interface Task {
   effort_minutes?: number | null
   created_at: string
   updated_at: string
+  // Client-side only optimistic fields
+  __optimistic?: boolean
+  __state?: 'syncing' | 'error' | 'ok'
+  __tempId?: string
+  __clientRequestId?: string
 }
 
 export interface Project {

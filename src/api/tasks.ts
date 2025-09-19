@@ -35,9 +35,10 @@ export async function listTasksByStatuses(statuses: TaskStatus[]): Promise<Task[
   return listTasks({ statuses })
 }
 
-type CreateTaskInput = Omit<Task, 'id' | 'sort_order' | 'created_at' | 'updated_at'> & { 
+type CreateTaskInput = Omit<Task, 'id' | 'sort_order' | 'created_at' | 'updated_at' | '__optimistic' | '__state' | '__tempId' | '__clientRequestId'> & {
   status: TaskStatus
   insert_at?: 'top' | 'bottom'
+  client_request_id?: string
 }
 export async function createTask(input: CreateTaskInput): Promise<Task> {
   const { data } = await api.post('/tasks', input)
