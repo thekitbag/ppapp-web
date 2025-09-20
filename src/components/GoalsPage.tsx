@@ -19,7 +19,7 @@ import type { GoalCadence, GoalNode, GoalStatus, Goal } from '../types'
 type TabType = 'open' | 'closed'
 
 // Helper functions for optimistic updates
-function updateGoalInTree(tree: GoalNode[], goalId: string, updates: Partial<CreateGoalInput>): GoalNode[] {
+function updateGoalInTree(tree: GoalNode[], goalId: string, updates: Partial<GoalNode>): GoalNode[] {
   return tree.map(goal => {
     if (goal.id === goalId) {
       return { ...goal, ...updates }
@@ -369,7 +369,7 @@ export default function GoalsPage({ selectedGoalId: _selectedGoalId, onSelectGoa
 
       return { previousGoalsTree }
     },
-    onError: (err, variables, context) => {
+    onError: (err, _variables, context) => {
       // Rollback on error
       if (context?.previousGoalsTree) {
         qc.setQueryData(qk.goals.tree, context.previousGoalsTree)
@@ -413,7 +413,7 @@ export default function GoalsPage({ selectedGoalId: _selectedGoalId, onSelectGoa
 
       return { previousGoalsTree, previousClosedGoals }
     },
-    onError: (err, goalId, context) => {
+    onError: (err, _goalId, context) => {
       if (context?.previousGoalsTree) {
         qc.setQueryData(qk.goals.tree, context.previousGoalsTree)
       }
@@ -448,7 +448,7 @@ export default function GoalsPage({ selectedGoalId: _selectedGoalId, onSelectGoa
 
       return { previousGoalsTree, previousClosedGoals }
     },
-    onError: (err, goalId, context) => {
+    onError: (err, _goalId, context) => {
       if (context?.previousGoalsTree) {
         qc.setQueryData(qk.goals.tree, context.previousGoalsTree)
       }

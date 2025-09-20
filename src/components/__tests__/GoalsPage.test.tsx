@@ -223,7 +223,7 @@ describe('GoalsPage', () => {
 
     // Look for any warning indicators that might appear for overdue goals
     // If there are any goals with past dates, they should show warning icons
-    const warningElements = document.querySelectorAll('svg.text-amber-500')
+    const _warningElements = document.querySelectorAll('svg.text-amber-500')
     // Just verify the component can render without errors - warning indicators depend on expanded state
     expect(true).toBe(true)
   })
