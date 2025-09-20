@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { v4 as uuidv4 } from 'uuid'
 import { createTask, type TaskFilters } from '../api/tasks'
-import { Task, TaskStatus } from '../types'
+import { Task, TaskStatus, TaskSize } from '../types'
 import { midpoint } from '../constants'
 
 interface OptimisticCreateRequest {
@@ -225,7 +225,7 @@ export function useOptimisticCreate(config: OptimisticCreateConfig = {}) {
         tags: optimisticTask.tags || [],
         project_id: optimisticTask.project_id,
         goal_id: optimisticTask.goal_id,
-        size: optimisticTask.size,
+        size: optimisticTask.size as TaskSize | null | undefined,
         effort_minutes: optimisticTask.effort_minutes,
         soft_due_at: optimisticTask.soft_due_at,
         hard_due_at: optimisticTask.hard_due_at,

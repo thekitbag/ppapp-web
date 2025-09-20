@@ -69,3 +69,27 @@ export async function listGoalsByType(type: GoalCadence, parentId?: string): Pro
   const { data } = await api.get(`/goals?${params.toString()}`)
   return data as Goal[]
 }
+
+export async function getGoalsTreeWithClosed(includeClosed = false): Promise<GoalNode[]> {
+  const params = new URLSearchParams()
+  if (includeClosed) {
+    params.append('include_closed', 'true')
+  }
+  const { data } = await api.get(`/goals/tree?${params.toString()}`)
+  return data as GoalNode[]
+}
+
+export async function getClosedGoals(): Promise<Goal[]> {
+  const { data } = await api.get('/goals?is_closed=true')
+  return data as Goal[]
+}
+
+export async function closeGoal(id: string): Promise<Goal> {
+  const { data } = await api.post(`/goals/${id}/close`)
+  return data as Goal
+}
+
+export async function reopenGoal(id: string): Promise<Goal> {
+  const { data } = await api.post(`/goals/${id}/reopen`)
+  return data as Goal
+}
