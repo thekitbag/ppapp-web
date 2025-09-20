@@ -46,6 +46,8 @@ export interface Goal {
   parent_goal_id?: string | null
   end_date?: string | null
   status?: GoalStatus | null
+  is_closed?: boolean
+  closed_at?: string | null
   created_at: string
   updated_at?: string
 }

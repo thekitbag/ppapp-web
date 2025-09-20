@@ -121,7 +121,14 @@ export const handlers = [
   }),
 
   // Goals endpoints
-  http.get('/api/v1/goals', () => {
+  http.get('/api/v1/goals', ({ request }) => {
+    const url = new URL(request.url)
+    const isClosed = url.searchParams.get('is_closed')
+
+    if (isClosed === 'true') {
+      return HttpResponse.json([])
+    }
+
     return HttpResponse.json([
       {
         id: '1',
@@ -134,7 +141,7 @@ export const handlers = [
         updated_at: '2023-01-01T00:00:00Z',
       },
       {
-        id: '2', 
+        id: '2',
         title: 'Test Quarterly Goal',
         type: 'quarterly',
         parent_goal_id: '1',
@@ -223,6 +230,33 @@ export const handlers = [
       ...body,
     })
   }),
+
+  // Close goal endpoint
+  http.post('/api/v1/goals/:id/close', async ({ params }) => {
+    return HttpResponse.json({
+      id: params.id,
+      title: 'Test Goal',
+      is_closed: true,
+      closed_at: new Date().toISOString(),
+      status: 'on_target',
+      created_at: '2023-01-01T00:00:00Z',
+      updated_at: new Date().toISOString(),
+    })
+  }),
+
+  // Reopen goal endpoint
+  http.post('/api/v1/goals/:id/reopen', async ({ params }) => {
+    return HttpResponse.json({
+      id: params.id,
+      title: 'Test Goal',
+      is_closed: false,
+      closed_at: null,
+      status: 'on_target',
+      created_at: '2023-01-01T00:00:00Z',
+      updated_at: new Date().toISOString(),
+    })
+  }),
+
 
   // Recommendations endpoints
   http.get('/api/v1/recommendations/next', () => {

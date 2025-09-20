@@ -1,12 +1,54 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { qk } from '../lib/queryKeys'
-import { getGoalsTree, createGoal, updateGoal, type CreateGoalInput } from '../api/goals'
-import { Plus, Target, ChevronDown, ChevronRight, Calendar, AlertTriangle } from 'lucide-react'
+import {
+  getGoalsTree,
+  createGoal,
+  updateGoal,
+  closeGoal,
+  reopenGoal,
+  getClosedGoals,
+  type CreateGoalInput
+} from '../api/goals'
+import { Plus, Target, Archive } from 'lucide-react'
+import GoalTree from './goals/GoalTree'
+import ClosedGoalsList from './goals/ClosedGoalsList'
 
-import type { GoalCadence, GoalNode, GoalStatus } from '../types'
+import type { GoalCadence, GoalNode, GoalStatus, Goal } from '../types'
 
-type TabType = 'annual' | 'quarterly' | 'weekly' | 'all'
+type TabType = 'open' | 'closed'
+
+// Helper functions for optimistic updates
+function updateGoalInTree(tree: GoalNode[], goalId: string, updates: Partial<CreateGoalInput>): GoalNode[] {
+  return tree.map(goal => {
+    if (goal.id === goalId) {
+      return { ...goal, ...updates }
+    }
+    if (goal.children.length > 0) {
+      return {
+        ...goal,
+        children: updateGoalInTree(goal.children, goalId, updates)
+      }
+    }
+    return goal
+  })
+}
+
+function removeGoalFromTree(tree: GoalNode[], goalId: string): GoalNode[] {
+  return tree.filter(goal => goal.id !== goalId).map(goal => ({
+    ...goal,
+    children: removeGoalFromTree(goal.children, goalId)
+  }))
+}
+
+function findGoalInTree(tree: GoalNode[], goalId: string): GoalNode | null {
+  for (const goal of tree) {
+    if (goal.id === goalId) return goal
+    const found = findGoalInTree(goal.children, goalId)
+    if (found) return found
+  }
+  return null
+}
 
 interface GoalFormData extends CreateGoalInput {
   title: string
@@ -274,126 +316,6 @@ function GoalModal({
   )
 }
 
-function getStatusColor(status?: GoalStatus | null) {
-  switch (status) {
-    case 'on_target': return 'bg-green-100 text-green-800'
-    case 'at_risk': return 'bg-amber-100 text-amber-800'
-    case 'off_target': return 'bg-red-100 text-red-800'
-    default: return 'bg-gray-100 text-gray-800'
-  }
-}
-
-function getTypeColor(type?: string | null) {
-  switch (type) {
-    case 'annual': return 'bg-purple-100 text-purple-800'
-    case 'quarterly': return 'bg-blue-100 text-blue-800'
-    case 'weekly': return 'bg-green-100 text-green-800'
-    default: return 'bg-gray-100 text-gray-800'
-  }
-}
-
-function isOverdue(endDate?: string | null) {
-  if (!endDate) return false
-  return new Date(endDate) < new Date()
-}
-
-function GoalRow({ goal, level = 0, isExpanded, onToggle, onEdit }: {
-  goal: GoalNode
-  level?: number
-  isExpanded: boolean
-  onToggle: () => void
-  onEdit: (goal: GoalNode) => void
-}) {
-  const hasChildren = goal.children.length > 0
-  const paddingLeft = level * 24
-
-  return (
-    <div>
-      <div 
-        className="flex items-center gap-3 p-4 border-b border-gray-100 hover:bg-gray-50 group"
-        style={{ paddingLeft: `${paddingLeft + 16}px` }}
-      >
-        {hasChildren && (
-          <button
-            onClick={onToggle}
-            aria-label={isExpanded ? 'Collapse' : 'Expand'}
-            className="text-gray-400 hover:text-gray-600 p-1"
-          >
-            {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-          </button>
-        )}
-        {!hasChildren && <div className="w-6" />}
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-medium text-gray-900 truncate">{goal.title}</h3>
-            {isOverdue(goal.end_date) && (
-              <AlertTriangle size={16} className="text-amber-500" />
-            )}
-          </div>
-          
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            {goal.type && (
-              <span className={`inline-flex items-center text-xs px-2 py-1 rounded-full ${getTypeColor(goal.type)}`}>
-                {goal.type}
-              </span>
-            )}
-            {goal.status && (
-              <span className={`inline-flex items-center text-xs px-2 py-1 rounded-full ${getStatusColor(goal.status)}`}>
-                {goal.status.replace('_', ' ')}
-              </span>
-            )}
-            {goal.end_date && (
-              <span className="inline-flex items-center gap-1 text-xs text-gray-500">
-                <Calendar size={12} />
-                {new Date(goal.end_date).toLocaleDateString()}
-              </span>
-            )}
-            {goal.taskCount !== undefined && goal.taskCount > 0 && (
-              <span className="text-xs text-gray-500">
-                {goal.taskCount} task{goal.taskCount !== 1 ? 's' : ''}
-              </span>
-            )}
-          </div>
-        </div>
-
-        <button
-          onClick={() => onEdit(goal)}
-          aria-label="Edit goal"
-          className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600 p-1"
-        >
-          ✏️
-        </button>
-      </div>
-
-      {isExpanded && hasChildren && (
-        <div>
-          {goal.children.map(child => (
-            <GoalRowContainer key={child.id} goal={child} level={level + 1} onEdit={onEdit} />
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-function GoalRowContainer({ goal, level, onEdit }: {
-  goal: GoalNode
-  level: number
-  onEdit: (goal: GoalNode) => void
-}) {
-  const [isExpanded, setIsExpanded] = useState(true)
-
-  return (
-    <GoalRow
-      goal={goal}
-      level={level}
-      isExpanded={isExpanded}
-      onToggle={() => setIsExpanded(!isExpanded)}
-      onEdit={onEdit}
-    />
-  )
-}
 
 
 interface GoalsPageProps {
@@ -403,15 +325,23 @@ interface GoalsPageProps {
 
 export default function GoalsPage({ selectedGoalId: _selectedGoalId, onSelectGoal: _onSelectGoal }: GoalsPageProps = {}) {
   const qc = useQueryClient()
-  const [activeTab, setActiveTab] = useState<TabType>('all')
+  const [activeTab, setActiveTab] = useState<TabType>('open')
   const [showModal, setShowModal] = useState(false)
   const [editingGoal, setEditingGoal] = useState<GoalNode | null>(null)
 
-  const goalsTreeQ = useQuery({ 
-    queryKey: qk.goals.tree, 
-    queryFn: getGoalsTree 
+  // Queries
+  const goalsTreeQ = useQuery({
+    queryKey: qk.goals.tree,
+    queryFn: getGoalsTree
   })
 
+  const closedGoalsQ = useQuery({
+    queryKey: ['goals', 'closed'],
+    queryFn: getClosedGoals,
+    enabled: activeTab === 'closed'
+  })
+
+  // Mutations
   const createM = useMutation({
     mutationFn: createGoal,
     onSuccess: () => {
@@ -422,8 +352,30 @@ export default function GoalsPage({ selectedGoalId: _selectedGoalId, onSelectGoa
   })
 
   const updateM = useMutation({
-    mutationFn: ({ id, ...input }: { id: string } & Partial<CreateGoalInput>) => 
+    mutationFn: ({ id, ...input }: { id: string } & Partial<CreateGoalInput>) =>
       updateGoal(id, input),
+    onMutate: async ({ id, ...input }) => {
+      // Cancel outgoing refetches
+      await qc.cancelQueries({ queryKey: qk.goals.tree })
+
+      // Snapshot the previous value
+      const previousGoalsTree = qc.getQueryData(qk.goals.tree)
+
+      // Optimistically update the cache
+      qc.setQueryData(qk.goals.tree, (old: GoalNode[] | undefined) => {
+        if (!old) return old
+        return updateGoalInTree(old, id, input)
+      })
+
+      return { previousGoalsTree }
+    },
+    onError: (err, variables, context) => {
+      // Rollback on error
+      if (context?.previousGoalsTree) {
+        qc.setQueryData(qk.goals.tree, context.previousGoalsTree)
+      }
+      console.error('Failed to update goal:', err)
+    },
     onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: qk.goals.all })
       qc.invalidateQueries({ queryKey: qk.goals.tree })
@@ -432,21 +384,101 @@ export default function GoalsPage({ selectedGoalId: _selectedGoalId, onSelectGoa
     }
   })
 
+  const closeM = useMutation({
+    mutationFn: closeGoal,
+    onMutate: async (goalId) => {
+      await qc.cancelQueries({ queryKey: qk.goals.tree })
+      await qc.cancelQueries({ queryKey: ['goals', 'closed'] })
+
+      const previousGoalsTree = qc.getQueryData(qk.goals.tree)
+      const previousClosedGoals = qc.getQueryData(['goals', 'closed'])
+
+      // Optimistically move goal from tree to closed list
+      qc.setQueryData(qk.goals.tree, (old: GoalNode[] | undefined) => {
+        if (!old) return old
+        return removeGoalFromTree(old, goalId)
+      })
+
+      qc.setQueryData(['goals', 'closed'], (old: Goal[] | undefined) => {
+        const goalToClose = findGoalInTree(qc.getQueryData(qk.goals.tree) as GoalNode[] || [], goalId)
+        if (!goalToClose) return old
+
+        const closedGoal: Goal = {
+          ...goalToClose,
+          is_closed: true,
+          closed_at: new Date().toISOString()
+        }
+        return [closedGoal, ...(old || [])]
+      })
+
+      return { previousGoalsTree, previousClosedGoals }
+    },
+    onError: (err, goalId, context) => {
+      if (context?.previousGoalsTree) {
+        qc.setQueryData(qk.goals.tree, context.previousGoalsTree)
+      }
+      if (context?.previousClosedGoals) {
+        qc.setQueryData(['goals', 'closed'], context.previousClosedGoals)
+      }
+      console.error('Failed to close goal:', err)
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.goals.tree })
+      qc.invalidateQueries({ queryKey: ['goals', 'closed'] })
+    }
+  })
+
+  const reopenM = useMutation({
+    mutationFn: reopenGoal,
+    onMutate: async (goalId) => {
+      await qc.cancelQueries({ queryKey: qk.goals.tree })
+      await qc.cancelQueries({ queryKey: ['goals', 'closed'] })
+
+      const previousGoalsTree = qc.getQueryData(qk.goals.tree)
+      const previousClosedGoals = qc.getQueryData(['goals', 'closed'])
+
+      // Optimistically move goal from closed list back to tree
+      qc.setQueryData(['goals', 'closed'], (old: Goal[] | undefined) => {
+        if (!old) return old
+        return old.filter(goal => goal.id !== goalId)
+      })
+
+      // Note: For simplicity, we'll let the server response handle tree placement
+      // In a full implementation, we'd need to reconstruct the tree position
+
+      return { previousGoalsTree, previousClosedGoals }
+    },
+    onError: (err, goalId, context) => {
+      if (context?.previousGoalsTree) {
+        qc.setQueryData(qk.goals.tree, context.previousGoalsTree)
+      }
+      if (context?.previousClosedGoals) {
+        qc.setQueryData(['goals', 'closed'], context.previousClosedGoals)
+      }
+      console.error('Failed to reopen goal:', err)
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.goals.tree })
+      qc.invalidateQueries({ queryKey: ['goals', 'closed'] })
+    }
+  })
+
+  // Handlers
   const handleCreateGoal = () => {
     setEditingGoal(null)
     setShowModal(true)
   }
 
-  // Determine the best default goal type based on existing goals
   const getDefaultGoalType = (): GoalCadence => {
+    const goalsTree = goalsTreeQ.data || []
     if (goalsTree.length === 0) return 'annual'
-    
+
     const hasAnnual = goalsTree.some(g => g.type === 'annual')
     if (!hasAnnual) return 'annual'
-    
+
     const hasQuarterly = goalsTree.some(g => g.children.some(c => c.type === 'quarterly'))
     if (!hasQuarterly) return 'quarterly'
-    
+
     return 'weekly'
   }
 
@@ -462,6 +494,22 @@ export default function GoalsPage({ selectedGoalId: _selectedGoalId, onSelectGoa
     }
   }
 
+  const handleStatusChange = (goalId: string, status: GoalStatus) => {
+    updateM.mutate({ id: goalId, status })
+  }
+
+  const handleEndDateChange = (goalId: string, endDate: string) => {
+    updateM.mutate({ id: goalId, end_date: endDate })
+  }
+
+  const handleCloseGoal = (goal: GoalNode) => {
+    closeM.mutate(goal.id)
+  }
+
+  const handleReopenGoal = (goal: Goal) => {
+    reopenM.mutate(goal.id)
+  }
+
   if (goalsTreeQ.isLoading) {
     return (
       <div className="p-6">
@@ -471,19 +519,7 @@ export default function GoalsPage({ selectedGoalId: _selectedGoalId, onSelectGoa
   }
 
   const goalsTree = goalsTreeQ.data || []
-
-  const getFilteredGoals = () => {
-    if (activeTab === 'all') return goalsTree
-    
-    return goalsTree.filter(goal => {
-      if (activeTab === 'annual') return goal.type === 'annual'
-      if (activeTab === 'quarterly') return goal.type === 'quarterly' || goal.children.some(c => c.type === 'quarterly')
-      if (activeTab === 'weekly') return goal.type === 'weekly' || goal.children.some(c => c.type === 'weekly' || c.children.some(cc => cc.type === 'weekly'))
-      return true
-    })
-  }
-
-  const filteredGoals = getFilteredGoals()
+  const closedGoals = closedGoalsQ.data || []
 
   return (
     <div className="p-6">
@@ -501,65 +537,56 @@ export default function GoalsPage({ selectedGoalId: _selectedGoalId, onSelectGoa
       {/* Tabs */}
       <div className="flex space-x-1 mb-6 border-b border-gray-200">
         {[
-          { key: 'all' as const, label: 'All' },
-          { key: 'annual' as const, label: 'Annual' },
-          { key: 'quarterly' as const, label: 'Quarterly' },
-          { key: 'weekly' as const, label: 'Weekly' }
+          { key: 'open' as const, label: 'Open Goals', icon: Target },
+          { key: 'closed' as const, label: 'Closed Goals', icon: Archive }
         ].map(tab => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === tab.key 
-                ? 'text-blue-600 border-blue-600' 
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === tab.key
+                ? 'text-blue-600 border-blue-600'
                 : 'text-gray-500 border-transparent hover:text-gray-700'
             }`}
           >
+            <tab.icon size={16} />
             {tab.label}
           </button>
         ))}
       </div>
 
-      {/* Goals List */}
-      {filteredGoals.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
-          <Target size={48} className="mx-auto mb-4 opacity-50" />
-          {activeTab === 'all' ? (
-            <>
-              <p className="text-lg mb-2">No goals yet</p>
-              <p className="mb-4">Start by creating an annual goal, then add quarterly and weekly goals under it</p>
-              <div className="text-sm bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
-                <p className="font-medium text-blue-800 mb-2">Goal Hierarchy:</p>
-                <div className="text-left text-blue-700">
-                  <p>1. Annual Goal (top level)</p>
-                  <p className="ml-4">↳ Quarterly Goal</p>
-                  <p className="ml-8">↳ Weekly Goal</p>
-                </div>
+      {/* Content */}
+      {activeTab === 'open' ? (
+        goalsTree.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            <Target size={48} className="mx-auto mb-4 opacity-50" />
+            <p className="text-lg mb-2">No goals yet</p>
+            <p className="mb-4">Start by creating an annual goal, then add quarterly and weekly goals under it</p>
+            <div className="text-sm bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
+              <p className="font-medium text-blue-800 mb-2">Goal Hierarchy:</p>
+              <div className="text-left text-blue-700">
+                <p>1. Annual Goal (top level)</p>
+                <p className="ml-4">↳ Quarterly Goal</p>
+                <p className="ml-8">↳ Weekly Goal</p>
               </div>
-            </>
-          ) : activeTab === 'annual' ? (
-            <>
-              <p className="text-lg mb-2">No annual goals</p>
-              <p>Create an annual goal to get started with your goal hierarchy</p>
-            </>
-          ) : activeTab === 'quarterly' ? (
-            <>
-              <p className="text-lg mb-2">No quarterly goals</p>
-              <p>Create an annual goal first, then add quarterly goals under it</p>
-            </>
-          ) : (
-            <>
-              <p className="text-lg mb-2">No weekly goals</p>
-              <p>Create annual and quarterly goals first, then add weekly goals under them</p>
-            </>
-          )}
-        </div>
+            </div>
+          </div>
+        ) : (
+          <GoalTree
+            goals={goalsTree}
+            onStatusChange={handleStatusChange}
+            onEndDateChange={handleEndDateChange}
+            onEdit={handleEditGoal}
+            onClose={handleCloseGoal}
+          />
+        )
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200">
-          {filteredGoals.map(goal => (
-            <GoalRowContainer key={goal.id} goal={goal} level={0} onEdit={handleEditGoal} />
-          ))}
-        </div>
+        <ClosedGoalsList
+          goals={closedGoals}
+          onReopen={handleReopenGoal}
+          onEdit={(goal) => handleEditGoal(goal as GoalNode)}
+          isLoading={closedGoalsQ.isLoading}
+        />
       )}
 
       <GoalModal
