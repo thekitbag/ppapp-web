@@ -14,7 +14,7 @@ interface OptimisticCreateRequest {
     tags: string[]
     project_id?: string | null
     goal_id?: string | null
-    size?: string | null
+    size?: TaskSize | null
     effort_minutes?: number | null
     soft_due_at?: string | null
     hard_due_at?: string | null
@@ -71,7 +71,7 @@ export function useOptimisticCreate(config: OptimisticCreateConfig = {}) {
       tags: options.tags || [],
       status,
       sort_order: 0, // Will be computed below
-      size: options.size as any || null,
+      size: (options.size as TaskSize) || null,
       project_id: options.project_id || null,
       goal_id: options.goal_id || null,
       goals: undefined,
