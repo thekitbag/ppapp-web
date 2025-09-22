@@ -93,3 +93,7 @@ export async function reopenGoal(id: string): Promise<Goal> {
   const { data } = await api.post(`/goals/${id}/reopen`)
   return data as Goal
 }
+
+export async function deleteGoal(id: string): Promise<void> {
+  await api.delete(`/goals/${id}`)
+}
