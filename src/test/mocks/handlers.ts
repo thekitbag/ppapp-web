@@ -257,6 +257,11 @@ export const handlers = [
     })
   }),
 
+  // Delete goal endpoint
+  http.delete('/api/v1/goals/:id', async () => {
+    return new HttpResponse(null, { status: 204 })
+  }),
+
 
   // Recommendations endpoints
   http.get('/api/v1/recommendations/next', () => {

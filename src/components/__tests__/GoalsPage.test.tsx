@@ -8,7 +8,7 @@ describe('GoalsPage', () => {
     vi.clearAllMocks()
   })
 
-  it('renders goals page with open and closed tabs', async () => {
+  it('renders goals page with 3-column view and tabs', async () => {
     render(<GoalsPage />)
 
     // Wait for component to load first
@@ -16,11 +16,16 @@ describe('GoalsPage', () => {
       expect(screen.getByText('Goals')).toBeInTheDocument()
     })
 
-    // Check new tabs are present
+    // Check tabs are present
     expect(screen.getByRole('button', { name: /open goals/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /closed goals/i })).toBeInTheDocument()
 
-    // Wait for at least the top level goal to load
+    // Check 3-column headers
+    expect(screen.getByText('Annual Goals')).toBeInTheDocument()
+    expect(screen.getByText('Quarterly Goals')).toBeInTheDocument()
+    expect(screen.getByText('Weekly Goals')).toBeInTheDocument()
+
+    // Wait for annual goal to load in first column
     await waitFor(() => {
       expect(screen.getByText('Test Annual Goal')).toBeInTheDocument()
     })
@@ -44,13 +49,16 @@ describe('GoalsPage', () => {
     })
   })
 
-  it('shows task counts for goals', async () => {
+  it('displays goals in card format', async () => {
     render(<GoalsPage />)
 
     await waitFor(() => {
-      const taskCountElements = screen.getAllByText(/1 task/)
-      expect(taskCountElements.length).toBeGreaterThan(0)
+      expect(screen.getByText('Test Annual Goal')).toBeInTheDocument()
     })
+
+    // Goals should be displayed as cards with status and date
+    const goalCard = screen.getByText('Test Annual Goal').closest('div')
+    expect(goalCard).toHaveClass('rounded-lg')
   })
 
   it('switches between open and closed goals tabs', async () => {
@@ -75,13 +83,14 @@ describe('GoalsPage', () => {
     const openTab = screen.getByRole('button', { name: /open goals/i })
     await user.click(openTab)
 
-    // Should show the goals again
+    // Should show the 3-column view again
     await waitFor(() => {
+      expect(screen.getByText('Annual Goals')).toBeInTheDocument()
       expect(screen.getByText('Test Annual Goal')).toBeInTheDocument()
     })
   })
 
-  it('expands and collapses hierarchy', async () => {
+  it('shows quarterly goals when annual goal is selected', async () => {
     const user = userEvent.setup()
     render(<GoalsPage />)
 
@@ -89,22 +98,25 @@ describe('GoalsPage', () => {
       expect(screen.getByText('Test Annual Goal')).toBeInTheDocument()
     })
 
-    // Find chevron button by aria-label and click to collapse
-    const collapseButton = screen.getByLabelText('Collapse')
-    await user.click(collapseButton)
+    // Initially, quarterly column should show "Select an Annual goal" message
+    expect(screen.getByText('Select an Annual goal to view Quarterly goals')).toBeInTheDocument()
 
-    // Should now show expand button
+    // Click on the annual goal card to select it
+    const annualGoalCard = screen.getByText('Test Annual Goal').closest('div')
+    await user.click(annualGoalCard!)
+
+    // Should now show quarterly goals in the middle column
     await waitFor(() => {
-      expect(screen.getByLabelText('Expand')).toBeInTheDocument()
+      expect(screen.getByText('Test Quarterly Goal')).toBeInTheDocument()
     })
 
-    // Click to expand again
-    const expandButton = screen.getByLabelText('Expand')
-    await user.click(expandButton)
+    // Click on quarterly goal to show weekly goals
+    const quarterlyGoalCard = screen.getByText('Test Quarterly Goal').closest('div')
+    await user.click(quarterlyGoalCard!)
 
-    // Should show collapse button again
+    // Should now show weekly goals in the right column
     await waitFor(() => {
-      expect(screen.getByLabelText('Collapse')).toBeInTheDocument()
+      expect(screen.getByText('Test Weekly Goal')).toBeInTheDocument()
     })
   })
 
@@ -203,15 +215,20 @@ describe('GoalsPage', () => {
     expect(actionMenus.length).toBeGreaterThan(0)
   })
 
-  it('displays goal types correctly', async () => {
+  it('displays goal types in appropriate columns', async () => {
     render(<GoalsPage />)
 
     await waitFor(() => {
       expect(screen.getByText('Test Annual Goal')).toBeInTheDocument()
     })
 
-    // Should show at least the annual type badge
-    expect(screen.getByText('annual')).toBeInTheDocument()
+    // Should show 3 column headers
+    expect(screen.getByText('Annual Goals')).toBeInTheDocument()
+    expect(screen.getByText('Quarterly Goals')).toBeInTheDocument()
+    expect(screen.getByText('Weekly Goals')).toBeInTheDocument()
+
+    // Annual goal should be visible in the view
+    expect(screen.getByText('Test Annual Goal')).toBeInTheDocument()
   })
 
   it('shows overdue indicator for past end dates', async () => {
@@ -223,20 +240,49 @@ describe('GoalsPage', () => {
 
     // Look for any warning indicators that might appear for overdue goals
     // If there are any goals with past dates, they should show warning icons
-    const _warningElements = document.querySelectorAll('svg.text-amber-500')
     // Just verify the component can render without errors - warning indicators depend on expanded state
     expect(true).toBe(true)
   })
 
-  it('shows hierarchical indentation', async () => {
+  it('shows quick-add buttons in each column', async () => {
     render(<GoalsPage />)
 
     await waitFor(() => {
       expect(screen.getByText('Test Annual Goal')).toBeInTheDocument()
     })
 
-    // Verify hierarchical structure by looking for indented elements
-    const indentedElements = document.querySelectorAll('[style*="padding-left"]')
-    expect(indentedElements.length).toBeGreaterThan(0)
+    // Should show quick-add button for annual goals
+    expect(screen.getByText('Add Annual Goal')).toBeInTheDocument()
+
+    // Initially should not show quarterly add button (no annual selected)
+    expect(screen.queryByText('Add Quarterly Goal')).not.toBeInTheDocument()
   })
+
+  it('shows delete confirmation when delete is clicked', async () => {
+    // Mock window.confirm
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
+
+    const user = userEvent.setup()
+    render(<GoalsPage />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Test Annual Goal')).toBeInTheDocument()
+    })
+
+    // Open the action menu
+    const actionMenus = screen.getAllByLabelText('Goal actions')
+    await user.click(actionMenus[0])
+
+    // Click delete
+    await waitFor(() => {
+      expect(screen.getByText('Delete')).toBeInTheDocument()
+    })
+    await user.click(screen.getByText('Delete'))
+
+    // Should show confirmation dialog
+    expect(confirmSpy).toHaveBeenCalledWith('Are you sure you want to delete "Test Annual Goal"? This action cannot be undone.')
+
+    confirmSpy.mockRestore()
+  })
+
 })

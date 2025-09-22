@@ -181,10 +181,7 @@ export default function App() {
             onBack={() => setSelectedGoalId(null)} 
           />
         ) : (
-          <GoalsPage 
-            selectedGoalId={selectedGoalId}
-            onSelectGoal={setSelectedGoalId}
-          />
+          <GoalsPage />
         )}
       </main>
       
