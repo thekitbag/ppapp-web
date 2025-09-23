@@ -15,8 +15,9 @@ import { Target, Archive } from 'lucide-react'
 import ThreeColumnGoalView from './goals/ThreeColumnGoalView'
 import ClosedGoalsList from './goals/ClosedGoalsList'
 import GoalCreateModal from './goals/GoalCreateModal'
+import TaskEditDrawer from './TaskEditDrawer'
 
-import type { GoalCadence, GoalStatus, Goal } from '../types'
+import type { GoalCadence, GoalStatus, Goal, Task } from '../types'
 
 type TabType = 'open' | 'closed'
 
@@ -38,6 +39,8 @@ export default function GoalsPage() {
   const [createModalType, setCreateModalType] = useState<GoalCadence>('annual')
   const [createModalParentId, setCreateModalParentId] = useState<string | undefined>()
   const [editGoal, setEditGoal] = useState<Goal | undefined>()
+  const [selectedTask, setSelectedTask] = useState<Task | undefined>()
+  const [showTaskDrawer, setShowTaskDrawer] = useState(false)
 
   // Queries - Using flat list instead of tree structure
   const goalsQ = useQuery({
@@ -214,6 +217,11 @@ export default function GoalsPage() {
     }
   }
 
+  const handleTaskClick = (task: Task) => {
+    setSelectedTask(task)
+    setShowTaskDrawer(true)
+  }
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -258,6 +266,7 @@ export default function GoalsPage() {
             onClose={handleCloseGoal}
             onDelete={handleDeleteGoal}
             onCreateGoal={handleCreateGoal}
+            onTaskClick={handleTaskClick}
           />
         ) : (
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden h-full">
@@ -283,6 +292,18 @@ export default function GoalsPage() {
         parentId={createModalParentId}
         editGoal={editGoal}
       />
+
+      {/* Task Edit Drawer */}
+      {selectedTask && (
+        <TaskEditDrawer
+          task={selectedTask}
+          isOpen={showTaskDrawer}
+          onClose={() => {
+            setShowTaskDrawer(false)
+            setSelectedTask(undefined)
+          }}
+        />
+      )}
     </div>
   )
 }
