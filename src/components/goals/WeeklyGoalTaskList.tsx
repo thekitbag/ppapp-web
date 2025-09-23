@@ -126,7 +126,6 @@ function TaskRow({ task, project, onClick }: { task: Task; project?: any; onClic
 export default function WeeklyGoalTaskList({ goalId, onTaskClick }: WeeklyGoalTaskListProps) {
   const qc = useQueryClient()
   const [newTaskTitle, setNewTaskTitle] = useState('')
-  const [isAdding, setIsAdding] = useState(false)
 
   const { data: tasks = [], isLoading } = useQuery({
     queryKey: [qk.tasks.all, { goal_id: goalId }],
@@ -153,7 +152,12 @@ export default function WeeklyGoalTaskList({ goalId, onTaskClick }: WeeklyGoalTa
       const newTask = await createTask({
         title,
         status: 'week',
+        tags: [],
+        project_id: null,
         goal_id: goalId,
+        hard_due_at: null,
+        soft_due_at: null,
+        effort_minutes: null,
         client_request_id: clientRequestId
       })
 
@@ -210,7 +214,7 @@ export default function WeeklyGoalTaskList({ goalId, onTaskClick }: WeeklyGoalTa
 
       return { previousTasks, previousFilteredQueries, tempId }
     },
-    onError: (err, title, context) => {
+    onError: (err, _title, context) => {
       // If the mutation fails, use the context to roll back
       if (context?.previousTasks) {
         qc.setQueryData([qk.tasks.all, { goal_id: goalId }], context.previousTasks)
@@ -225,7 +229,7 @@ export default function WeeklyGoalTaskList({ goalId, onTaskClick }: WeeklyGoalTa
 
       console.error('Failed to create task:', err)
     },
-    onSuccess: (newTask, title, context) => {
+    onSuccess: (newTask, _title, context) => {
       // Replace the optimistic task with the real one in goal task list
       qc.setQueryData([qk.tasks.all, { goal_id: goalId }], (old: Task[] | undefined) => {
         if (!old) return [newTask]
@@ -255,7 +259,6 @@ export default function WeeklyGoalTaskList({ goalId, onTaskClick }: WeeklyGoalTa
 
       // Clear the input
       setNewTaskTitle('')
-      setIsAdding(false)
     }
   })
 

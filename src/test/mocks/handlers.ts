@@ -285,7 +285,7 @@ export const handlers = [
   }),
 
   // Link tasks to goal endpoint
-  http.post('/api/v1/goals/:id/link-tasks', async ({ params, request }) => {
+  http.post('/api/v1/goals/:id/link-tasks', async ({ request }) => {
     const body = await request.json() as any
     return HttpResponse.json({
       linked: body.task_ids || [],
