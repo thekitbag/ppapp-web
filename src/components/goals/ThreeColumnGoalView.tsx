@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
-import { Goal } from '../../types'
+import { Goal, Task } from '../../types'
 import GoalCard from './GoalCard'
 
 interface ThreeColumnGoalViewProps {
@@ -11,6 +11,7 @@ interface ThreeColumnGoalViewProps {
   onClose?: (goal: Goal) => void
   onDelete?: (goal: Goal) => void
   onCreateGoal?: (type: 'annual' | 'quarterly' | 'weekly', parentId?: string) => void
+  onTaskClick?: (task: Task) => void
 }
 
 export default function ThreeColumnGoalView({
@@ -20,7 +21,8 @@ export default function ThreeColumnGoalView({
   onEdit,
   onClose,
   onDelete,
-  onCreateGoal
+  onCreateGoal,
+  onTaskClick
 }: ThreeColumnGoalViewProps) {
   const [selectedAnnualId, setSelectedAnnualId] = useState<string | null>(null)
   const [selectedQuarterlyId, setSelectedQuarterlyId] = useState<string | null>(null)
@@ -189,6 +191,8 @@ export default function ThreeColumnGoalView({
                 onEdit={() => onEdit?.(goal)}
                 onClose={() => onClose?.(goal)}
                 onDelete={() => onDelete?.(goal)}
+                onTaskClick={onTaskClick}
+                showTasks={true}
               />
             ))
           )}

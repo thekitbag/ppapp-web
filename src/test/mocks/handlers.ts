@@ -7,7 +7,8 @@ export const handlers = [
   http.get('/api/v1/tasks', ({ request }) => {
     const url = new URL(request.url)
     const status = url.searchParams.getAll('status')
-    
+    const goalId = url.searchParams.get('goal_id')
+
     const mockTasks = [
       {
         id: '1',
@@ -24,7 +25,7 @@ export const handlers = [
         updated_at: '2023-01-01T00:00:00Z',
       },
       {
-        id: '2', 
+        id: '2',
         title: 'Test Task 2',
         status: 'week',
         sort_order: 2000,
@@ -36,15 +37,36 @@ export const handlers = [
         effort_minutes: 30,
         created_at: '2023-01-01T00:00:00Z',
         updated_at: '2023-01-01T00:00:00Z',
+      },
+      {
+        id: '3',
+        title: 'Weekly Goal Task',
+        status: 'today',
+        sort_order: 1500,
+        tags: ['urgent'],
+        project_id: '1',
+        goal_id: '3',
+        hard_due_at: '2024-01-07T23:59:59Z',
+        soft_due_at: null,
+        effort_minutes: 45,
+        created_at: '2023-01-01T00:00:00Z',
+        updated_at: '2023-01-01T00:00:00Z',
       }
     ]
 
+    let filteredTasks = mockTasks
+
+    // Filter by status
     if (status.length > 0) {
-      const filteredTasks = mockTasks.filter(task => status.includes(task.status))
-      return HttpResponse.json(filteredTasks)
+      filteredTasks = filteredTasks.filter(task => status.includes(task.status))
     }
-    
-    return HttpResponse.json(mockTasks)
+
+    // Filter by goal_id
+    if (goalId) {
+      filteredTasks = filteredTasks.filter(task => task.goal_id === goalId)
+    }
+
+    return HttpResponse.json(filteredTasks)
   }),
 
   http.post('/api/v1/tasks', async ({ request }) => {
@@ -260,6 +282,15 @@ export const handlers = [
   // Delete goal endpoint
   http.delete('/api/v1/goals/:id', async () => {
     return new HttpResponse(null, { status: 204 })
+  }),
+
+  // Link tasks to goal endpoint
+  http.post('/api/v1/goals/:id/link-tasks', async ({ request }) => {
+    const body = await request.json() as any
+    return HttpResponse.json({
+      linked: body.task_ids || [],
+      already_linked: []
+    })
   }),
 
 

@@ -1,7 +1,8 @@
-import { Goal } from '../../types'
+import { Goal, Task } from '../../types'
 import StatusPill from './StatusPill'
 import EndDatePicker from './EndDatePicker'
 import GoalActionsMenu from './GoalActionsMenu'
+import WeeklyGoalTaskList from './WeeklyGoalTaskList'
 
 interface GoalCardProps {
   goal: Goal
@@ -12,6 +13,8 @@ interface GoalCardProps {
   onEdit?: () => void
   onClose?: () => void
   onDelete?: () => void
+  onTaskClick?: (task: Task) => void
+  showTasks?: boolean
 }
 
 export default function GoalCard({
@@ -22,7 +25,9 @@ export default function GoalCard({
   onEndDateChange,
   onEdit,
   onClose,
-  onDelete
+  onDelete,
+  onTaskClick,
+  showTasks = false
 }: GoalCardProps) {
   return (
     <div
@@ -63,6 +68,14 @@ export default function GoalCard({
           onDelete={onDelete || (() => {})}
         />
       </div>
+
+      {/* Weekly Goal Tasks */}
+      {showTasks && goal.type === 'weekly' && onTaskClick && (
+        <WeeklyGoalTaskList
+          goalId={goal.id}
+          onTaskClick={onTaskClick}
+        />
+      )}
     </div>
   )
 }

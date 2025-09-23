@@ -121,6 +121,7 @@ export function useOptimisticCreate(config: OptimisticCreateConfig = {}) {
       // Make the API call
       const serverTask = await createTask({
         ...request.payload,
+        size: request.payload.size as TaskSize | null | undefined,
         client_request_id,
         insert_at: 'top'
       })
