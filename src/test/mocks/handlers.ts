@@ -46,6 +46,10 @@ export const handlers = [
         tags: ['urgent'],
         project_id: '1',
         goal_id: '3',
+        goals: [
+          { id: '3', title: 'Test Weekly Goal' },
+          { id: '2', title: 'Test Quarterly Goal' }
+        ],
         hard_due_at: '2024-01-07T23:59:59Z',
         soft_due_at: null,
         effort_minutes: 45,

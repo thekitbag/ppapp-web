@@ -36,6 +36,21 @@ export default function ThreeColumnGoalView({
     goal.type === 'weekly' && goal.parent_goal_id === selectedQuarterlyId
   )
 
+  // Compute child counts
+  const quarterlyChildrenCountByAnnual: Record<string, number> = goals.reduce((acc, g) => {
+    if (g.type === 'quarterly' && g.parent_goal_id) {
+      acc[g.parent_goal_id] = (acc[g.parent_goal_id] || 0) + 1
+    }
+    return acc
+  }, {} as Record<string, number>)
+
+  const weeklyChildrenCountByQuarterly: Record<string, number> = goals.reduce((acc, g) => {
+    if (g.type === 'weekly' && g.parent_goal_id) {
+      acc[g.parent_goal_id] = (acc[g.parent_goal_id] || 0) + 1
+    }
+    return acc
+  }, {} as Record<string, number>)
+
   const handleAnnualSelect = (goalId: string) => {
     setSelectedAnnualId(goalId === selectedAnnualId ? null : goalId)
     setSelectedQuarterlyId(null) // Reset quarterly selection
@@ -84,6 +99,7 @@ export default function ThreeColumnGoalView({
                 onEdit={() => onEdit?.(goal)}
                 onClose={() => onClose?.(goal)}
                 onDelete={() => onDelete?.(goal)}
+                childCount={quarterlyChildrenCountByAnnual[goal.id] || 0}
               />
             ))
           )}
@@ -138,6 +154,7 @@ export default function ThreeColumnGoalView({
                 onEdit={() => onEdit?.(goal)}
                 onClose={() => onClose?.(goal)}
                 onDelete={() => onDelete?.(goal)}
+                childCount={weeklyChildrenCountByQuarterly[goal.id] || 0}
               />
             ))
           )}
@@ -193,6 +210,7 @@ export default function ThreeColumnGoalView({
                 onDelete={() => onDelete?.(goal)}
                 onTaskClick={onTaskClick}
                 showTasks={true}
+                childCount={0}
               />
             ))
           )}

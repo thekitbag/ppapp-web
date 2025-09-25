@@ -258,26 +258,44 @@ function TaskCard({ task, project, goal, index, isPending, onTaskDrop, onArchive
         </div>
 
         {/* Metadata Row - Chips wrapped with overflow handling */}
-        {(project || goal || (task.goals && task.goals.length > 0)) && (
-          <div className="flex flex-wrap items-center gap-2">
-            {project && <ProjectChip project={project} />}
-            {goal && <InfoBadge icon={Target} label={goal.title} colorClass="bg-green-100 text-green-800" />}
-            {task.goals && task.goals.length > 0 && (
-              <div className="flex items-center gap-1 flex-wrap">
-                {task.goals.slice(0, density === 'compact' ? 1 : 2).map(g => (
-                  <InfoBadge key={g.id} icon={Target} label={g.title} colorClass="bg-purple-100 text-purple-800" />
-                ))}
-                {task.goals.length > (density === 'compact' ? 1 : 2) && (
-                  <InfoBadge 
-                    icon={Target} 
-                    label={`+${task.goals.length - (density === 'compact' ? 1 : 2)}`} 
-                    colorClass="bg-purple-100 text-purple-800" 
-                  />
-                )}
-              </div>
-            )}
-          </div>
-        )}
+        {(() => {
+          // Create a unique list of goals, combining goal_id and goals array
+          const allGoals = [];
+
+          // Add goal from goal_id if it exists
+          if (goal) {
+            allGoals.push({ id: goal.id, title: goal.title });
+          }
+
+          // Add goals from goals array, but only if they're not already included
+          if (task.goals && task.goals.length > 0) {
+            task.goals.forEach(g => {
+              if (!allGoals.find(existing => existing.id === g.id)) {
+                allGoals.push(g);
+              }
+            });
+          }
+
+          return (project || allGoals.length > 0) && (
+            <div className="flex flex-wrap items-center gap-2">
+              {project && <ProjectChip project={project} />}
+              {allGoals.length > 0 && (
+                <div className="flex items-center gap-1 flex-wrap">
+                  {allGoals.slice(0, density === 'compact' ? 1 : 2).map(g => (
+                    <InfoBadge key={g.id} icon={Target} label={g.title} colorClass="bg-purple-100 text-purple-800" />
+                  ))}
+                  {allGoals.length > (density === 'compact' ? 1 : 2) && (
+                    <InfoBadge
+                      icon={Target}
+                      label={`+${allGoals.length - (density === 'compact' ? 1 : 2)}`}
+                      colorClass="bg-purple-100 text-purple-800"
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {(task.soft_due_at || task.hard_due_at || isQuickEditing) && (
           <div className="border-t border-gray-200/80 pt-3 flex flex-col gap-2">

@@ -1,4 +1,5 @@
 import { Goal, Task } from '../../types'
+import { GitBranch } from 'lucide-react'
 import StatusPill from './StatusPill'
 import EndDatePicker from './EndDatePicker'
 import GoalActionsMenu from './GoalActionsMenu'
@@ -15,6 +16,7 @@ interface GoalCardProps {
   onDelete?: () => void
   onTaskClick?: (task: Task) => void
   showTasks?: boolean
+  childCount?: number
 }
 
 export default function GoalCard({
@@ -27,7 +29,8 @@ export default function GoalCard({
   onClose,
   onDelete,
   onTaskClick,
-  showTasks = false
+  showTasks = false,
+  childCount,
 }: GoalCardProps) {
   return (
     <div
@@ -60,13 +63,21 @@ export default function GoalCard({
           />
         </div>
 
-        {/* Action Menu */}
-        <GoalActionsMenu
-          goal={{ ...goal, children: [] }}
-          onEdit={onEdit || (() => {})}
-          onClose={onClose || (() => {})}
-          onDelete={onDelete || (() => {})}
-        />
+        {/* Right side: child count (if any) + actions */}
+        <div className="flex items-center gap-2">
+          {typeof childCount === 'number' && childCount > 0 && (
+            <div className="flex items-center gap-1 text-gray-600 text-xs select-none">
+              <GitBranch size={16} className="text-gray-400" />
+              <span className="tabular-nums">{childCount}</span>
+            </div>
+          )}
+          <GoalActionsMenu
+            goal={{ ...goal, children: [] }}
+            onEdit={onEdit || (() => {})}
+            onClose={onClose || (() => {})}
+            onDelete={onDelete || (() => {})}
+          />
+        </div>
       </div>
 
       {/* Weekly Goal Tasks */}
