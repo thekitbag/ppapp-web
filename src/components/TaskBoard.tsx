@@ -260,7 +260,7 @@ function TaskCard({ task, project, goal, index, isPending, onTaskDrop, onArchive
         {/* Metadata Row - Chips wrapped with overflow handling */}
         {(() => {
           // Create a unique list of goals, combining goal_id and goals array
-          const allGoals = [];
+          const allGoals: { id: string; title: string }[] = [];
 
           // Add goal from goal_id if it exists
           if (goal) {
