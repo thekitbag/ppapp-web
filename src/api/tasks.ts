@@ -1,5 +1,6 @@
 import { api } from './client'
 import type { Task, TaskStatus } from '../types'
+import { BUCKETS } from '../constants'
 
 export interface TaskFilters {
   statuses?: TaskStatus[]
@@ -15,7 +16,7 @@ export async function listTasks(filters: TaskFilters = {}): Promise<Task[]> {
   const params = new URLSearchParams()
   
   // Add status filters (default to all statuses if none provided)
-  const statuses = filters.statuses || ['backlog', 'week', 'doing', 'done']
+  const statuses = filters.statuses || [...BUCKETS, 'done']
   statuses.forEach(s => params.append('status', s))
   
   // Add other filters
