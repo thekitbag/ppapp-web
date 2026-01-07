@@ -225,32 +225,49 @@ export default function GoalsPage() {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-800">Goals</h1>
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-2">
+          <h1 className="text-4xl font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text)' }}>
+            Goals
+          </h1>
+        </div>
+        <div className="w-20 h-1 rounded-full" style={{ background: 'var(--color-accent)' }}></div>
       </div>
 
       {/* Tabs */}
-      <div className="flex space-x-1 mb-6 border-b border-gray-200">
+      <div className="flex space-x-3 mb-6">
         <button
-          className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+          className={`flex items-center gap-2 px-6 py-3 text-sm font-bold rounded-lg border-3 border-black transition-all ${
             activeTab === 'open'
-              ? 'text-blue-600 border-blue-600'
-              : 'text-gray-500 border-transparent hover:text-gray-700'
+              ? 'translate-y-[-2px]'
+              : 'hover:translate-y-[-2px]'
           }`}
           onClick={() => setActiveTab('open')}
+          style={{
+            fontFamily: 'var(--font-display)',
+            background: activeTab === 'open' ? 'var(--color-accent)' : 'var(--color-surface)',
+            color: activeTab === 'open' ? 'white' : 'var(--color-text)',
+            boxShadow: activeTab === 'open' ? 'var(--shadow-brutal)' : 'var(--shadow-subtle)'
+          }}
         >
-          <Target size={16} />
+          <Target size={18} />
           Open Goals
         </button>
         <button
-          className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+          className={`flex items-center gap-2 px-6 py-3 text-sm font-bold rounded-lg border-3 border-black transition-all ${
             activeTab === 'closed'
-              ? 'text-blue-600 border-blue-600'
-              : 'text-gray-500 border-transparent hover:text-gray-700'
+              ? 'translate-y-[-2px]'
+              : 'hover:translate-y-[-2px]'
           }`}
           onClick={() => setActiveTab('closed')}
+          style={{
+            fontFamily: 'var(--font-display)',
+            background: activeTab === 'closed' ? 'var(--color-secondary)' : 'var(--color-surface)',
+            color: 'var(--color-text)',
+            boxShadow: activeTab === 'closed' ? 'var(--shadow-brutal)' : 'var(--shadow-subtle)'
+          }}
         >
-          <Archive size={16} />
+          <Archive size={18} />
           Closed Goals
         </button>
       </div>
@@ -269,7 +286,8 @@ export default function GoalsPage() {
             onTaskClick={handleTaskClick}
           />
         ) : (
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden h-full">
+          <div className="rounded-xl border-3 border-black overflow-hidden h-full"
+               style={{ background: 'var(--color-surface)', boxShadow: 'var(--shadow-brutal)' }}>
             <ClosedGoalsList
               goals={closedGoalsQ.data || []}
               onReopen={handleReopenGoal}

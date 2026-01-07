@@ -21,7 +21,8 @@ import OptimisticTaskCard from './OptimisticTaskCard';
 
 function InfoBadge({ icon: Icon, label, colorClass }: { icon: React.ElementType, label: string, colorClass?: string }) {
   return (
-    <div className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-full ${colorClass || 'bg-gray-200 text-gray-700'}`}>
+    <div className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md border-2 border-black font-medium ${colorClass || 'bg-gray-200 text-gray-700'}`}
+         style={{ fontFamily: 'var(--font-body)', boxShadow: '1px 1px 0px var(--color-border)' }}>
       <Icon size={14} />
       <span>{label}</span>
     </div>
@@ -29,20 +30,22 @@ function InfoBadge({ icon: Icon, label, colorClass }: { icon: React.ElementType,
 }
 
 function ProjectChip({ project, colorClass }: { project: any, colorClass?: string }) {
-  const daysUntilMilestone = project?.milestone_due_at ? 
+  const daysUntilMilestone = project?.milestone_due_at ?
     Math.ceil((new Date(project.milestone_due_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : null
 
   return (
-    <div className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-full ${colorClass || 'bg-blue-100 text-blue-800'}`}>
-      <div 
-        className="w-2.5 h-2.5 rounded-full"
+    <div className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md border-2 border-black font-medium ${colorClass || 'bg-blue-100 text-blue-800'}`}
+         style={{ fontFamily: 'var(--font-body)', boxShadow: '1px 1px 0px var(--color-border)' }}>
+      <div
+        className="w-2.5 h-2.5 rounded-sm border border-black"
         style={{ backgroundColor: project?.color || '#3B82F6' }}
       />
       <span>{project?.name || 'Unknown Project'}</span>
       {daysUntilMilestone !== null && daysUntilMilestone <= 14 && daysUntilMilestone >= 0 && (
-        <span className="text-xs bg-orange-500 text-white px-1.5 py-0.5 rounded-full ml-1">
-          {daysUntilMilestone === 0 ? 'Today' : 
-           daysUntilMilestone === 1 ? '1d' : 
+        <span className="text-xs border border-black px-1.5 py-0.5 rounded-md ml-1 font-bold"
+              style={{ background: 'var(--color-secondary)', color: 'var(--color-text)' }}>
+          {daysUntilMilestone === 0 ? 'Today' :
+           daysUntilMilestone === 1 ? '1d' :
            `${daysUntilMilestone}d`}
         </span>
       )}
@@ -161,17 +164,24 @@ function TaskCard({ task, project, goal, index, isPending, onTaskDrop, onArchive
   return (
     <div className="relative">
       {dropPosition === 'before' && (
-        <div className="absolute -top-1.5 left-0 right-0 h-1 bg-blue-500 rounded-full z-10" />
+        <div className="absolute -top-2 left-0 right-0 h-1 rounded-full z-10"
+             style={{ background: 'var(--color-primary)' }} />
       )}
       <div
         ref={ref}
-        className={`bg-white rounded-xl shadow-md border border-gray-200/80 transition-all flex flex-col ${
+        className={`rounded-lg border-3 border-black transition-all flex flex-col ${
           density === 'compact' ? 'p-3 gap-2' : 'p-4 gap-3'
         } ${
           isDragging ? 'opacity-40 scale-95' : ''
-        } ${isPending ? 'opacity-75 border-blue-400' : ''} ${
-          dropPosition ? 'ring-2 ring-blue-300' : ''
+        } ${isPending ? 'opacity-75' : ''} ${
+          dropPosition ? 'ring-4 ring-offset-2' : ''
         }`}
+        style={{
+          background: 'var(--color-surface)',
+          boxShadow: isDragging ? 'var(--shadow-subtle)' : 'var(--shadow-brutal)',
+          transform: isDragging ? 'rotate(-2deg)' : undefined,
+          ringColor: dropPosition ? 'var(--color-accent)' : undefined
+        }}
       >
         {/* Title Row - Always visible with wrapping */}
         <div className="flex items-start justify-between gap-3">
@@ -182,26 +192,35 @@ function TaskCard({ task, project, goal, index, isPending, onTaskDrop, onArchive
                 value={quickEditTitle}
                 onChange={(e) => setQuickEditTitle(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="w-full font-semibold text-base text-gray-800 bg-transparent border border-primary rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full font-semibold text-base border-2 border-black rounded-md px-3 py-2 focus:outline-none"
+                style={{
+                  background: 'var(--color-background)',
+                  color: 'var(--color-text)',
+                  fontFamily: 'var(--font-body)'
+                }}
                 autoFocus
               />
             </div>
           ) : (
-            <h3 
-              className="font-medium leading-snug break-words flex-1 cursor-pointer hover:text-blue-600 transition-colors overflow-hidden"
+            <h3
+              className="font-semibold leading-snug break-words flex-1 cursor-pointer transition-colors overflow-hidden"
               style={{
                 display: '-webkit-box',
                 WebkitLineClamp: density === 'compact' ? 2 : 3,
-                WebkitBoxOrient: 'vertical'
+                WebkitBoxOrient: 'vertical',
+                fontFamily: 'var(--font-body)',
+                color: 'var(--color-text)'
               }}
               onClick={(e) => {
                 e.stopPropagation();
                 setIsQuickEditing(true);
               }}
+              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
+              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text)'}
               title={`${task.title} (Click to edit)`}
             >
               {task.title}
-              {isPending && <span className="ml-2 text-xs text-blue-600 font-normal">Updating...</span>}
+              {isPending && <span className="ml-2 text-xs font-normal" style={{ color: 'var(--color-accent)' }}>Updating...</span>}
             </h3>
           )}
           
@@ -213,18 +232,20 @@ function TaskCard({ task, project, goal, index, isPending, onTaskDrop, onArchive
                     e.stopPropagation();
                     handleQuickEditSave();
                   }}
-                  className="text-green-600 hover:text-green-800 p-1 rounded transition-colors"
+                  className="p-1.5 rounded-md border-2 border-black transition-all hover:translate-y-[-2px]"
+                  style={{ background: 'var(--color-accent)', boxShadow: '2px 2px 0px var(--color-border)' }}
                   title="Save changes"
                   disabled={updateMutation.isPending}
                 >
-                  <Check size={16} />
+                  <Check size={16} color="white" />
                 </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleQuickEditCancel();
                   }}
-                  className="text-gray-400 hover:text-gray-600 p-1 rounded transition-colors"
+                  className="p-1.5 rounded-md border-2 border-black transition-all hover:translate-y-[-2px]"
+                  style={{ background: 'var(--color-surface)', boxShadow: '2px 2px 0px var(--color-border)', color: 'var(--color-text-muted)' }}
                   title="Cancel editing"
                 >
                   <X size={16} />
@@ -237,20 +258,26 @@ function TaskCard({ task, project, goal, index, isPending, onTaskDrop, onArchive
                     e.stopPropagation();
                     onArchive(task.id);
                   }}
-                  className="text-gray-400 hover:text-green-600 p-1 rounded transition-colors"
+                  className="p-1.5 rounded-md border-2 border-black transition-all hover:translate-y-[-2px]"
+                  style={{ background: 'var(--color-surface)', boxShadow: '2px 2px 0px var(--color-border)' }}
                   title="Complete task"
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-accent)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
                 >
-                  <CheckCircle size={16} />
+                  <CheckCircle size={16} style={{ color: 'var(--color-text-muted)' }} />
                 </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setIsEditDrawerOpen(true);
                   }}
-                  className="text-gray-400 hover:text-blue-600 p-1 rounded transition-colors"
+                  className="p-1.5 rounded-md border-2 border-black transition-all hover:translate-y-[-2px]"
+                  style={{ background: 'var(--color-surface)', boxShadow: '2px 2px 0px var(--color-border)' }}
                   title="Edit task"
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-primary)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
                 >
-                  <Edit size={16} />
+                  <Edit size={16} style={{ color: 'var(--color-text-muted)' }} />
                 </button>
               </>
             )}
@@ -361,9 +388,10 @@ function TaskCard({ task, project, goal, index, isPending, onTaskDrop, onArchive
         )}
       </div>
       {dropPosition === 'after' && (
-        <div className="absolute -bottom-1.5 left-0 right-0 h-1 bg-blue-500 rounded-full z-10" />
+        <div className="absolute -bottom-2 left-0 right-0 h-1 rounded-full z-10"
+             style={{ background: 'var(--color-primary)' }} />
       )}
-      
+
       <TaskEditDrawer
         task={task}
         isOpen={isEditDrawerOpen}
@@ -418,11 +446,16 @@ function EmptyColumnDropZone({ status, onTaskDrop }: { status: TaskStatus, onTas
   return (
     <div
       ref={ref}
-      className={`h-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center text-center p-6 transition-all min-h-[120px] ${
-        isDraggedOver ? 'border-blue-400 bg-blue-100/50 text-blue-700' : 'border-gray-300/80 text-gray-500'
+      className={`h-full border-3 border-dashed rounded-lg flex flex-col items-center justify-center text-center p-6 transition-all min-h-[120px] ${
+        isDraggedOver ? '' : ''
       }`}
+      style={{
+        borderColor: isDraggedOver ? 'var(--color-primary)' : 'var(--color-border-light)',
+        background: isDraggedOver ? 'rgba(255, 107, 88, 0.1)' : 'transparent',
+        color: isDraggedOver ? 'var(--color-primary)' : 'var(--color-text-muted)'
+      }}
     >
-      <div className="text-sm font-medium mb-1">{content.title}</div>
+      <div className="text-sm font-bold mb-1" style={{ fontFamily: 'var(--font-display)' }}>{content.title}</div>
       {content.subtitle && (
         <div className="text-xs opacity-75">{content.subtitle}</div>
       )}
@@ -454,8 +487,9 @@ function EndOfListDropZone({ status, index, onTaskDrop }: { status: TaskStatus, 
     <div
       ref={ref}
       className={`h-2 transition-all rounded-full ${
-        isDraggedOver ? 'bg-blue-500 h-1' : ''
+        isDraggedOver ? 'h-1' : ''
       }`}
+      style={{ background: isDraggedOver ? 'var(--color-primary)' : 'transparent' }}
     />
   );
 }
@@ -497,32 +531,48 @@ function TaskColumn({
 
   return (
     <div
-      className="bg-gray-100/80 rounded-2xl p-2 flex flex-col flex-shrink-0 w-80"
+      className="rounded-xl p-4 flex flex-col flex-shrink-0 w-80 border-3 border-black"
+      style={{
+        background: 'var(--color-background)',
+        boxShadow: 'var(--shadow-brutal)'
+      }}
     >
-      <div className="flex items-center justify-between px-2 py-1 mb-2">
-        <h3 className="font-semibold capitalize text-lg text-gray-800">
+      <div className="flex items-center justify-between px-2 py-2 mb-3">
+        <h3 className="font-bold capitalize text-xl"
+            style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text)' }}>
           {status === 'week' ? 'This Week' : status}
         </h3>
         <div className="flex items-center gap-2">
           {onCreateTask && (
             <button
               onClick={() => onCreateTask(status)}
-              className="text-gray-600 hover:text-blue-600 p-1 rounded transition-colors"
+              className="p-1.5 rounded-md border-2 border-black transition-all hover:translate-y-[-2px]"
+              style={{ background: 'var(--color-surface)', boxShadow: '2px 2px 0px var(--color-border)' }}
               title={`Add task to ${status === 'week' ? 'This Week' : status}`}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-primary)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
             >
-              <Plus size={16} />
+              <Plus size={16} style={{ color: 'var(--color-text)' }} />
             </button>
           )}
           {status === 'backlog' && onShowImport && (
             <button
               onClick={onShowImport}
-              className="text-gray-600 hover:text-gray-800 p-1 rounded transition-colors"
+              className="p-1.5 rounded-md border-2 border-black transition-all hover:translate-y-[-2px]"
+              style={{ background: 'var(--color-surface)', boxShadow: '2px 2px 0px var(--color-border)' }}
               title="Import from Trello"
+              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-accent)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
             >
-              <Upload size={16} />
+              <Upload size={16} style={{ color: 'var(--color-text)' }} />
             </button>
           )}
-          <span className="text-sm font-medium bg-gray-200/80 text-gray-600 rounded-full px-2.5 py-0.5">
+          <span className="text-sm font-bold rounded-md px-3 py-1 border-2 border-black"
+                style={{
+                  background: 'var(--color-secondary)',
+                  color: 'var(--color-text)',
+                  fontFamily: 'var(--font-display)'
+                }}>
             {tasks.length}
           </span>
         </div>
@@ -774,16 +824,17 @@ export default function TaskBoard() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 h-screen bg-gray-50 flex flex-col">
+    <div className="h-screen flex flex-col">
       {/* Header with Suggest Week button */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold text-gray-800">Task Board</h1>
-        <button 
+        <div></div>
+        <button
           onClick={handleSuggestWeek}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="btn-brutal inline-flex items-center gap-2 px-5 py-3 text-white rounded-lg"
+          style={{ background: 'var(--color-accent)' }}
         >
-          <Sparkles size={16} />
-          Suggest Tasks for Week
+          <Sparkles size={18} />
+          <span style={{ fontFamily: 'var(--font-display)' }}>Suggest Tasks for Week</span>
         </button>
       </div>
 
@@ -801,8 +852,8 @@ export default function TaskBoard() {
       />
 
       {/* Task columns */}
-      <div className="overflow-x-auto">
-        <div className="min-w-[1200px] grid grid-flow-col auto-cols-[320px] gap-4 pb-2">
+      <div className="overflow-x-auto flex-1">
+        <div className="min-w-[1200px] grid grid-flow-col auto-cols-[320px] gap-5 pb-6 h-full">
           {Array.from(columns.entries()).map(([status, tasks]) => (
           <TaskColumn
             key={status}

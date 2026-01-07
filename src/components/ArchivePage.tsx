@@ -12,7 +12,9 @@ export default function ArchivePage() {
   if (archivedTasksQ.isLoading) {
     return (
       <div className="p-6">
-        <div className="animate-pulse">Loading archived tasks...</div>
+        <div className="animate-pulse font-bold text-lg" style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text)' }}>
+          Loading archived tasks...
+        </div>
       </div>
     )
   }
@@ -20,37 +22,56 @@ export default function ArchivePage() {
   const tasks = archivedTasksQ.data || []
 
   return (
-    <div className="p-6">
-      <div className="flex items-center gap-3 mb-6">
-        <Archive size={24} className="text-gray-600" />
-        <h1 className="text-2xl font-semibold text-gray-800">Archive</h1>
-        <span className="text-sm text-gray-500">({tasks.length} tasks)</span>
+    <div>
+      <div className="mb-8">
+        <div className="flex items-center gap-4 mb-2">
+          <div className="w-12 h-12 rounded-lg flex items-center justify-center border-3 border-black"
+               style={{ background: 'var(--color-secondary)' }}>
+            <Archive size={24} style={{ color: 'var(--color-text)' }} />
+          </div>
+          <h1 className="text-4xl font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text)' }}>
+            Archive
+          </h1>
+          <span className="px-3 py-1 rounded-md border-2 border-black font-bold text-sm"
+                style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)', fontFamily: 'var(--font-display)' }}>
+            {tasks.length} tasks
+          </span>
+        </div>
+        <div className="w-24 h-1 rounded-full ml-16" style={{ background: 'var(--color-secondary)' }}></div>
       </div>
 
       {tasks.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
-          <Archive size={48} className="mx-auto mb-4 opacity-50" />
-          <p className="text-lg mb-2">No archived tasks</p>
-          <p>Completed or irrelevant tasks will appear here when archived</p>
+        <div className="card-brutal text-center py-16 rounded-xl">
+          <Archive size={64} className="mx-auto mb-6" style={{ color: 'var(--color-text-muted)' }} />
+          <p className="text-xl mb-2 font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text)' }}>
+            No archived tasks
+          </p>
+          <p style={{ color: 'var(--color-text-muted)' }}>
+            Completed or irrelevant tasks will appear here when archived
+          </p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {tasks.map(task => (
-            <div key={task.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+            <div key={task.id} className="card-brutal rounded-xl p-5">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <h3 className="font-medium text-gray-900 mb-1">{task.title}</h3>
-                  
-                  <div className="flex items-center gap-2 text-sm">
+                  <h3 className="font-semibold mb-3 text-lg" style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text)' }}>
+                    {task.title}
+                  </h3>
+
+                  <div className="flex items-center gap-2 text-sm flex-wrap">
                     {task.tags.length > 0 && (
-                      <div className="flex gap-1">
+                      <div className="flex gap-2">
                         {task.tags.slice(0, 3).map((tag, i) => (
-                          <span key={`${tag}-${i}`} className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs">
+                          <span key={`${tag}-${i}`} className="px-2.5 py-1 rounded-md border-2 border-black text-xs font-medium"
+                                style={{ background: 'var(--color-background)', color: 'var(--color-text)' }}>
                             {tag}
                           </span>
                         ))}
                         {task.tags.length > 3 && (
-                          <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs">
+                          <span className="px-2.5 py-1 rounded-md border-2 border-black text-xs font-medium"
+                                style={{ background: 'var(--color-background)', color: 'var(--color-text)' }}>
                             +{task.tags.length - 3}
                           </span>
                         )}
@@ -58,16 +79,18 @@ export default function ArchivePage() {
                     )}
 
                     {task.goals && task.goals.length > 0 && (
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-2">
                         {task.goals.slice(0, 1).map(g => (
-                          <span key={g.id} className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
-                            <Target size={10} />
+                          <span key={g.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border-2 border-black text-xs font-medium"
+                                style={{ background: 'var(--color-accent)', color: 'white' }}>
+                            <Target size={12} />
                             {g.title}
                           </span>
                         ))}
                         {task.goals.length > 1 && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
-                            <Target size={10} />
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border-2 border-black text-xs font-medium"
+                                style={{ background: 'var(--color-accent)', color: 'white' }}>
+                            <Target size={12} />
                             +{task.goals.length - 1}
                           </span>
                         )}
@@ -77,8 +100,9 @@ export default function ArchivePage() {
                 </div>
 
                 <div className="text-right">
-                  <div className="text-xs text-gray-400 mb-1">
-                    Archived {new Date(task.updated_at).toLocaleDateString()}
+                  <div className="text-xs font-medium px-3 py-1 rounded-md border-2 border-black"
+                       style={{ background: 'var(--color-secondary)', color: 'var(--color-text)', fontFamily: 'var(--font-body)' }}>
+                    {new Date(task.updated_at).toLocaleDateString()}
                   </div>
                 </div>
               </div>

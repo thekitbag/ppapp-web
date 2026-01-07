@@ -19,10 +19,14 @@ export default function App() {
   // Show loading spinner while checking authentication
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center relative">
+        <div className="text-center z-10">
+          <div className="relative inline-block mb-6">
+            <div className="w-16 h-16 border-4 border-black rounded-full animate-spin mx-auto"
+                 style={{ borderTopColor: 'var(--color-primary)', borderRightColor: 'var(--color-accent)' }}></div>
+            <div className="absolute inset-0 w-16 h-16 border-4 border-black rounded-full opacity-20"></div>
+          </div>
+          <p className="text-xl font-bold" style={{ fontFamily: 'var(--font-display)' }}>Loading...</p>
         </div>
       </div>
     )
@@ -36,42 +40,52 @@ export default function App() {
   // Show login options if not authenticated but login is optional (local dev)
   if (!isAuthenticated && !requiresLogin) {
     const isLocalDev = import.meta.env.DEV
-    
-    
+
+
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="bg-white rounded-2xl p-8 w-full max-w-md text-center shadow-lg">
-          <h1 className="text-2xl font-semibold mb-6">EigenTask</h1>
-          <p className="text-gray-600 mb-6">You are not authenticated. Choose an option to continue:</p>
-          
+      <div className="min-h-screen flex items-center justify-center p-4 relative">
+        <div className="card-brutal p-8 w-full max-w-md text-center animate-slide-in z-10">
+          <h1 className="text-4xl font-bold mb-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--color-primary)' }}>
+            EigenTask
+          </h1>
+          <div className="w-16 h-1 mx-auto mb-6" style={{ background: 'var(--color-accent)' }}></div>
+          <p className="mb-8 text-lg" style={{ color: 'var(--color-text-muted)' }}>
+            Choose your sign-in method
+          </p>
+
           <div className="space-y-4">
             <button
               onClick={login}
-              className="w-full px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+              className="btn-brutal w-full px-6 py-4 rounded-lg text-white text-lg"
+              style={{ background: 'var(--color-primary)' }}
             >
               Sign in with Microsoft
             </button>
-            
+
             <button
               onClick={() => window.location.href = '/api/v1/auth/google/login'}
-              className="w-full px-4 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors"
+              className="btn-brutal w-full px-6 py-4 rounded-lg text-white text-lg"
+              style={{ background: 'var(--color-accent)' }}
             >
               Sign in with Google
             </button>
-            
+
             {isLocalDev && (
               <button
                 onClick={devLogin}
-                className="w-full px-4 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-colors"
+                className="btn-brutal w-full px-6 py-4 rounded-lg text-white text-lg"
+                style={{ background: 'var(--color-text)' }}
               >
                 Dev Login (Local Only)
               </button>
             )}
-            
-            <p className="text-sm text-gray-500 mt-4">
-              {isLocalDev ? 'Local development mode' : 'Production mode'}
-            </p>
-            <p className="text-xs text-gray-400 mt-2">API: /api/v1</p>
+
+            <div className="mt-6 pt-6 border-t-2 border-black/10">
+              <p className="text-sm font-medium" style={{ color: 'var(--color-text-muted)' }}>
+                {isLocalDev ? 'Local development mode' : 'Production mode'}
+              </p>
+              <p className="text-xs mt-2" style={{ color: 'var(--color-text-muted)' }}>API: /api/v1</p>
+            </div>
           </div>
         </div>
       </div>
@@ -79,72 +93,96 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-dvh bg-gray-100 font-sans">
-      <header className="px-6 py-4 border-b bg-primary text-white shadow">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-4">
-            <div className="text-lg font-semibold">EigenTask</div>
+    <div className="min-h-dvh relative" style={{ fontFamily: 'var(--font-body)' }}>
+      <header className="relative z-20 border-b-4 border-black"
+              style={{ background: 'var(--color-surface)' }}>
+        <div className="max-w-7xl mx-auto px-6 py-5">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center border-3 border-black"
+                   style={{ background: 'var(--color-primary)' }}>
+                <span className="text-2xl">✦</span>
+              </div>
+              <div className="text-3xl font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text)' }}>
+                EigenTask
+              </div>
+            </div>
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-white/80">
+              <div className="px-4 py-2 rounded-lg border-2 border-black/10"
+                   style={{ background: 'var(--color-background)' }}>
+                <span className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>
                   {user?.name || user?.email}
                 </span>
                 {user?.provider && (
-                  <span className="text-xs px-2 py-1 bg-white/20 rounded-full text-white/70">
+                  <span className="ml-2 text-xs px-2 py-1 rounded-full border border-black"
+                        style={{ background: 'var(--color-secondary)', color: 'var(--color-text)' }}>
                     {user.provider === 'microsoft' ? 'MS' : user.provider === 'google' ? 'Google' : 'Dev'}
                   </span>
                 )}
               </div>
               <button
                 onClick={logout}
-                className="text-sm text-white/70 hover:text-white transition-colors"
+                className="px-4 py-2 rounded-lg border-2 border-black font-medium transition-all hover:translate-x-[-2px] hover:translate-y-[-2px]"
+                style={{
+                  background: 'var(--color-surface)',
+                  boxShadow: '2px 2px 0px var(--color-border)',
+                  fontFamily: 'var(--font-display)'
+                }}
               >
                 Sign Out
               </button>
             </div>
           </div>
-          
-          <nav className="flex space-x-1">
+
+          <nav className="flex space-x-3">
             <button
               onClick={() => setCurrentView('tasks')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                currentView === 'tasks' 
-                  ? 'bg-white/20 text-white' 
-                  : 'text-white/70 hover:text-white hover:bg-white/10'
+              className={`px-6 py-3 rounded-lg font-bold transition-all border-3 border-black ${
+                currentView === 'tasks'
+                  ? 'translate-y-[-2px]'
+                  : 'hover:translate-y-[-2px]'
               }`}
+              style={{
+                fontFamily: 'var(--font-display)',
+                background: currentView === 'tasks' ? 'var(--color-primary)' : 'var(--color-surface)',
+                color: currentView === 'tasks' ? 'white' : 'var(--color-text)',
+                boxShadow: currentView === 'tasks' ? 'var(--shadow-brutal)' : 'var(--shadow-subtle)'
+              }}
             >
               Tasks
-            </button>
-            <button
-              onClick={() => setCurrentView('projects')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                currentView === 'projects' 
-                  ? 'bg-white/20 text-white' 
-                  : 'text-white/70 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              Projects
             </button>
             <button
               onClick={() => {
                 setCurrentView('goals')
                 setSelectedGoalId(null)
               }}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                currentView === 'goals' 
-                  ? 'bg-white/20 text-white' 
-                  : 'text-white/70 hover:text-white hover:bg-white/10'
+              className={`px-6 py-3 rounded-lg font-bold transition-all border-3 border-black ${
+                currentView === 'goals'
+                  ? 'translate-y-[-2px]'
+                  : 'hover:translate-y-[-2px]'
               }`}
+              style={{
+                fontFamily: 'var(--font-display)',
+                background: currentView === 'goals' ? 'var(--color-accent)' : 'var(--color-surface)',
+                color: currentView === 'goals' ? 'white' : 'var(--color-text)',
+                boxShadow: currentView === 'goals' ? 'var(--shadow-brutal)' : 'var(--shadow-subtle)'
+              }}
             >
               Goals
             </button>
             <button
               onClick={() => setCurrentView('archive')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                currentView === 'archive' 
-                  ? 'bg-white/20 text-white' 
-                  : 'text-white/70 hover:text-white hover:bg-white/10'
+              className={`px-6 py-3 rounded-lg font-bold transition-all border-3 border-black ${
+                currentView === 'archive'
+                  ? 'translate-y-[-2px]'
+                  : 'hover:translate-y-[-2px]'
               }`}
+              style={{
+                fontFamily: 'var(--font-display)',
+                background: currentView === 'archive' ? 'var(--color-secondary)' : 'var(--color-surface)',
+                color: currentView === 'archive' ? 'var(--color-text)' : 'var(--color-text)',
+                boxShadow: currentView === 'archive' ? 'var(--shadow-brutal)' : 'var(--shadow-subtle)'
+              }}
             >
               Archive
             </button>
@@ -152,19 +190,25 @@ export default function App() {
         </div>
       </header>
       
-      <main className="p-6 space-y-8">
+      <main className="p-8 space-y-8 relative z-10">
         {currentView === 'tasks' ? (
           <>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold">Task Board</h2>
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-4xl font-bold mb-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text)' }}>
+                  Task Board
+                </h2>
+                <div className="w-24 h-1 rounded-full" style={{ background: 'var(--color-primary)' }}></div>
+              </div>
               <button
                 onClick={() => setShowGlobalTaskEditor(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="btn-brutal flex items-center gap-2 px-6 py-3 text-white rounded-lg"
+                style={{ background: 'var(--color-primary)' }}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                   <path d="M12 5v14M5 12h14" />
                 </svg>
-                Add Task
+                <span style={{ fontFamily: 'var(--font-display)' }}>Add Task</span>
               </button>
             </div>
             <div className="max-w-7xl mx-auto">
@@ -176,9 +220,9 @@ export default function App() {
         ) : currentView === 'archive' ? (
           <ArchivePage />
         ) : currentView === 'goals' && selectedGoalId ? (
-          <GoalDetailPage 
-            goalId={selectedGoalId} 
-            onBack={() => setSelectedGoalId(null)} 
+          <GoalDetailPage
+            goalId={selectedGoalId}
+            onBack={() => setSelectedGoalId(null)}
           />
         ) : (
           <GoalsPage />
@@ -198,7 +242,12 @@ export default function App() {
         }}
       />
       
-      <footer className="mt-8 py-4 border-t text-center text-sm text-gray-500">© 2025 Personal Productivity App</footer>
+      <footer className="mt-12 py-6 border-t-4 border-black text-center relative z-10"
+              style={{ background: 'var(--color-surface)' }}>
+        <p className="text-sm font-medium" style={{ color: 'var(--color-text-muted)', fontFamily: 'var(--font-display)' }}>
+          © 2025 EigenTask • Built with focus
+        </p>
+      </footer>
     </div>
   )
 }
