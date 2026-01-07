@@ -8,6 +8,7 @@ import { BUCKETS, midpoint } from '../constants';
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
 import { Calendar, Flag, Target, Sparkles, Upload, Edit, Check, X, CheckCircle, Plus } from 'lucide-react';
 import SuggestWeekModal from './SuggestWeekModal';
 import TrelloImportModal from './TrelloImportModal';
@@ -174,13 +175,12 @@ function TaskCard({ task, project, goal, index, isPending, onTaskDrop, onArchive
         } ${
           isDragging ? 'opacity-40 scale-95' : ''
         } ${isPending ? 'opacity-75' : ''} ${
-          dropPosition ? 'ring-4 ring-offset-2' : ''
+          dropPosition ? 'ring-4 ring-offset-2 ring-teal-500' : ''
         }`}
         style={{
           background: 'var(--color-surface)',
           boxShadow: isDragging ? 'var(--shadow-subtle)' : 'var(--shadow-brutal)',
-          transform: isDragging ? 'rotate(-2deg)' : undefined,
-          ringColor: dropPosition ? 'var(--color-accent)' : undefined
+          transform: isDragging ? 'rotate(-2deg)' : undefined
         }}
       >
         {/* Title Row - Always visible with wrapping */}
@@ -494,6 +494,42 @@ function EndOfListDropZone({ status, index, onTaskDrop }: { status: TaskStatus, 
   );
 }
 
+function StickyHeaderDropZone({ status, onTaskDrop }: { status: TaskStatus, onTaskDrop: (task: Task, newStatus: TaskStatus, targetIndex?: number) => void }) {
+  const ref = useRef(null);
+  const [isDraggedOver, setIsDraggedOver] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    return dropTargetForElements({
+      element: el,
+      getData: () => ({ status, targetIndex: 0 }),
+      onDragEnter: () => setIsDraggedOver(true),
+      onDragLeave: () => setIsDraggedOver(false),
+      onDrop: ({ source }) => {
+        onTaskDrop(source.data.task as Task, status, 0);
+        setIsDraggedOver(false);
+      },
+    });
+  }, [status, onTaskDrop]);
+
+  return (
+    <div
+      ref={ref}
+      className={`w-full transition-all ${
+        isDraggedOver ? 'h-12 mb-3' : 'h-0'
+      }`}
+      style={{
+        background: isDraggedOver ? 'var(--color-primary)' : 'transparent',
+        opacity: isDraggedOver ? 0.3 : 0,
+        borderRadius: '8px',
+        border: isDraggedOver ? '3px dashed var(--color-border)' : 'none'
+      }}
+    />
+  );
+}
+
 function TaskColumn({
   status,
   tasks,
@@ -521,6 +557,19 @@ function TaskColumn({
   onOptimisticRetry?: (tempId: string) => void,
   onOptimisticCancel?: (tempId: string) => void
 }) {
+  const columnRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Enable auto-scroll for the column's vertical scroll
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+
+    return autoScrollForElements({
+      element: el,
+    });
+  }, []);
+
   const handleArchive = (taskId: string) => {
     patchMutation.mutate({ id: taskId, status: 'archived' as TaskStatus })
   }
@@ -531,51 +580,59 @@ function TaskColumn({
 
   return (
     <div
-      className="rounded-xl p-4 flex flex-col flex-shrink-0 w-80 border-3 border-black"
+      ref={columnRef}
+      className="rounded-xl p-4 flex flex-col flex-shrink-0 w-80 border-3 border-black relative"
       style={{
         background: 'var(--color-background)',
         boxShadow: 'var(--shadow-brutal)'
       }}
     >
-      <div className="flex items-center justify-between px-2 py-2 mb-3">
-        <h3 className="font-bold capitalize text-xl"
-            style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text)' }}>
-          {status === 'week' ? 'This Week' : status}
-        </h3>
-        <div className="flex items-center gap-2">
-          {onCreateTask && (
-            <button
-              onClick={() => onCreateTask(status)}
-              className="p-1.5 rounded-md border-2 border-black transition-all hover:translate-y-[-2px]"
-              style={{ background: 'var(--color-surface)', boxShadow: '2px 2px 0px var(--color-border)' }}
-              title={`Add task to ${status === 'week' ? 'This Week' : status}`}
-              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-primary)'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
-            >
-              <Plus size={16} style={{ color: 'var(--color-text)' }} />
-            </button>
-          )}
-          {status === 'backlog' && onShowImport && (
-            <button
-              onClick={onShowImport}
-              className="p-1.5 rounded-md border-2 border-black transition-all hover:translate-y-[-2px]"
-              style={{ background: 'var(--color-surface)', boxShadow: '2px 2px 0px var(--color-border)' }}
-              title="Import from Trello"
-              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-accent)'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
-            >
-              <Upload size={16} style={{ color: 'var(--color-text)' }} />
-            </button>
-          )}
-          <span className="text-sm font-bold rounded-md px-3 py-1 border-2 border-black"
-                style={{
-                  background: 'var(--color-secondary)',
-                  color: 'var(--color-text)',
-                  fontFamily: 'var(--font-display)'
-                }}>
-            {tasks.length}
-          </span>
+      {/* Sticky header with drop zone */}
+      <div className="sticky top-0 z-10"
+           style={{ background: 'var(--color-background)' }}>
+        <div className="flex items-center justify-between px-2 py-2 mb-3">
+          <h3 className="font-bold capitalize text-xl"
+              style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text)' }}>
+            {status === 'week' ? 'This Week' : status}
+          </h3>
+          <div className="flex items-center gap-2">
+            {onCreateTask && (
+              <button
+                onClick={() => onCreateTask(status)}
+                className="p-1.5 rounded-md border-2 border-black transition-all hover:translate-y-[-2px]"
+                style={{ background: 'var(--color-surface)', boxShadow: '2px 2px 0px var(--color-border)' }}
+                title={`Add task to ${status === 'week' ? 'This Week' : status}`}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-primary)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
+              >
+                <Plus size={16} style={{ color: 'var(--color-text)' }} />
+              </button>
+            )}
+            {status === 'backlog' && onShowImport && (
+              <button
+                onClick={onShowImport}
+                className="p-1.5 rounded-md border-2 border-black transition-all hover:translate-y-[-2px]"
+                style={{ background: 'var(--color-surface)', boxShadow: '2px 2px 0px var(--color-border)' }}
+                title="Import from Trello"
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-accent)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
+              >
+                <Upload size={16} style={{ color: 'var(--color-text)' }} />
+              </button>
+            )}
+            <span className="text-sm font-bold rounded-md px-3 py-1 border-2 border-black"
+                  style={{
+                    background: 'var(--color-secondary)',
+                    color: 'var(--color-text)',
+                    fontFamily: 'var(--font-display)'
+                  }}>
+              {tasks.length}
+            </span>
+          </div>
         </div>
+
+        {/* Drop zone that expands when dragging over */}
+        <StickyHeaderDropZone status={status} onTaskDrop={onTaskDrop} />
       </div>
 
       {/* Quick Add Component */}
@@ -585,7 +642,7 @@ function TaskColumn({
         </div>
       )}
 
-      <div className="space-y-3 p-1 overflow-y-auto h-full">
+      <div ref={scrollContainerRef} className="space-y-3 p-1 overflow-y-auto h-full">
         {tasks.length === 0 && !onQuickAdd && (
           <EmptyColumnDropZone status={status} onTaskDrop={onTaskDrop} />
         )}
@@ -637,10 +694,21 @@ export default function TaskBoard() {
   const [filters, setFilters] = useState<TaskFilters>({ statuses: BUCKETS });
   const [debouncedFilters, setDebouncedFilters] = useState<TaskFilters>({ statuses: BUCKETS });
   const [density, setDensity] = useState<'comfortable' | 'compact'>('comfortable');
+  const horizontalScrollRef = useRef<HTMLDivElement>(null);
 
   // Optimistic creation hook
   const optimisticCreate = useOptimisticCreate();
-  
+
+  // Enable auto-scroll for horizontal scrolling between columns
+  useEffect(() => {
+    const el = horizontalScrollRef.current;
+    if (!el) return;
+
+    return autoScrollForElements({
+      element: el,
+    });
+  }, []);
+
   // Debounce the filters to prevent re-renders during typing
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -852,7 +920,7 @@ export default function TaskBoard() {
       />
 
       {/* Task columns */}
-      <div className="overflow-x-auto flex-1">
+      <div ref={horizontalScrollRef} className="overflow-x-auto flex-1">
         <div className="min-w-[1200px] grid grid-flow-col auto-cols-[320px] gap-5 pb-6 h-full">
           {Array.from(columns.entries()).map(([status, tasks]) => (
           <TaskColumn
