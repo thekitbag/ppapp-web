@@ -1,12 +1,13 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { Search, X, Filter, LayoutGrid, List } from 'lucide-react'
+import { Search, X, Filter, LayoutGrid, List, Target, CheckCircle2, AlertTriangle, XCircle as XCircleIcon } from 'lucide-react'
 import type { TaskFilters as TaskFiltersType } from '../api/tasks'
+import type { GoalStatus } from '../types'
 
 interface TaskFiltersProps {
   filters: TaskFiltersType
   onFiltersChange: (filters: TaskFiltersType) => void
   projects: Array<{ id: string; name: string; color?: string | null }>
-  goals: Array<{ id: string; title: string }>
+  goals: Array<{ id: string; title: string; type?: string | null; status?: GoalStatus | null; description?: string | null; end_date?: string | null; is_closed?: boolean }>
   allTags: string[]
   density?: 'comfortable' | 'compact'
   onDensityChange?: (density: 'comfortable' | 'compact') => void
@@ -187,8 +188,113 @@ export default function TaskFilters({ filters, onFiltersChange, projects, goals,
     ].filter(Boolean).length
   }, [filters])
 
+  // Weekly goals
+  const weeklyGoals = useMemo(() => {
+    return goals.filter(g => g.type === 'weekly' && !g.is_closed)
+  }, [goals])
+
+  const handleGoalClick = (goalId: string) => {
+    // Filter tasks by this goal
+    onFiltersChange({ ...filters, goal_id: goalId })
+  }
+
+  const getStatusInfo = (status?: GoalStatus | null): { bg: string; text: string; icon: React.ElementType } => {
+    switch (status) {
+      case 'on_target':
+        return { bg: 'var(--color-accent)', text: 'white', icon: CheckCircle2 };
+      case 'at_risk':
+        return { bg: 'var(--color-secondary)', text: 'var(--color-text)', icon: AlertTriangle };
+      case 'off_target':
+        return { bg: 'var(--color-primary)', text: 'white', icon: XCircleIcon };
+      default:
+        return { bg: 'var(--color-surface)', text: 'var(--color-text-muted)', icon: Target };
+    }
+  }
+
   return (
-    <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
+    <div className="mb-4">
+      {/* Weekly Goals - The North Star */}
+      {weeklyGoals.length > 0 && (
+        <div className="card-brutal rounded-xl p-4 mb-4"
+             style={{ background: 'var(--color-surface)' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 rounded-md flex items-center justify-center border-2 border-black"
+                 style={{ background: 'var(--color-accent)' }}>
+              <Target size={16} color="white" />
+            </div>
+            <h3 className="text-lg font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text)' }}>
+              Weekly Goals
+            </h3>
+            <span className="text-xs font-bold rounded-md px-2 py-1 border-2 border-black"
+                  style={{ background: 'var(--color-secondary)', color: 'var(--color-text)', fontFamily: 'var(--font-display)' }}>
+              {weeklyGoals.length}
+            </span>
+          </div>
+
+          <div className="overflow-x-auto -mx-4 px-4">
+            <div className="flex gap-3 pb-2 min-w-min">
+              {weeklyGoals.map(goal => {
+                const statusInfo = getStatusInfo(goal.status);
+                const StatusIcon = statusInfo.icon;
+                const isSelected = filters.goal_id === goal.id;
+
+                return (
+                  <div
+                    key={goal.id}
+                    className={`w-72 flex-shrink-0 card-brutal rounded-lg p-3 cursor-pointer transition-all hover:translate-y-[-2px] ${
+                      isSelected ? 'ring-4 ring-offset-2 ring-teal-500' : ''
+                    }`}
+                    onClick={() => handleGoalClick(goal.id)}
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h4 className="font-bold text-sm flex-1 line-clamp-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text)' }}>
+                        {goal.title}
+                      </h4>
+                      <div className="flex items-center gap-1 px-2 py-1 rounded-md border-2 border-black text-xs font-bold flex-shrink-0"
+                           style={{ background: statusInfo.bg, color: statusInfo.text, fontFamily: 'var(--font-display)' }}>
+                        <StatusIcon size={10} />
+                      </div>
+                    </div>
+
+                    {goal.description && (
+                      <p className="text-xs mb-2 line-clamp-2" style={{ color: 'var(--color-text-muted)' }}>
+                        {goal.description}
+                      </p>
+                    )}
+
+                    {goal.end_date && (
+                      <div className="flex items-center gap-2 text-xs font-medium">
+                        <span className="px-2 py-0.5 rounded-md border border-black text-xs"
+                              style={{ background: 'var(--color-background)', color: 'var(--color-text)' }}>
+                          📅 {new Date(goal.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </span>
+                      </div>
+                    )}
+
+                    {isSelected && (
+                      <div className="mt-2 pt-2 border-t border-black/10">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onFiltersChange({ ...filters, goal_id: undefined });
+                          }}
+                          className="text-xs font-bold px-2 py-1 rounded-md border-2 border-black"
+                          style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}
+                        >
+                          Clear filter
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Filters */}
+      <div className="bg-white rounded-lg shadow-sm border p-4">
       {/* Unified Toolbar */}
       <div className="flex items-center gap-4 mb-4">
         {/* Search - Takes up most space */}
@@ -396,6 +502,7 @@ export default function TaskFilters({ filters, onFiltersChange, projects, goals,
           )}
         </div>
       )}
+      </div>
     </div>
   )
 }

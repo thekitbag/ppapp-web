@@ -1,19 +1,16 @@
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { qk } from '../lib/queryKeys';
-import { listTasks, patchTask, promoteTasksToWeek, type TaskFilters } from '../api/tasks';
-import { suggestWeek } from '../api/recommendations';
+import { listTasks, patchTask, type TaskFilters } from '../api/tasks';
 import { Task, TaskStatus } from '../types';
 import { BUCKETS, midpoint } from '../constants';
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
-import { Calendar, Flag, Target, Sparkles, Upload, Edit, Check, X, CheckCircle, Plus } from 'lucide-react';
-import SuggestWeekModal from './SuggestWeekModal';
+import { Calendar, Flag, Target, Upload, Edit, Check, X, CheckCircle } from 'lucide-react';
 import TrelloImportModal from './TrelloImportModal';
 import TaskEditDrawer from './TaskEditDrawer';
-import TaskEditor from './TaskEditor';
 import TaskFiltersComponent from './TaskFilters';
 import { useTaskUpdateMutation } from '../hooks/useTaskMutation';
 import { useOptimisticCreate } from '../hooks/useOptimisticCreate';
@@ -538,7 +535,6 @@ function TaskColumn({
   goalsById,
   patchMutation,
   onShowImport,
-  onCreateTask,
   density = 'comfortable',
   onQuickAdd,
   onOptimisticRetry,
@@ -551,7 +547,6 @@ function TaskColumn({
   goalsById: any,
   patchMutation: any,
   onShowImport?: () => void,
-  onCreateTask?: (status: TaskStatus) => void,
   density?: 'comfortable' | 'compact',
   onQuickAdd?: (status: TaskStatus, title: string) => void,
   onOptimisticRetry?: (tempId: string) => void,
@@ -596,18 +591,6 @@ function TaskColumn({
             {status === 'week' ? 'This Week' : status}
           </h3>
           <div className="flex items-center gap-2">
-            {onCreateTask && (
-              <button
-                onClick={() => onCreateTask(status)}
-                className="p-1.5 rounded-md border-2 border-black transition-all hover:translate-y-[-2px]"
-                style={{ background: 'var(--color-surface)', boxShadow: '2px 2px 0px var(--color-border)' }}
-                title={`Add task to ${status === 'week' ? 'This Week' : status}`}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-primary)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
-              >
-                <Plus size={16} style={{ color: 'var(--color-text)' }} />
-              </button>
-            )}
             {status === 'backlog' && onShowImport && (
               <button
                 onClick={onShowImport}
@@ -795,46 +778,7 @@ export default function TaskBoard() {
   });
 
   // Modal state and functionality
-  const [showSuggestModal, setShowSuggestModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
-  const [showTaskEditor, setShowTaskEditor] = useState(false);
-  const [taskEditorDefaultStatus, setTaskEditorDefaultStatus] = useState<TaskStatus>('week');
-  
-  const suggestedTasksQ = useQuery({
-    queryKey: qk.recs.suggestWeek,
-    queryFn: () => suggestWeek(20), // Get more recommendations to choose from
-    enabled: showSuggestModal, // Only fetch when modal is open
-  });
-
-  const promoteMutation = useMutation({
-    mutationFn: promoteTasksToWeek,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['tasks', 'filtered'] });
-      qc.invalidateQueries({ queryKey: qk.tasks.byStatuses(BUCKETS) });
-      qc.invalidateQueries({ queryKey: qk.recs.suggestWeek });
-      setShowSuggestModal(false);
-      // Could add a toast notification here
-    },
-    onError: (error) => {
-      console.error('Failed to promote tasks:', error);
-      // Could add error toast here
-    }
-  });
-
-  const handleSuggestWeek = () => {
-    setShowSuggestModal(true);
-  };
-
-  const handlePromoteTasks = (taskIds: string[]) => {
-    if (taskIds.length > 0) {
-      promoteMutation.mutate(taskIds);
-    }
-  };
-
-  const handleCreateTask = (status: TaskStatus) => {
-    setTaskEditorDefaultStatus(status);
-    setShowTaskEditor(true);
-  };
 
   const handleQuickAdd = (status: TaskStatus, title: string) => {
     optimisticCreate.quickAdd(status, title, debouncedFilters);
@@ -893,20 +837,7 @@ export default function TaskBoard() {
 
   return (
     <div className="h-screen flex flex-col">
-      {/* Header with Suggest Week button */}
-      <div className="flex items-center justify-between mb-6">
-        <div></div>
-        <button
-          onClick={handleSuggestWeek}
-          className="btn-brutal inline-flex items-center gap-2 px-5 py-3 text-white rounded-lg"
-          style={{ background: 'var(--color-accent)' }}
-        >
-          <Sparkles size={18} />
-          <span style={{ fontFamily: 'var(--font-display)' }}>Suggest Tasks for Week</span>
-        </button>
-      </div>
-
-      {/* Filters */}
+      {/* Filters & Weekly Goals */}
       <TaskFiltersComponent
         filters={filters}
         onFiltersChange={handleFiltersChange}
@@ -932,7 +863,6 @@ export default function TaskBoard() {
             goalsById={goalsById}
             patchMutation={patchM}
             onShowImport={status === 'backlog' ? () => setShowImportModal(true) : undefined}
-            onCreateTask={handleCreateTask}
             onQuickAdd={handleQuickAdd}
             onOptimisticRetry={handleOptimisticRetry}
             onOptimisticCancel={handleOptimisticCancel}
@@ -942,26 +872,10 @@ export default function TaskBoard() {
         </div>
       </div>
 
-      {/* Suggest Week Modal */}
-      <SuggestWeekModal 
-        open={showSuggestModal}
-        tasks={suggestedTasksQ.data?.map(item => item.task) || []}
-        onClose={() => setShowSuggestModal(false)}
-        onConfirm={handlePromoteTasks}
-        isLoading={suggestedTasksQ.isLoading}
-      />
-
       {/* Trello Import Modal */}
-      <TrelloImportModal 
+      <TrelloImportModal
         open={showImportModal}
         onClose={() => setShowImportModal(false)}
-      />
-
-      {/* Task Editor Modal */}
-      <TaskEditor
-        isOpen={showTaskEditor}
-        defaultStatus={taskEditorDefaultStatus}
-        onClose={() => setShowTaskEditor(false)}
       />
     </div>
   );
