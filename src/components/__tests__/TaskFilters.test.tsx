@@ -4,11 +4,6 @@ import '@testing-library/jest-dom'
 import TaskFilters from '../TaskFilters'
 import type { TaskFilters as TaskFiltersType } from '../../api/tasks'
 
-const mockProjects = [
-  { id: 'project-1', name: 'Project Alpha', color: '#ff0000' },
-  { id: 'project-2', name: 'Project Beta', color: '#00ff00' }
-]
-
 const mockGoals = [
   { id: 'goal-1', title: 'Goal Alpha' },
   { id: 'goal-2', title: 'Goal Beta' }
@@ -30,7 +25,6 @@ describe('TaskFilters Integration Tests', () => {
       <TaskFilters
         filters={mockFilters}
         onFiltersChange={mockOnFiltersChange}
-        projects={mockProjects}
         goals={mockGoals}
         allTags={mockAllTags}
         taskCount={5}

@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { X, Save } from 'lucide-react'
 import { qk } from '../lib/queryKeys'
-import { listProjects } from '../api/projects'
 import { getGoalsTree } from '../api/goals'
 import { createTask, updateTask } from '../api/tasks'
 import GoalPicker from './GoalPicker'
@@ -19,7 +18,6 @@ interface TaskEditorProps {
 interface TaskFormData {
   title: string
   description: string
-  project_id: string
   goal_id: string
   soft_due_at: string
   hard_due_at: string
@@ -37,7 +35,6 @@ export default function TaskEditor({ task, defaultStatus = 'week', isOpen, onClo
   const [formData, setFormData] = useState<TaskFormData>({
     title: task?.title || '',
     description: task?.description || '',
-    project_id: task?.project_id || '',
     goal_id: task?.goal_id || '',
     soft_due_at: task?.soft_due_at ? new Date(task.soft_due_at).toISOString().slice(0, 16) : '',
     hard_due_at: task?.hard_due_at ? new Date(task.hard_due_at).toISOString().slice(0, 16) : '',
@@ -57,7 +54,6 @@ export default function TaskEditor({ task, defaultStatus = 'week', isOpen, onClo
       setFormData({
         title: task?.title || '',
         description: task?.description || '',
-        project_id: task?.project_id || '',
         goal_id: task?.goal_id || '',
         soft_due_at: task?.soft_due_at ? new Date(task.soft_due_at).toISOString().slice(0, 16) : '',
         hard_due_at: task?.hard_due_at ? new Date(task.hard_due_at).toISOString().slice(0, 16) : '',
@@ -68,7 +64,7 @@ export default function TaskEditor({ task, defaultStatus = 'week', isOpen, onClo
         status: task?.status || defaultStatus,
       })
       setErrors({})
-      
+
       // Focus title input
       setTimeout(() => titleInputRef.current?.focus(), 100)
     }
@@ -95,7 +91,6 @@ export default function TaskEditor({ task, defaultStatus = 'week', isOpen, onClo
     }
   }, [formData.hard_due_at, formData.isHardDeadline])
 
-  const projectsQ = useQuery({ queryKey: qk.projects.all, queryFn: listProjects })
   const goalsQ = useQuery({ queryKey: qk.goals.tree, queryFn: getGoalsTree })
 
   const createMutation = useMutation({
@@ -150,7 +145,6 @@ export default function TaskEditor({ task, defaultStatus = 'week', isOpen, onClo
     const taskData = {
       title: formData.title.trim(),
       description: formData.description.trim() || null,
-      project_id: formData.project_id || null,
       goal_id: formData.goal_id || null,
       soft_due_at: formData.soft_due_at ? new Date(formData.soft_due_at).toISOString() : null,
       hard_due_at: formData.isHardDeadline && formData.hard_due_at ? new Date(formData.hard_due_at).toISOString() : null,
@@ -260,39 +254,18 @@ export default function TaskEditor({ task, defaultStatus = 'week', isOpen, onClo
             </div>
           )}
 
-          {/* Project and Goal */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="project" className="block text-sm font-medium text-gray-700 mb-2">
-                Project
-              </label>
-              <select
-                id="project"
-                value={formData.project_id}
-                onChange={(e) => handleInputChange('project_id', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">No project</option>
-                {projectsQ.data?.map(project => (
-                  <option key={project.id} value={project.id}>
-                    {project.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="goal" className="block text-sm font-medium text-gray-700 mb-2">
-                Goal
-              </label>
-              <GoalPicker
-                tree={goalsQ.data || []}
-                value={formData.goal_id}
-                onChange={(goalId) => handleInputChange('goal_id', goalId)}
-                placeholder="Select a goal..."
-                className="w-full"
-              />
-            </div>
+          {/* Goal */}
+          <div>
+            <label htmlFor="goal" className="block text-sm font-medium text-gray-700 mb-2">
+              Goal
+            </label>
+            <GoalPicker
+              tree={goalsQ.data || []}
+              value={formData.goal_id}
+              onChange={(goalId) => handleInputChange('goal_id', goalId)}
+              placeholder="Select a goal..."
+              className="w-full"
+            />
           </div>
 
           {/* Due Dates */}

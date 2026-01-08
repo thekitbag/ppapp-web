@@ -1,12 +1,13 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { Search, X, Filter, LayoutGrid, List, Target, CheckCircle2, AlertTriangle, XCircle as XCircleIcon } from 'lucide-react'
 import type { TaskFilters as TaskFiltersType } from '../api/tasks'
-import type { GoalStatus } from '../types'
+import type { GoalStatus, Task } from '../types'
+import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
+import { useTaskUpdateMutation } from '../hooks/useTaskMutation'
 
 interface TaskFiltersProps {
   filters: TaskFiltersType
   onFiltersChange: (filters: TaskFiltersType) => void
-  projects: Array<{ id: string; name: string; color?: string | null }>
   goals: Array<{ id: string; title: string; type?: string | null; status?: GoalStatus | null; description?: string | null; end_date?: string | null; is_closed?: boolean }>
   allTags: string[]
   density?: 'comfortable' | 'compact'
@@ -15,17 +16,13 @@ interface TaskFiltersProps {
   isLoading?: boolean
 }
 
-export default function TaskFilters({ filters, onFiltersChange, projects, goals, allTags, density = 'comfortable', onDensityChange, taskCount, isLoading }: TaskFiltersProps) {
+export default function TaskFilters({ filters, onFiltersChange, goals, allTags, density = 'comfortable', onDensityChange, taskCount, isLoading }: TaskFiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const filtersPanelRef = useRef<HTMLDivElement>(null)
   const filtersButtonRef = useRef<HTMLButtonElement>(null)
 
   const handleSearchChange = (search: string) => {
     onFiltersChange({ ...filters, search: search || undefined })
-  }
-
-  const handleProjectChange = (projectId: string) => {
-    onFiltersChange({ ...filters, project_id: projectId || undefined })
   }
 
   const handleGoalChange = (goalId: string) => {
@@ -170,7 +167,6 @@ export default function TaskFilters({ filters, onFiltersChange, projects, goals,
   const hasActiveFilters = useMemo(() => {
     return !!(
       filters.search ||
-      filters.project_id ||
       filters.goal_id ||
       filters.tags?.length ||
       filters.due_date_start ||
@@ -181,7 +177,6 @@ export default function TaskFilters({ filters, onFiltersChange, projects, goals,
   const activeFiltersCount = useMemo(() => {
     return [
       !!filters.search,
-      !!filters.project_id,
       !!filters.goal_id,
       !!(filters.tags?.length),
       !!(filters.due_date_start || filters.due_date_end)
@@ -211,6 +206,109 @@ export default function TaskFilters({ filters, onFiltersChange, projects, goals,
     }
   }
 
+  // Separate component for goal cards with drop target functionality
+  function GoalCard({
+    goal,
+    isSelected,
+    onGoalClick,
+    onClearFilter
+  }: {
+    goal: { id: string; title: string; type?: string | null; status?: GoalStatus | null; description?: string | null; end_date?: string | null };
+    isSelected: boolean;
+    onGoalClick: (goalId: string) => void;
+    onClearFilter: () => void;
+  }) {
+    const ref = useRef<HTMLDivElement>(null);
+    const [isDraggedOver, setIsDraggedOver] = useState(false);
+    const updateMutation = useTaskUpdateMutation();
+    const statusInfo = getStatusInfo(goal.status);
+    const StatusIcon = statusInfo.icon;
+
+    useEffect(() => {
+      const el = ref.current;
+      if (!el) return;
+
+      return dropTargetForElements({
+        element: el,
+        getData: () => ({ goalId: goal.id }),
+        onDragEnter: () => setIsDraggedOver(true),
+        onDragLeave: () => setIsDraggedOver(false),
+        onDrop: ({ source }) => {
+          const task = source.data.task as Task;
+          if (task) {
+            // Update the task's goal_id
+            updateMutation.mutate({
+              id: task.id,
+              patch: { goal_id: goal.id }
+            });
+          }
+          setIsDraggedOver(false);
+        },
+      });
+    }, [goal.id, updateMutation]);
+
+    return (
+      <div
+        ref={ref}
+        className={`w-72 flex-shrink-0 card-brutal rounded-lg p-3 cursor-pointer transition-all hover:translate-y-[-2px] ${
+          isSelected ? 'ring-4 ring-offset-2 ring-teal-500' : ''
+        } ${isDraggedOver ? 'ring-4 ring-offset-2 ring-purple-500 scale-105' : ''}`}
+        onClick={() => onGoalClick(goal.id)}
+        style={{
+          background: isDraggedOver ? 'rgba(168, 85, 247, 0.1)' : 'var(--color-surface)'
+        }}
+      >
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <h4 className="font-bold text-sm flex-1 line-clamp-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text)' }}>
+            {goal.title}
+          </h4>
+          <div className="flex items-center gap-1 px-2 py-1 rounded-md border-2 border-black text-xs font-bold flex-shrink-0"
+               style={{ background: statusInfo.bg, color: statusInfo.text, fontFamily: 'var(--font-display)' }}>
+            <StatusIcon size={10} />
+          </div>
+        </div>
+
+        {goal.description && (
+          <p className="text-xs mb-2 line-clamp-2" style={{ color: 'var(--color-text-muted)' }}>
+            {goal.description}
+          </p>
+        )}
+
+        {goal.end_date && (
+          <div className="flex items-center gap-2 text-xs font-medium">
+            <span className="px-2 py-0.5 rounded-md border border-black text-xs"
+                  style={{ background: 'var(--color-background)', color: 'var(--color-text)' }}>
+              📅 {new Date(goal.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            </span>
+          </div>
+        )}
+
+        {isDraggedOver && (
+          <div className="mt-2 pt-2 border-t border-purple-500/30">
+            <div className="text-xs font-bold text-purple-700" style={{ fontFamily: 'var(--font-display)' }}>
+              Drop to set as parent goal
+            </div>
+          </div>
+        )}
+
+        {isSelected && !isDraggedOver && (
+          <div className="mt-2 pt-2 border-t border-black/10">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onClearFilter();
+              }}
+              className="text-xs font-bold px-2 py-1 rounded-md border-2 border-black"
+              style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}
+            >
+              Clear filter
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="mb-4">
       {/* Weekly Goals - The North Star */}
@@ -231,63 +329,17 @@ export default function TaskFilters({ filters, onFiltersChange, projects, goals,
             </span>
           </div>
 
-          <div className="overflow-x-auto -mx-4 px-4">
+          <div className="overflow-x-auto -mx-4 px-4 custom-scrollbar">
             <div className="flex gap-3 pb-2 min-w-min">
-              {weeklyGoals.map(goal => {
-                const statusInfo = getStatusInfo(goal.status);
-                const StatusIcon = statusInfo.icon;
-                const isSelected = filters.goal_id === goal.id;
-
-                return (
-                  <div
-                    key={goal.id}
-                    className={`w-72 flex-shrink-0 card-brutal rounded-lg p-3 cursor-pointer transition-all hover:translate-y-[-2px] ${
-                      isSelected ? 'ring-4 ring-offset-2 ring-teal-500' : ''
-                    }`}
-                    onClick={() => handleGoalClick(goal.id)}
-                  >
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <h4 className="font-bold text-sm flex-1 line-clamp-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text)' }}>
-                        {goal.title}
-                      </h4>
-                      <div className="flex items-center gap-1 px-2 py-1 rounded-md border-2 border-black text-xs font-bold flex-shrink-0"
-                           style={{ background: statusInfo.bg, color: statusInfo.text, fontFamily: 'var(--font-display)' }}>
-                        <StatusIcon size={10} />
-                      </div>
-                    </div>
-
-                    {goal.description && (
-                      <p className="text-xs mb-2 line-clamp-2" style={{ color: 'var(--color-text-muted)' }}>
-                        {goal.description}
-                      </p>
-                    )}
-
-                    {goal.end_date && (
-                      <div className="flex items-center gap-2 text-xs font-medium">
-                        <span className="px-2 py-0.5 rounded-md border border-black text-xs"
-                              style={{ background: 'var(--color-background)', color: 'var(--color-text)' }}>
-                          📅 {new Date(goal.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        </span>
-                      </div>
-                    )}
-
-                    {isSelected && (
-                      <div className="mt-2 pt-2 border-t border-black/10">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onFiltersChange({ ...filters, goal_id: undefined });
-                          }}
-                          className="text-xs font-bold px-2 py-1 rounded-md border-2 border-black"
-                          style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}
-                        >
-                          Clear filter
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {weeklyGoals.map(goal => (
+                <GoalCard
+                  key={goal.id}
+                  goal={goal}
+                  isSelected={filters.goal_id === goal.id}
+                  onGoalClick={handleGoalClick}
+                  onClearFilter={() => onFiltersChange({ ...filters, goal_id: undefined })}
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -392,30 +444,13 @@ export default function TaskFilters({ filters, onFiltersChange, projects, goals,
 
       {/* Expanded Filters */}
       {isExpanded && (
-        <div 
+        <div
           ref={filtersPanelRef}
           id="filters-panel"
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t"
           role="region"
           aria-label="Filter options"
         >
-          {/* Project Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Project</label>
-            <select
-              value={filters.project_id || ''}
-              onChange={(e) => handleProjectChange(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:border-transparent"
-            >
-              <option value="">All Projects</option>
-              {projects.map(project => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
           {/* Goal Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Goal</label>

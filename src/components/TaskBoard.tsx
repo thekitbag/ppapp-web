@@ -16,6 +16,7 @@ import { useTaskUpdateMutation } from '../hooks/useTaskMutation';
 import { useOptimisticCreate } from '../hooks/useOptimisticCreate';
 import QuickAdd from './QuickAdd';
 import OptimisticTaskCard from './OptimisticTaskCard';
+import confetti from 'canvas-confetti';
 
 function InfoBadge({ icon: Icon, label, colorClass }: { icon: React.ElementType, label: string, colorClass?: string }) {
   return (
@@ -27,31 +28,8 @@ function InfoBadge({ icon: Icon, label, colorClass }: { icon: React.ElementType,
   );
 }
 
-function ProjectChip({ project, colorClass }: { project: any, colorClass?: string }) {
-  const daysUntilMilestone = project?.milestone_due_at ?
-    Math.ceil((new Date(project.milestone_due_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : null
 
-  return (
-    <div className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md border-2 border-black font-medium ${colorClass || 'bg-blue-100 text-blue-800'}`}
-         style={{ fontFamily: 'var(--font-body)', boxShadow: '1px 1px 0px var(--color-border)' }}>
-      <div
-        className="w-2.5 h-2.5 rounded-sm border border-black"
-        style={{ backgroundColor: project?.color || '#3B82F6' }}
-      />
-      <span>{project?.name || 'Unknown Project'}</span>
-      {daysUntilMilestone !== null && daysUntilMilestone <= 14 && daysUntilMilestone >= 0 && (
-        <span className="text-xs border border-black px-1.5 py-0.5 rounded-md ml-1 font-bold"
-              style={{ background: 'var(--color-secondary)', color: 'var(--color-text)' }}>
-          {daysUntilMilestone === 0 ? 'Today' :
-           daysUntilMilestone === 1 ? '1d' :
-           `${daysUntilMilestone}d`}
-        </span>
-      )}
-    </div>
-  );
-}
-
-function TaskCard({ task, project, goal, index, isPending, onTaskDrop, onArchive, density = 'comfortable' }: { task: Task, project: any, goal: any, index: number, isPending?: boolean, onTaskDrop: (task: Task, newStatus: TaskStatus, targetIndex: number) => void, onArchive: (taskId: string) => void, density?: 'comfortable' | 'compact' }) {
+function TaskCard({ task, goal, index, isPending, onTaskDrop, onComplete, density = 'comfortable' }: { task: Task, goal: any, index: number, isPending?: boolean, onTaskDrop: (task: Task, newStatus: TaskStatus, targetIndex: number) => void, onComplete: (taskId: string) => void, density?: 'comfortable' | 'compact' }) {
   const ref = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dropPosition, setDropPosition] = useState<'before' | 'after' | null>(null);
@@ -253,11 +231,11 @@ function TaskCard({ task, project, goal, index, isPending, onTaskDrop, onArchive
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    onArchive(task.id);
+                    onComplete(task.id);
                   }}
                   className="p-1.5 rounded-md border-2 border-black transition-all hover:translate-y-[-2px]"
                   style={{ background: 'var(--color-surface)', boxShadow: '2px 2px 0px var(--color-border)' }}
-                  title="Complete task"
+                  title="Mark as done"
                   onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-accent)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
                 >
@@ -281,7 +259,7 @@ function TaskCard({ task, project, goal, index, isPending, onTaskDrop, onArchive
           </div>
         </div>
 
-        {/* Metadata Row - Chips wrapped with overflow handling */}
+        {/* Metadata Row - Goal chips */}
         {(() => {
           // Create a unique list of goals, combining goal_id and goals array
           const allGoals: { id: string; title: string }[] = [];
@@ -300,22 +278,17 @@ function TaskCard({ task, project, goal, index, isPending, onTaskDrop, onArchive
             });
           }
 
-          return (project || allGoals.length > 0) && (
+          return allGoals.length > 0 && (
             <div className="flex flex-wrap items-center gap-2">
-              {project && <ProjectChip project={project} />}
-              {allGoals.length > 0 && (
-                <div className="flex items-center gap-1 flex-wrap">
-                  {allGoals.slice(0, density === 'compact' ? 1 : 2).map(g => (
-                    <InfoBadge key={g.id} icon={Target} label={g.title} colorClass="bg-purple-100 text-purple-800" />
-                  ))}
-                  {allGoals.length > (density === 'compact' ? 1 : 2) && (
-                    <InfoBadge
-                      icon={Target}
-                      label={`+${allGoals.length - (density === 'compact' ? 1 : 2)}`}
-                      colorClass="bg-purple-100 text-purple-800"
-                    />
-                  )}
-                </div>
+              {allGoals.slice(0, density === 'compact' ? 1 : 2).map(g => (
+                <InfoBadge key={g.id} icon={Target} label={g.title} colorClass="bg-purple-100 text-purple-800" />
+              ))}
+              {allGoals.length > (density === 'compact' ? 1 : 2) && (
+                <InfoBadge
+                  icon={Target}
+                  label={`+${allGoals.length - (density === 'compact' ? 1 : 2)}`}
+                  colorClass="bg-purple-100 text-purple-800"
+                />
               )}
             </div>
           );
@@ -531,7 +504,6 @@ function TaskColumn({
   status,
   tasks,
   onTaskDrop,
-  projectsById,
   goalsById,
   patchMutation,
   onShowImport,
@@ -543,7 +515,6 @@ function TaskColumn({
   status: TaskStatus;
   tasks: Task[];
   onTaskDrop: (task: Task, newStatus: TaskStatus, targetIndex?: number) => void;
-  projectsById: any,
   goalsById: any,
   patchMutation: any,
   onShowImport?: () => void,
@@ -565,8 +536,15 @@ function TaskColumn({
     });
   }, []);
 
-  const handleArchive = (taskId: string) => {
-    patchMutation.mutate({ id: taskId, status: 'archived' as TaskStatus })
+  const handleComplete = (taskId: string) => {
+    // Trigger confetti animation
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 }
+    });
+
+    patchMutation.mutate({ id: taskId, status: 'done' as TaskStatus })
   }
 
   const handleQuickAdd = (title: string) => {
@@ -625,7 +603,7 @@ function TaskColumn({
         </div>
       )}
 
-      <div ref={scrollContainerRef} className="space-y-3 p-1 overflow-y-auto h-full">
+      <div ref={scrollContainerRef} className="space-y-3 p-1 overflow-y-auto h-full custom-scrollbar">
         {tasks.length === 0 && !onQuickAdd && (
           <EmptyColumnDropZone status={status} onTaskDrop={onTaskDrop} />
         )}
@@ -648,12 +626,11 @@ function TaskColumn({
             <TaskCard
               key={task.id}
               task={task}
-              project={projectsById[task.project_id!]}
               goal={goalsById[task.goal_id!]}
               index={index}
               isPending={patchMutation.isPending && patchMutation.variables?.id === task.id}
               onTaskDrop={onTaskDrop}
-              onArchive={handleArchive}
+              onComplete={handleComplete}
               density={density}
             />
           )
@@ -669,7 +646,6 @@ function TaskColumn({
   );
 }
 
-import { listProjects } from '../api/projects';
 import { listGoals } from '../api/goals';
 
 export default function TaskBoard() {
@@ -709,13 +685,8 @@ export default function TaskBoard() {
   const handleFiltersChange = useCallback((newFilters: TaskFilters) => {
     setFilters(newFilters);
   }, []);
-  const projectsQ = useQuery({ queryKey: qk.projects.all, queryFn: listProjects });
   const goalsQ = useQuery({ queryKey: qk.goals.all, queryFn: listGoals });
 
-  const projectsById = useMemo(() => {
-    if (!projectsQ.data || !Array.isArray(projectsQ.data)) return {};
-    return projectsQ.data.reduce((acc, p) => ({ ...acc, [p.id]: p }), {});
-  }, [projectsQ.data]);
   const goalsById = useMemo(() => {
     if (!goalsQ.data || !Array.isArray(goalsQ.data)) return {};
     return goalsQ.data.reduce((acc, g) => ({ ...acc, [g.id]: g }), {});
@@ -795,12 +766,21 @@ export default function TaskBoard() {
   function handleTaskDrop(task: Task, newStatus: TaskStatus, targetIndex?: number) {
     const oldStatus = task.status;
     const tasksInNewCol = columns.get(newStatus) || [];
-    
+
+    // Trigger confetti if moving to 'done' status
+    if (oldStatus !== 'done' && newStatus === 'done') {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    }
+
     // If no targetIndex provided, it's a legacy column drop (append to end)
     if (targetIndex === undefined) {
       if (oldStatus === newStatus) return;
       const newSortOrder = (tasksInNewCol[tasksInNewCol.length - 1]?.sort_order || 0) + 1000;
-      
+
       patchM.mutate({
         id: task.id,
         status: newStatus,
@@ -813,9 +793,9 @@ export default function TaskBoard() {
     let newSortOrder: number;
     const prevTask = tasksInNewCol[targetIndex - 1];
     const nextTask = tasksInNewCol[targetIndex];
-    
+
     newSortOrder = midpoint(prevTask?.sort_order, nextTask?.sort_order);
-    
+
     // If same column and same position, no need to update
     if (oldStatus === newStatus) {
       const currentIndex = tasksInNewCol.findIndex(t => t.id === task.id);
@@ -831,7 +811,7 @@ export default function TaskBoard() {
     });
   }
 
-  if (tasksQ.isLoading || projectsQ.isLoading || goalsQ.isLoading) {
+  if (tasksQ.isLoading || goalsQ.isLoading) {
     return <div>Loading...</div>;
   }
 
@@ -841,7 +821,6 @@ export default function TaskBoard() {
       <TaskFiltersComponent
         filters={filters}
         onFiltersChange={handleFiltersChange}
-        projects={projectsQ.data || []}
         goals={goalsQ.data || []}
         allTags={allTags}
         density={density}
@@ -851,7 +830,7 @@ export default function TaskBoard() {
       />
 
       {/* Task columns */}
-      <div ref={horizontalScrollRef} className="overflow-x-auto flex-1">
+      <div ref={horizontalScrollRef} className="overflow-x-auto flex-1 custom-scrollbar">
         <div className="min-w-[1200px] grid grid-flow-col auto-cols-[320px] gap-5 pb-6 h-full">
           {Array.from(columns.entries()).map(([status, tasks]) => (
           <TaskColumn
@@ -859,7 +838,6 @@ export default function TaskBoard() {
             status={status}
             tasks={tasks}
             onTaskDrop={handleTaskDrop}
-            projectsById={projectsById}
             goalsById={goalsById}
             patchMutation={patchM}
             onShowImport={status === 'backlog' ? () => setShowImportModal(true) : undefined}

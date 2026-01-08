@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { X, Save } from 'lucide-react'
+import { X, Save, Archive } from 'lucide-react'
 import { qk } from '../lib/queryKeys'
-import { listProjects } from '../api/projects'
 import { getGoalsTree } from '../api/goals'
 import { useTaskUpdateMutation } from '../hooks/useTaskMutation'
 import GoalPicker from './GoalPicker'
@@ -18,7 +17,6 @@ export default function TaskEditDrawer({ task, isOpen, onClose }: TaskEditDrawer
   const [formData, setFormData] = useState({
     title: task.title,
     description: task.description || '',
-    project_id: task.project_id || '',
     goal_id: task.goal_id || '',
     soft_due_at: task.soft_due_at ? new Date(task.soft_due_at).toISOString().slice(0, 16) : '',
     hard_due_at: task.hard_due_at ? new Date(task.hard_due_at).toISOString().slice(0, 16) : '',
@@ -27,12 +25,11 @@ export default function TaskEditDrawer({ task, isOpen, onClose }: TaskEditDrawer
     effort_minutes: task.effort_minutes?.toString() || '',
     tags: task.tags.join(', '),
   })
-  
+
   const [errors, setErrors] = useState<Record<string, string>>({})
   const dialogRef = useRef<HTMLDivElement>(null)
   const firstInputRef = useRef<HTMLInputElement>(null)
-  
-  const projectsQ = useQuery({ queryKey: qk.projects.all, queryFn: listProjects })
+
   const goalsTreeQ = useQuery({ queryKey: qk.goals.tree, queryFn: getGoalsTree })
   const updateMutation = useTaskUpdateMutation()
   
@@ -41,7 +38,6 @@ export default function TaskEditDrawer({ task, isOpen, onClose }: TaskEditDrawer
     setFormData({
       title: task.title,
       description: task.description || '',
-      project_id: task.project_id || '',
       goal_id: task.goal_id || '',
       soft_due_at: task.soft_due_at ? new Date(task.soft_due_at).toISOString().slice(0, 16) : '',
       hard_due_at: task.hard_due_at ? new Date(task.hard_due_at).toISOString().slice(0, 16) : '',
@@ -139,23 +135,30 @@ export default function TaskEditDrawer({ task, isOpen, onClose }: TaskEditDrawer
   
   const handleSave = () => {
     if (!validateForm()) return
-    
+
     const tags = formData.tags.split(',').map(t => t.trim()).filter(Boolean)
     const patch = {
       title: formData.title.trim(),
       description: formData.description.trim() || null,
-      project_id: formData.project_id || null,
       goal_id: formData.goal_id || null,
       soft_due_at: formData.soft_due_at ? new Date(formData.soft_due_at).toISOString() : null,
-      hard_due_at: formData.isHardDeadline && formData.soft_due_at 
-        ? new Date(formData.soft_due_at).toISOString() 
+      hard_due_at: formData.isHardDeadline && formData.soft_due_at
+        ? new Date(formData.soft_due_at).toISOString()
         : null,
       size: (formData.size as TaskSize) || null,
       effort_minutes: formData.effort_minutes ? Number(formData.effort_minutes) : null,
       tags,
     }
-    
+
     updateMutation.mutate({ id: task.id, patch }, {
+      onSuccess: () => {
+        onClose()
+      }
+    })
+  }
+
+  const handleArchive = () => {
+    updateMutation.mutate({ id: task.id, patch: { status: 'archived' } }, {
       onSuccess: () => {
         onClose()
       }
@@ -235,39 +238,18 @@ export default function TaskEditDrawer({ task, isOpen, onClose }: TaskEditDrawer
             />
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="edit-project" className="block text-sm font-medium text-gray-700 mb-1">
-                Project
-              </label>
-              <select
-                id="edit-project"
-                className="w-full border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary"
-                value={formData.project_id}
-                onChange={(e) => handleInputChange('project_id', e.target.value)}
-              >
-                <option value="">No project</option>
-                {projectsQ.data?.map(p => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            <div>
-              <label htmlFor="edit-goal" className="block text-sm font-medium text-gray-700 mb-1">
-                Goal
-              </label>
-              <GoalPicker
-                tree={goalsTreeQ.data || []}
-                value={formData.goal_id}
-                onChange={(goalId) => handleInputChange('goal_id', goalId)}
-                placeholder="Select a goal..."
-                className={`w-full ${errors.goal_id ? 'border-red-500' : ''}`}
-              />
-              {errors.goal_id && <p className="text-red-500 text-sm mt-1">{errors.goal_id}</p>}
-            </div>
+          <div>
+            <label htmlFor="edit-goal" className="block text-sm font-medium text-gray-700 mb-1">
+              Goal
+            </label>
+            <GoalPicker
+              tree={goalsTreeQ.data || []}
+              value={formData.goal_id}
+              onChange={(goalId) => handleInputChange('goal_id', goalId)}
+              placeholder="Select a goal..."
+              className={`w-full ${errors.goal_id ? 'border-red-500' : ''}`}
+            />
+            {errors.goal_id && <p className="text-red-500 text-sm mt-1">{errors.goal_id}</p>}
           </div>
           
           <div>
@@ -354,24 +336,36 @@ export default function TaskEditDrawer({ task, isOpen, onClose }: TaskEditDrawer
           </div>
         </div>
         
-        <div className="sticky bottom-0 bg-white border-t px-6 py-4 flex justify-end space-x-3 rounded-b-2xl">
+        <div className="sticky bottom-0 bg-white border-t px-6 py-4 flex justify-between rounded-b-2xl">
           <button
             type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+            onClick={handleArchive}
             disabled={updateMutation.isPending}
+            className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors flex items-center gap-2 border border-red-200"
+            title="Archive this task"
           >
-            Cancel
+            <Archive size={16} />
+            Archive
           </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={updateMutation.isPending}
-            className="px-4 py-2 bg-primary text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2"
-          >
-            <Save size={16} />
-            {updateMutation.isPending ? 'Saving...' : 'Save'}
-          </button>
+          <div className="flex space-x-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+              disabled={updateMutation.isPending}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={updateMutation.isPending}
+              className="px-4 py-2 bg-primary text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2"
+            >
+              <Save size={16} />
+              {updateMutation.isPending ? 'Saving...' : 'Save'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

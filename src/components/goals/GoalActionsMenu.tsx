@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
-import { MoreHorizontal, Edit, Archive, RotateCcw, Trash2 } from 'lucide-react'
+import { MoreHorizontal, Edit, Archive, RotateCcw, Trash2, CheckCircle } from 'lucide-react'
 import type { GoalNode } from '../../types'
 
 interface GoalActionsMenuProps {
   goal: GoalNode
   onEdit: () => void
   onClose: () => void
+  onArchive?: () => void
   onReopen?: () => void
   onDelete?: () => void
   disabled?: boolean
@@ -15,6 +16,7 @@ export default function GoalActionsMenu({
   goal,
   onEdit,
   onClose,
+  onArchive,
   onReopen,
   onDelete,
   disabled = false
@@ -98,12 +100,26 @@ export default function GoalActionsMenu({
                 <button
                   type="button"
                   onClick={() => handleAction(onClose)}
-                  className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                  className="w-full text-left px-3 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center gap-2"
                   role="menuitem"
+                  title="Mark goal as achieved/completed"
                 >
-                  <Archive size={14} />
+                  <CheckCircle size={14} />
                   Close Goal
                 </button>
+
+                {onArchive && (
+                  <button
+                    type="button"
+                    onClick={() => handleAction(onArchive)}
+                    className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                    role="menuitem"
+                    title="Archive goal (abandoned/cleanup)"
+                  >
+                    <Archive size={14} />
+                    Archive Goal
+                  </button>
+                )}
               </>
             )}
 
