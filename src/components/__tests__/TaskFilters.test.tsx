@@ -9,6 +9,11 @@ const mockGoals = [
   { id: 'goal-2', title: 'Goal Beta' }
 ]
 
+const mockProjects = [
+  { id: 'project-1', name: 'Project Alpha' },
+  { id: 'project-2', name: 'Project Beta' }
+]
+
 const mockAllTags = ['urgent', 'frontend', 'backend', 'testing']
 
 describe('TaskFilters Integration Tests', () => {
@@ -26,6 +31,7 @@ describe('TaskFilters Integration Tests', () => {
         filters={mockFilters}
         onFiltersChange={mockOnFiltersChange}
         goals={mockGoals}
+        projects={mockProjects}
         allTags={mockAllTags}
         taskCount={5}
         isLoading={false}

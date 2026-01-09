@@ -35,8 +35,13 @@ describe('TaskCard Quick Edit', () => {
     render(<TaskBoard />)
     
     await waitFor(() => {
-      const editButtons = screen.getAllByTitle('Edit task')
-      const completeButtons = screen.getAllByTitle('Complete task')
+      const buttons = screen.queryAllByRole('button')
+      console.log('Buttons found:', buttons.map(b => `label=${b.getAttribute('aria-label')} title=${b.title} text=${b.textContent}`))
+
+      // Use role query which is more robust
+      const editButtons = screen.getAllByRole('button', { name: /edit task/i })
+      // title attribute becomes the accessible name for icon-only buttons
+      const completeButtons = screen.getAllByRole('button', { name: /complete task/i })
       
       expect(editButtons.length).toBeGreaterThan(0)
       expect(completeButtons.length).toBeGreaterThan(0)

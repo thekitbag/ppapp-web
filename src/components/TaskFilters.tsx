@@ -9,6 +9,7 @@ interface TaskFiltersProps {
   filters: TaskFiltersType
   onFiltersChange: (filters: TaskFiltersType) => void
   goals: Array<{ id: string; title: string; type?: string | null; status?: GoalStatus | null; description?: string | null; end_date?: string | null; is_closed?: boolean }>
+  projects?: Array<{ id: string; name: string }>
   allTags: string[]
   density?: 'comfortable' | 'compact'
   onDensityChange?: (density: 'comfortable' | 'compact') => void
@@ -16,7 +17,7 @@ interface TaskFiltersProps {
   isLoading?: boolean
 }
 
-export default function TaskFilters({ filters, onFiltersChange, goals, allTags, density = 'comfortable', onDensityChange, taskCount, isLoading }: TaskFiltersProps) {
+export default function TaskFilters({ filters, onFiltersChange, goals, projects = [], allTags, density = 'comfortable', onDensityChange, taskCount, isLoading }: TaskFiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const filtersPanelRef = useRef<HTMLDivElement>(null)
   const filtersButtonRef = useRef<HTMLButtonElement>(null)
@@ -27,6 +28,10 @@ export default function TaskFilters({ filters, onFiltersChange, goals, allTags, 
 
   const handleGoalChange = (goalId: string) => {
     onFiltersChange({ ...filters, goal_id: goalId || undefined })
+  }
+
+  const handleProjectChange = (projectId: string) => {
+    onFiltersChange({ ...filters, project_id: projectId || undefined })
   }
 
   const handleTagChange = (tag: string) => {
@@ -168,6 +173,7 @@ export default function TaskFilters({ filters, onFiltersChange, goals, allTags, 
     return !!(
       filters.search ||
       filters.goal_id ||
+      filters.project_id ||
       filters.tags?.length ||
       filters.due_date_start ||
       filters.due_date_end
@@ -178,6 +184,7 @@ export default function TaskFilters({ filters, onFiltersChange, goals, allTags, 
     return [
       !!filters.search,
       !!filters.goal_id,
+      !!filters.project_id,
       !!(filters.tags?.length),
       !!(filters.due_date_start || filters.due_date_end)
     ].filter(Boolean).length
@@ -451,6 +458,23 @@ export default function TaskFilters({ filters, onFiltersChange, goals, allTags, 
           role="region"
           aria-label="Filter options"
         >
+          {/* Project Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Project</label>
+            <select
+              value={filters.project_id || ''}
+              onChange={(e) => handleProjectChange(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:border-transparent"
+            >
+              <option value="">All Projects</option>
+              {projects.map(project => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Goal Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Goal</label>

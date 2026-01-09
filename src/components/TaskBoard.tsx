@@ -231,11 +231,12 @@ function TaskCard({ task, goal, index, isPending, onTaskDrop, onComplete, densit
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    onComplete(task.id);
+                    onArchive(task.id);
                   }}
                   className="p-1.5 rounded-md border-2 border-black transition-all hover:translate-y-[-2px]"
                   style={{ background: 'var(--color-surface)', boxShadow: '2px 2px 0px var(--color-border)' }}
-                  title="Mark as done"
+                  title="Complete task"
+                  aria-label="Complete task"
                   onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-accent)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
                 >
@@ -249,6 +250,7 @@ function TaskCard({ task, goal, index, isPending, onTaskDrop, onComplete, densit
                   className="p-1.5 rounded-md border-2 border-black transition-all hover:translate-y-[-2px]"
                   style={{ background: 'var(--color-surface)', boxShadow: '2px 2px 0px var(--color-border)' }}
                   title="Edit task"
+                  aria-label="Edit task"
                   onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-primary)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
                 >
