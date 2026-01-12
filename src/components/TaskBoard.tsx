@@ -40,8 +40,11 @@ function TaskCard({ task, goal, index, isPending, onTaskDrop, onComplete, densit
     task.soft_due_at ? new Date(task.soft_due_at).toISOString().slice(0, 16) : ''
   );
   const [isHardDeadlineToggle, setIsHardDeadlineToggle] = useState(!!task.hard_due_at);
-  
+
   const updateMutation = useTaskUpdateMutation();
+
+  // Check if task has 'request' tag
+  const hasRequestTag = task.tags.some(tag => tag.toLowerCase() === 'request');
 
   useEffect(() => {
     const el = ref.current;
@@ -145,16 +148,18 @@ function TaskCard({ task, goal, index, isPending, onTaskDrop, onComplete, densit
       )}
       <div
         ref={ref}
-        className={`rounded-lg border-3 border-black transition-all flex flex-col ${
+        className={`rounded-lg border-3 transition-all flex flex-col ${
           density === 'compact' ? 'p-3 gap-2' : 'p-4 gap-3'
         } ${
           isDragging ? 'opacity-40 scale-95' : ''
         } ${isPending ? 'opacity-75' : ''} ${
           dropPosition ? 'ring-4 ring-offset-2 ring-teal-500' : ''
+        } ${
+          hasRequestTag ? 'border-orange-500' : 'border-black'
         }`}
         style={{
-          background: 'var(--color-surface)',
-          boxShadow: isDragging ? 'var(--shadow-subtle)' : 'var(--shadow-brutal)',
+          background: hasRequestTag ? 'linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)' : 'var(--color-surface)',
+          boxShadow: isDragging ? 'var(--shadow-subtle)' : hasRequestTag ? '4px 4px 0px #FB923C' : 'var(--shadow-brutal)',
           transform: isDragging ? 'rotate(-2deg)' : undefined
         }}
       >
@@ -295,6 +300,31 @@ function TaskCard({ task, goal, index, isPending, onTaskDrop, onComplete, densit
             </div>
           );
         })()}
+
+        {/* Tags Row */}
+        {task.tags.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {task.tags.map((tag, idx) => {
+              const isRequest = tag.toLowerCase() === 'request';
+              return (
+                <span
+                  key={idx}
+                  className={`text-xs px-2 py-1 rounded-md font-medium border-2 ${
+                    isRequest
+                      ? 'bg-orange-100 text-orange-800 border-orange-400'
+                      : 'bg-blue-100 text-blue-800 border-blue-300'
+                  }`}
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    boxShadow: isRequest ? '1px 1px 0px #FB923C' : '1px 1px 0px #3B82F6'
+                  }}
+                >
+                  {tag}
+                </span>
+              );
+            })}
+          </div>
+        )}
 
         {(task.soft_due_at || task.hard_due_at || isQuickEditing) && (
           <div className="border-t border-gray-200/80 pt-3 flex flex-col gap-2">
