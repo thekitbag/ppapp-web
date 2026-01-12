@@ -231,7 +231,7 @@ function TaskCard({ task, goal, index, isPending, onTaskDrop, onComplete, densit
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    onArchive(task.id);
+                    onComplete(task.id);
                   }}
                   className="p-1.5 rounded-md border-2 border-black transition-all hover:translate-y-[-2px]"
                   style={{ background: 'var(--color-surface)', boxShadow: '2px 2px 0px var(--color-border)' }}
