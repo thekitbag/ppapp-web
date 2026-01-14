@@ -97,3 +97,8 @@ export async function reopenGoal(id: string): Promise<Goal> {
 export async function deleteGoal(id: string): Promise<void> {
   await api.delete(`/goals/${id}`)
 }
+
+export async function reorderGoal(id: string, direction: 'up' | 'down'): Promise<Goal> {
+  const { data } = await api.post(`/goals/${id}/reorder`, { direction })
+  return data as Goal
+}
