@@ -27,6 +27,8 @@ interface GoalTreeVisualizationProps {
   onDelete?: (goal: GoalNode) => void
   onCreateGoal?: (type: 'annual' | 'quarterly' | 'weekly', parentId?: string) => void
   onTaskClick?: (task: Task) => void
+  onChangePriority?: (goalId: string, direction: 'up' | 'down') => void
+  isReordering?: boolean
   // Focus mode props
   focusedGoalId?: string | null
   treeMemberIds?: Set<string>
@@ -45,6 +47,8 @@ export default function GoalTreeVisualization({
   onDelete,
   onCreateGoal,
   onTaskClick,
+  onChangePriority,
+  isReordering = false,
   focusedGoalId,
   treeMemberIds,
   onGoalClick,
@@ -336,6 +340,7 @@ export default function GoalTreeVisualization({
                     <div className="flex-1 min-w-[320px]">
                       {row.annualGoal && (() => {
                         const goal = row.annualGoal
+                        const annualIndex = annualGoals.findIndex(g => g.id === goal.id)
                         return (
                           <div
                             className="relative"
@@ -362,6 +367,11 @@ export default function GoalTreeVisualization({
                                 onClose={() => onClose?.(goal)}
                                 onDelete={() => onDelete?.(goal)}
                                 childCount={getChildren(goal.id, quarterlyGoals).length}
+                                onIncreasePriority={() => onChangePriority?.(goal.id, 'up')}
+                                onDecreasePriority={() => onChangePriority?.(goal.id, 'down')}
+                                canMoveUp={annualIndex > 0}
+                                canMoveDown={annualIndex < annualGoals.length - 1}
+                                isReordering={isReordering}
                               />
 
                               {/* Add Quarterly Goal button */}
@@ -393,6 +403,7 @@ export default function GoalTreeVisualization({
                     <div className="flex-1 min-w-[320px]">
                       {row.quarterlyGoal && (() => {
                         const goal = row.quarterlyGoal
+                        const quarterlyIndex = quarterlyGoals.findIndex(g => g.id === goal.id)
                         return (
                           <div
                             className="relative"
@@ -419,6 +430,11 @@ export default function GoalTreeVisualization({
                                 onClose={() => onClose?.(goal)}
                                 onDelete={() => onDelete?.(goal)}
                                 childCount={getChildren(goal.id, weeklyGoals).length}
+                                onIncreasePriority={() => onChangePriority?.(goal.id, 'up')}
+                                onDecreasePriority={() => onChangePriority?.(goal.id, 'down')}
+                                canMoveUp={quarterlyIndex > 0}
+                                canMoveDown={quarterlyIndex < quarterlyGoals.length - 1}
+                                isReordering={isReordering}
                               />
 
                               {/* Add Weekly Goal button */}
@@ -450,6 +466,7 @@ export default function GoalTreeVisualization({
                     <div className="flex-1 min-w-[320px]">
                       {row.weeklyGoal && (() => {
                         const goal = row.weeklyGoal
+                        const weeklyIndex = weeklyGoals.findIndex(g => g.id === goal.id)
                         return (
                           <div
                             className="relative"
@@ -478,6 +495,11 @@ export default function GoalTreeVisualization({
                                 onTaskClick={onTaskClick}
                                 showTasks={true}
                                 childCount={0}
+                                onIncreasePriority={() => onChangePriority?.(goal.id, 'up')}
+                                onDecreasePriority={() => onChangePriority?.(goal.id, 'down')}
+                                canMoveUp={weeklyIndex > 0}
+                                canMoveDown={weeklyIndex < weeklyGoals.length - 1}
+                                isReordering={isReordering}
                               />
                             </div>
                           </div>

@@ -9,6 +9,7 @@ import {
   reopenGoal,
   deleteGoal,
   getClosedGoals,
+  reorderGoal,
   type CreateGoalInput
 } from '../api/goals'
 import { Target, Archive } from 'lucide-react'
@@ -115,9 +116,27 @@ export default function GoalsPage() {
     }
   })
 
+  const reorderM = useMutation({
+    mutationFn: ({ id, direction }: { id: string; direction: 'up' | 'down' }) =>
+      reorderGoal(id, direction),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.goals.all })
+      qc.invalidateQueries({ queryKey: qk.goals.tree })
+    },
+    onError: (err) => {
+      console.error('Failed to reorder goal:', err)
+    }
+  })
+
   // Handlers
   const handleStatusChange = (goalId: string, status: string) => {
     updateM.mutate({ id: goalId, status: status as GoalStatus })
+  }
+
+  const handleChangePriority = (goalId: string, direction: 'up' | 'down') => {
+    // Frontend is "dumb" - just send the direction to the backend
+    // Backend handles all the sort order calculation logic
+    reorderM.mutate({ id: goalId, direction })
   }
 
   const handleEndDateChange = (goalId: string, date: string) => {
@@ -274,6 +293,8 @@ export default function GoalsPage() {
                 onClose={handleCloseGoal}
                 onDelete={handleDeleteGoal}
                 onCreateGoal={handleCreateGoal}
+                onChangePriority={handleChangePriority}
+                isReordering={reorderM.isPending}
               />
             </div>
           </>
