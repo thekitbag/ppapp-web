@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { qk } from '../lib/queryKeys'
 import {
-  listGoals,
+  getGoalsTree,
   createGoal,
   updateGoal,
   closeGoal,
@@ -12,25 +12,15 @@ import {
   type CreateGoalInput
 } from '../api/goals'
 import { Target, Archive } from 'lucide-react'
-import ThreeColumnGoalView from './goals/ThreeColumnGoalView'
+import GoalTreeVisualization from './goals/GoalTreeVisualization'
+import SortControl from './goals/SortControl'
 import ClosedGoalsList from './goals/ClosedGoalsList'
 import GoalCreateModal from './goals/GoalCreateModal'
-import TaskEditDrawer from './TaskEditDrawer'
+import { getTreeMemberIds, type SortOption } from '../lib/goalTreeUtils'
 
-import type { GoalCadence, GoalStatus, Goal, Task } from '../types'
+import type { GoalCadence, GoalStatus, Goal, GoalNode } from '../types'
 
 type TabType = 'open' | 'closed'
-
-// Helper functions for optimistic updates
-function updateGoalInList(goals: Goal[], goalId: string, updates: Partial<Goal>): Goal[] {
-  return goals.map(goal =>
-    goal.id === goalId ? { ...goal, ...updates } : goal
-  )
-}
-
-function removeGoalFromList(goals: Goal[], goalId: string): Goal[] {
-  return goals.filter(goal => goal.id !== goalId)
-}
 
 export default function GoalsPage() {
   const qc = useQueryClient()
@@ -39,13 +29,16 @@ export default function GoalsPage() {
   const [createModalType, setCreateModalType] = useState<GoalCadence>('annual')
   const [createModalParentId, setCreateModalParentId] = useState<string | undefined>()
   const [editGoal, setEditGoal] = useState<Goal | undefined>()
-  const [selectedTask, setSelectedTask] = useState<Task | undefined>()
-  const [showTaskDrawer, setShowTaskDrawer] = useState(false)
 
-  // Queries - Using flat list instead of tree structure
-  const goalsQ = useQuery({
-    queryKey: qk.goals.all,
-    queryFn: listGoals
+  // Focus and sort state
+  const [focusedGoalId, setFocusedGoalId] = useState<string | null>(null)
+  const [sortBy, setSortBy] = useState<SortOption>('type')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+
+  // Queries - Using tree structure
+  const goalsTreeQ = useQuery({
+    queryKey: qk.goals.tree,
+    queryFn: getGoalsTree
   })
 
   const closedGoalsQ = useQuery({
@@ -54,68 +47,39 @@ export default function GoalsPage() {
     enabled: activeTab === 'closed'
   })
 
-  // Get only open goals for the 3-column view
-  const openGoals = goalsQ.data?.filter(goal => !goal.is_closed) || []
+  // Get only open goals for the tree view
+  const openGoalsTree = goalsTreeQ.data?.filter(goal => !goal.is_closed) || []
+
+  // Compute tree members when focus is active
+  const treeMemberIds = useMemo(() => {
+    if (!focusedGoalId || !openGoalsTree) return undefined
+    return getTreeMemberIds(focusedGoalId, openGoalsTree)
+  }, [focusedGoalId, openGoalsTree])
 
   // Mutations
   const updateM = useMutation({
     mutationFn: ({ id, ...input }: { id: string } & Partial<Goal>) =>
       updateGoal(id, input),
-    onMutate: async ({ id, ...input }) => {
-      await qc.cancelQueries({ queryKey: qk.goals.all })
-      const previousGoals = qc.getQueryData(qk.goals.all)
-
-      qc.setQueryData(qk.goals.all, (old: Goal[] | undefined) => {
-        if (!old) return old
-        return updateGoalInList(old, id, input)
-      })
-
-      return { previousGoals }
-    },
-    onError: (err, _variables, context) => {
-      if (context?.previousGoals) {
-        qc.setQueryData(qk.goals.all, context.previousGoals)
-      }
-      console.error('Failed to update goal:', err)
-    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.goals.all })
+      qc.invalidateQueries({ queryKey: qk.goals.tree })
       setShowCreateModal(false)
       setEditGoal(undefined)
+    },
+    onError: (err) => {
+      console.error('Failed to update goal:', err)
     }
   })
 
   const closeM = useMutation({
     mutationFn: closeGoal,
-    onMutate: async (goalId) => {
-      await qc.cancelQueries({ queryKey: qk.goals.all })
-      const previousGoals = qc.getQueryData(qk.goals.all)
-
-      // Optimistically remove from main list
-      qc.setQueryData(qk.goals.all, (old: Goal[] | undefined) => {
-        if (!old) return old
-        return removeGoalFromList(old, goalId)
-      })
-
-      // Optimistically add to closed list if we have that query cached
-      const closedGoal = goalsQ.data?.find(g => g.id === goalId)
-      if (closedGoal) {
-        qc.setQueryData(['goals', 'closed'], (old: Goal[] | undefined) => {
-          const updatedGoal = { ...closedGoal, is_closed: true, closed_at: new Date().toISOString() }
-          return [updatedGoal, ...(old || [])]
-        })
+    onSuccess: (_, goalId) => {
+      // Clear focus if the closed goal was focused
+      if (focusedGoalId === goalId) {
+        setFocusedGoalId(null)
       }
-
-      return { previousGoals }
-    },
-    onError: (err, _goalId, context) => {
-      if (context?.previousGoals) {
-        qc.setQueryData(qk.goals.all, context.previousGoals)
-      }
-      console.error('Failed to close goal:', err)
-    },
-    onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.goals.all })
+      qc.invalidateQueries({ queryKey: qk.goals.tree })
       qc.invalidateQueries({ queryKey: ['goals', 'closed'] })
     }
   })
@@ -124,6 +88,7 @@ export default function GoalsPage() {
     mutationFn: reopenGoal,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.goals.all })
+      qc.invalidateQueries({ queryKey: qk.goals.tree })
       qc.invalidateQueries({ queryKey: ['goals', 'closed'] })
     }
   })
@@ -132,6 +97,7 @@ export default function GoalsPage() {
     mutationFn: createGoal,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.goals.all })
+      qc.invalidateQueries({ queryKey: qk.goals.tree })
       setShowCreateModal(false)
       setEditGoal(undefined)
     }
@@ -139,26 +105,13 @@ export default function GoalsPage() {
 
   const deleteM = useMutation({
     mutationFn: deleteGoal,
-    onMutate: async (goalId) => {
-      await qc.cancelQueries({ queryKey: qk.goals.all })
-      const previousGoals = qc.getQueryData(qk.goals.all)
-
-      // Optimistically remove from main list
-      qc.setQueryData(qk.goals.all, (old: Goal[] | undefined) => {
-        if (!old) return old
-        return removeGoalFromList(old, goalId)
-      })
-
-      return { previousGoals }
-    },
-    onError: (err, _goalId, context) => {
-      if (context?.previousGoals) {
-        qc.setQueryData(qk.goals.all, context.previousGoals)
+    onSuccess: (_, goalId) => {
+      // Clear focus if the deleted goal was focused
+      if (focusedGoalId === goalId) {
+        setFocusedGoalId(null)
       }
-      console.error('Failed to delete goal:', err)
-    },
-    onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.goals.all })
+      qc.invalidateQueries({ queryKey: qk.goals.tree })
     }
   })
 
@@ -171,7 +124,7 @@ export default function GoalsPage() {
     updateM.mutate({ id: goalId, end_date: date })
   }
 
-  const handleCloseGoal = (goal: Goal) => {
+  const handleCloseGoal = (goal: GoalNode) => {
     closeM.mutate(goal.id)
   }
 
@@ -184,6 +137,11 @@ export default function GoalsPage() {
     setCreateModalType(type)
     setCreateModalParentId(parentId)
     setShowCreateModal(true)
+  }
+
+  const handleGoalClick = (goal: GoalNode) => {
+    // Toggle focus: click same goal to unfocus
+    setFocusedGoalId(prev => prev === goal.id ? null : goal.id)
   }
 
   const handleCreateSubmit = (data: CreateGoalInput) => {
@@ -204,22 +162,19 @@ export default function GoalsPage() {
     }
   }
 
-  const handleEditGoal = (goal: Goal) => {
-    setEditGoal(goal)
+  const handleEditGoal = (goal: GoalNode) => {
+    // Convert GoalNode to Goal for the modal
+    const { children, taskCount, ...goalData } = goal
+    setEditGoal(goalData as Goal)
     setCreateModalType(goal.type || 'annual')
     setCreateModalParentId(goal.parent_goal_id || undefined)
     setShowCreateModal(true)
   }
 
-  const handleDeleteGoal = (goal: Goal) => {
+  const handleDeleteGoal = (goal: GoalNode) => {
     if (window.confirm(`Are you sure you want to delete "${goal.title}"? This action cannot be undone.`)) {
       deleteM.mutate(goal.id)
     }
-  }
-
-  const handleTaskClick = (task: Task) => {
-    setSelectedTask(task)
-    setShowTaskDrawer(true)
   }
 
   return (
@@ -273,18 +228,55 @@ export default function GoalsPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 flex flex-col gap-4">
         {activeTab === 'open' ? (
-          <ThreeColumnGoalView
-            goals={openGoals}
-            onStatusChange={handleStatusChange}
-            onEndDateChange={handleEndDateChange}
-            onEdit={handleEditGoal}
-            onClose={handleCloseGoal}
-            onDelete={handleDeleteGoal}
-            onCreateGoal={handleCreateGoal}
-            onTaskClick={handleTaskClick}
-          />
+          <>
+            {/* Controls bar */}
+            <div className="flex items-center justify-between">
+              <SortControl
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                onSortChange={(by, order) => {
+                  setSortBy(by)
+                  setSortOrder(order)
+                }}
+              />
+
+              {focusedGoalId && (
+                <button
+                  onClick={() => setFocusedGoalId(null)}
+                  className="px-4 py-2 text-sm font-bold rounded-lg border-2 border-black transition-all hover:translate-y-[-1px]"
+                  style={{
+                    background: 'var(--color-secondary)',
+                    color: 'var(--color-text)',
+                    boxShadow: 'var(--shadow-subtle)',
+                    fontFamily: 'var(--font-display)'
+                  }}
+                >
+                  Clear Focus
+                </button>
+              )}
+            </div>
+
+            {/* Tree visualization */}
+            <div className="flex-1 rounded-xl border-3 border-black overflow-hidden"
+                 style={{ background: 'var(--color-background)', boxShadow: 'var(--shadow-brutal)' }}>
+              <GoalTreeVisualization
+                goals={openGoalsTree}
+                focusedGoalId={focusedGoalId}
+                treeMemberIds={treeMemberIds}
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                onGoalClick={handleGoalClick}
+                onStatusChange={handleStatusChange}
+                onEndDateChange={handleEndDateChange}
+                onEdit={handleEditGoal}
+                onClose={handleCloseGoal}
+                onDelete={handleDeleteGoal}
+                onCreateGoal={handleCreateGoal}
+              />
+            </div>
+          </>
         ) : (
           <div className="rounded-xl border-3 border-black overflow-hidden h-full"
                style={{ background: 'var(--color-surface)', boxShadow: 'var(--shadow-brutal)' }}>
@@ -310,18 +302,6 @@ export default function GoalsPage() {
         parentId={createModalParentId}
         editGoal={editGoal}
       />
-
-      {/* Task Edit Drawer */}
-      {selectedTask && (
-        <TaskEditDrawer
-          task={selectedTask}
-          isOpen={showTaskDrawer}
-          onClose={() => {
-            setShowTaskDrawer(false)
-            setSelectedTask(undefined)
-          }}
-        />
-      )}
     </div>
   )
 }
