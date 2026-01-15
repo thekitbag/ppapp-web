@@ -15,6 +15,8 @@ export default function TrelloImportModal({
   const qc = useQueryClient()
   const [dragActive, setDragActive] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [fileError, setFileError] = useState<string | null>(null)
+  const maxFileSizeBytes = 10 * 1024 * 1024
 
   const importM = useMutation({
     mutationFn: importTrello,
@@ -26,6 +28,7 @@ export default function TrelloImportModal({
       setTimeout(() => {
         onClose()
         setSelectedFile(null)
+        setFileError(null)
       }, 2000)
     }
   })
@@ -49,16 +52,52 @@ export default function TrelloImportModal({
     
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0]
-      if (file.type === 'application/json' || file.name.endsWith('.json') || 
-          file.type === 'text/csv' || file.name.endsWith('.csv')) {
-        setSelectedFile(file)
+      const isValidType =
+        file.type === 'application/json' ||
+        file.name.endsWith('.json') ||
+        file.type === 'text/csv' ||
+        file.name.endsWith('.csv')
+
+      if (!isValidType) {
+        setSelectedFile(null)
+        setFileError('Only JSON or CSV files are supported.')
+        return
       }
+
+      if (file.size > maxFileSizeBytes) {
+        setSelectedFile(null)
+        setFileError('File is too large. Please upload a file under 10 MB.')
+        return
+      }
+
+      setFileError(null)
+      setSelectedFile(file)
     }
   }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0])
+      const file = e.target.files[0]
+      const isValidType =
+        file.type === 'application/json' ||
+        file.name.endsWith('.json') ||
+        file.type === 'text/csv' ||
+        file.name.endsWith('.csv')
+
+      if (!isValidType) {
+        setSelectedFile(null)
+        setFileError('Only JSON or CSV files are supported.')
+        return
+      }
+
+      if (file.size > maxFileSizeBytes) {
+        setSelectedFile(null)
+        setFileError('File is too large. Please upload a file under 10 MB.')
+        return
+      }
+
+      setFileError(null)
+      setSelectedFile(file)
     }
   }
 
@@ -72,6 +111,7 @@ export default function TrelloImportModal({
     if (!importM.isPending) {
       onClose()
       setSelectedFile(null)
+      setFileError(null)
       importM.reset()
     }
   }
@@ -169,6 +209,9 @@ export default function TrelloImportModal({
                 </>
               )}
             </div>
+            {fileError && (
+              <p className="mt-3 text-sm text-red-600">{fileError}</p>
+            )}
 
             <div className="flex gap-3 mt-6">
               <button

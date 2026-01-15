@@ -40,12 +40,14 @@ describe('GoalsPage', () => {
 
     // Should show at least one status pill
     await waitFor(() => {
-      expect(screen.getByText('On Target')).toBeInTheDocument()
+      const statusButtons = screen.getAllByRole('button', { name: /current status: on target/i })
+      expect(statusButtons.length).toBeGreaterThan(0)
     })
 
     // Should show at least one date
     await waitFor(() => {
-      expect(screen.getByText(/Dec 31, 2024/)).toBeInTheDocument()
+      const datePickers = screen.getAllByLabelText(/End date:/i)
+      expect(datePickers.length).toBeGreaterThan(0)
     })
   })
 
@@ -90,32 +92,16 @@ describe('GoalsPage', () => {
     })
   })
 
-  it('shows quarterly goals when annual goal is selected', async () => {
-    const user = userEvent.setup()
+  it('shows quarterly and weekly goals for the annual goal', async () => {
     render(<GoalsPage />)
 
     await waitFor(() => {
       expect(screen.getByText('Test Annual Goal')).toBeInTheDocument()
     })
 
-    // Initially, quarterly column should show "Select an Annual goal" message
-    expect(screen.getByText('Select an Annual goal to view Quarterly goals')).toBeInTheDocument()
-
-    // Click on the annual goal card to select it
-    const annualGoalCard = screen.getByText('Test Annual Goal').closest('div')
-    await user.click(annualGoalCard!)
-
-    // Should now show quarterly goals in the middle column
+    // Quarterly and weekly goals should be visible in the tree view
     await waitFor(() => {
       expect(screen.getByText('Test Quarterly Goal')).toBeInTheDocument()
-    })
-
-    // Click on quarterly goal to show weekly goals
-    const quarterlyGoalCard = screen.getByText('Test Quarterly Goal').closest('div')
-    await user.click(quarterlyGoalCard!)
-
-    // Should now show weekly goals in the right column
-    await waitFor(() => {
       expect(screen.getByText('Test Weekly Goal')).toBeInTheDocument()
     })
   })
@@ -252,10 +238,11 @@ describe('GoalsPage', () => {
     })
 
     // Should show quick-add button for annual goals
-    expect(screen.getByText('Add Annual Goal')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Add' })).toBeInTheDocument()
 
-    // Initially should not show quarterly add button (no annual selected)
-    expect(screen.queryByText('Add Quarterly Goal')).not.toBeInTheDocument()
+    // Should show quick-add buttons for quarterly and weekly goals
+    expect(screen.getAllByRole('button', { name: /Quarterly/i }).length).toBeGreaterThan(0)
+    expect(screen.getAllByRole('button', { name: /Weekly/i }).length).toBeGreaterThan(0)
   })
 
   it('shows delete confirmation when delete is clicked', async () => {

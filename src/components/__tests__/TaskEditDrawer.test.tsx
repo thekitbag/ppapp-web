@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '../../test/utils'
 import userEvent from '@testing-library/user-event'
 import TaskEditDrawer from '../TaskEditDrawer'
-import { Task } from '../../types'
+import { Task, type GoalNode } from '../../types'
 import { http, HttpResponse } from 'msw'
 import { server } from '../../test/mocks/server'
 import { getGoalsTree } from '../../api/goals'
@@ -14,8 +14,15 @@ const mockProjects = [
   { id: '1', name: 'Test Project', color: '#000000' }
 ]
 
-const mockGoalsTree = [
-  { id: '1', title: 'Test Annual Goal', children: [] }
+const mockGoalsTree: GoalNode[] = [
+  {
+    id: '1',
+    title: 'Test Annual Goal',
+    type: 'annual',
+    status: 'on_target',
+    created_at: '2023-01-01T00:00:00.000Z',
+    children: []
+  }
 ]
 
 const mockTask: Task = {

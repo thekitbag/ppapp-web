@@ -13,4 +13,6 @@ export const api = axios.create({
   baseURL: apiBaseUrl,
   headers: { 'Content-Type': 'application/json' },
   withCredentials: true, // Send cookies with requests
+  timeout: 15000,
+  timeoutErrorMessage: 'Request timed out',
 })
