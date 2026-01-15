@@ -3,6 +3,16 @@ import { beforeAll, afterEach, afterAll } from 'vitest'
 import { cleanup } from '@testing-library/react'
 import { server } from './mocks/server'
 
+class ResizeObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+if (typeof window !== 'undefined' && !window.ResizeObserver) {
+  window.ResizeObserver = ResizeObserverMock as unknown as typeof ResizeObserver
+}
+
 // Start server before all tests
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
 

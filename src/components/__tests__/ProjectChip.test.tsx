@@ -1,37 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
-
-// We need to extract the ProjectChip component to test it separately
-// For now, let's create a simple test component that mimics the ProjectChip functionality
-function ProjectChip({ project, colorClass }: { project: any, colorClass?: string }) {
-  const daysUntilMilestone = project?.milestone_due_at ? (() => {
-    const today = new Date()
-    const milestone = new Date(project.milestone_due_at)
-    
-    // Reset both dates to midnight for accurate day comparison
-    today.setHours(0, 0, 0, 0)
-    milestone.setHours(0, 0, 0, 0)
-    
-    return Math.floor((milestone.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-  })() : null
-
-  return (
-    <div className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-full ${colorClass || 'bg-blue-100 text-blue-800'}`}>
-      <div 
-        className="w-2.5 h-2.5 rounded-full"
-        style={{ backgroundColor: project?.color || '#3B82F6' }}
-      />
-      <span>{project?.name || 'Unknown Project'}</span>
-      {daysUntilMilestone !== null && daysUntilMilestone <= 14 && daysUntilMilestone >= 0 && (
-        <span className="text-xs bg-orange-500 text-white px-1.5 py-0.5 rounded-full ml-1">
-          {daysUntilMilestone === 0 ? 'Today' : 
-           daysUntilMilestone === 1 ? '1d' : 
-           `${daysUntilMilestone}d`}
-        </span>
-      )}
-    </div>
-  );
-}
+import ProjectChip from '../ProjectChip'
 
 describe('ProjectChip', () => {
   it('renders project name with default color', () => {
