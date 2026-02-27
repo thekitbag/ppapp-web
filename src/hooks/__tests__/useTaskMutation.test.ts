@@ -20,7 +20,7 @@ describe('useTaskUpdateMutation', () => {
       tags: ['updated'],
       status: 'week',
       sort_order: 1,
-      size: 'l',
+      size: 8,
       project_id: '1',
       goal_id: '1',
       hard_due_at: null,
@@ -146,7 +146,7 @@ describe('useTaskUpdateMutation', () => {
         title: 'Another Title',
         description: 'New description',
         tags: ['new', 'tags'],
-        size: 'xl'
+        size: 13
       }
     })
     
@@ -155,7 +155,7 @@ describe('useTaskUpdateMutation', () => {
         title: 'Another Title',
         description: 'New description', 
         tags: ['new', 'tags'],
-        size: 'xl'
+        size: 13
       })
     })
   })

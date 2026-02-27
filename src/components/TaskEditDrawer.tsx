@@ -21,7 +21,7 @@ export default function TaskEditDrawer({ task, isOpen, onClose }: TaskEditDrawer
     soft_due_at: task.soft_due_at ? new Date(task.soft_due_at).toISOString().slice(0, 16) : '',
     hard_due_at: task.hard_due_at ? new Date(task.hard_due_at).toISOString().slice(0, 16) : '',
     isHardDeadline: !!task.hard_due_at,
-    size: task.size || '',
+    size: task.size?.toString() || '',
     effort_minutes: task.effort_minutes?.toString() || '',
     tags: task.tags.join(', '),
   })
@@ -42,7 +42,7 @@ export default function TaskEditDrawer({ task, isOpen, onClose }: TaskEditDrawer
       soft_due_at: task.soft_due_at ? new Date(task.soft_due_at).toISOString().slice(0, 16) : '',
       hard_due_at: task.hard_due_at ? new Date(task.hard_due_at).toISOString().slice(0, 16) : '',
       isHardDeadline: !!task.hard_due_at,
-      size: task.size || '',
+      size: task.size?.toString() || '',
       effort_minutes: task.effort_minutes?.toString() || '',
       tags: task.tags.join(', '),
     })
@@ -145,7 +145,7 @@ export default function TaskEditDrawer({ task, isOpen, onClose }: TaskEditDrawer
       hard_due_at: formData.isHardDeadline && formData.soft_due_at
         ? new Date(formData.soft_due_at).toISOString()
         : null,
-      size: (formData.size as TaskSize) || null,
+      size: formData.size ? (parseInt(formData.size) as TaskSize) : null,
       effort_minutes: formData.effort_minutes ? Number(formData.effort_minutes) : null,
       tags,
     }
@@ -293,11 +293,13 @@ export default function TaskEditDrawer({ task, isOpen, onClose }: TaskEditDrawer
                 onChange={(e) => handleInputChange('size', e.target.value)}
               >
                 <option value="">No size set</option>
-                <option value="xs">XS - Very Small</option>
-                <option value="s">S - Small</option>
-                <option value="m">M - Medium</option>
-                <option value="l">L - Large</option>
-                <option value="xl">XL - Very Large</option>
+                <option value="1">1 — Trivial</option>
+                <option value="2">2 — Small</option>
+                <option value="3">3 — Easy</option>
+                <option value="5">5 — Medium</option>
+                <option value="8">8 — Large</option>
+                <option value="13">13 — Complex</option>
+                <option value="21">21 — Very Complex</option>
               </select>
             </div>
             

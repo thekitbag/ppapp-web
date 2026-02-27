@@ -39,7 +39,7 @@ export default function TaskEditor({ task, defaultStatus = 'week', isOpen, onClo
     soft_due_at: task?.soft_due_at ? new Date(task.soft_due_at).toISOString().slice(0, 16) : '',
     hard_due_at: task?.hard_due_at ? new Date(task.hard_due_at).toISOString().slice(0, 16) : '',
     isHardDeadline: !!task?.hard_due_at,
-    size: task?.size || '',
+    size: task?.size?.toString() || '',
     effort_minutes: task?.effort_minutes?.toString() || '',
     tags: task?.tags.join(', ') || '',
     status: task?.status || defaultStatus,
@@ -58,7 +58,7 @@ export default function TaskEditor({ task, defaultStatus = 'week', isOpen, onClo
         soft_due_at: task?.soft_due_at ? new Date(task.soft_due_at).toISOString().slice(0, 16) : '',
         hard_due_at: task?.hard_due_at ? new Date(task.hard_due_at).toISOString().slice(0, 16) : '',
         isHardDeadline: !!task?.hard_due_at,
-        size: task?.size || '',
+        size: task?.size?.toString() || '',
         effort_minutes: task?.effort_minutes?.toString() || '',
         tags: task?.tags.join(', ') || '',
         status: task?.status || defaultStatus,
@@ -148,7 +148,7 @@ export default function TaskEditor({ task, defaultStatus = 'week', isOpen, onClo
       goal_id: formData.goal_id || null,
       soft_due_at: formData.soft_due_at ? new Date(formData.soft_due_at).toISOString() : null,
       hard_due_at: formData.isHardDeadline && formData.hard_due_at ? new Date(formData.hard_due_at).toISOString() : null,
-      size: (formData.size as TaskSize) || null,
+      size: formData.size ? (parseInt(formData.size) as TaskSize) : null,
       effort_minutes: formData.effort_minutes ? parseInt(formData.effort_minutes) : null,
       tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
       status: formData.status,
@@ -332,11 +332,13 @@ export default function TaskEditor({ task, defaultStatus = 'week', isOpen, onClo
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">No size</option>
-                <option value="xs">XS</option>
-                <option value="s">S</option>
-                <option value="m">M</option>
-                <option value="l">L</option>
-                <option value="xl">XL</option>
+                <option value="1">1 — Trivial</option>
+                <option value="2">2 — Small</option>
+                <option value="3">3 — Easy</option>
+                <option value="5">5 — Medium</option>
+                <option value="8">8 — Large</option>
+                <option value="13">13 — Complex</option>
+                <option value="21">21 — Very Complex</option>
               </select>
             </div>
 

@@ -11,7 +11,7 @@ const mockTask: Task = {
   tags: ['tag1'],
   status: 'week',
   sort_order: 1,
-  size: 'm',
+  size: 5,
   project_id: null,
   goal_id: null,
   hard_due_at: null,

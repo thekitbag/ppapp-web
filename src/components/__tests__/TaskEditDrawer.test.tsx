@@ -32,7 +32,7 @@ const mockTask: Task = {
   tags: ['tag1', 'tag2'],
   status: 'week',
   sort_order: 1,
-  size: 'm',
+  size: 5,
   project_id: '1',
   goal_id: '1',
   hard_due_at: '2023-12-25T23:59:00.000Z',
@@ -78,7 +78,7 @@ describe('TaskEditDrawer', () => {
     expect(screen.getByDisplayValue('Test description')).toBeInTheDocument()
     expect(screen.getByDisplayValue('tag1, tag2')).toBeInTheDocument()
     expect(screen.getByDisplayValue('90')).toBeInTheDocument()
-    expect(screen.getByRole('combobox', { name: /size/i })).toHaveValue('m')
+    expect(screen.getByRole('combobox', { name: /size/i })).toHaveValue('5')
   })
 
   it('shows hard deadline toggle when task has hard deadline', () => {

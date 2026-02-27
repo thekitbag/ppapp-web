@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Task, TaskStatus } from '../types';
+import { Task, TaskSize, TaskStatus } from '../types';
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
@@ -8,12 +8,16 @@ import TaskEditDrawer from './TaskEditDrawer';
 import { useTaskUpdateMutation } from '../hooks/useTaskMutation';
 import InfoBadge from './InfoBadge';
 
+const FIBONACCI_SIZES: TaskSize[] = [1, 2, 3, 5, 8, 13, 21];
+
 export default function TaskCard({ task, goal, index, isPending, onTaskDrop, onComplete, density = 'comfortable' }: { task: Task, goal: any, index: number, isPending?: boolean, onTaskDrop: (task: Task, newStatus: TaskStatus, targetIndex: number) => void, onComplete: (taskId: string) => void, density?: 'comfortable' | 'compact' }) {
   const ref = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dropPosition, setDropPosition] = useState<'before' | 'after' | null>(null);
   const [isQuickEditing, setIsQuickEditing] = useState(false);
   const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
+  const [isSizePicking, setIsSizePicking] = useState(false);
+  const sizeRef = useRef<HTMLDivElement>(null);
   const [quickEditTitle, setQuickEditTitle] = useState(task.title);
   const [quickEditDate, setQuickEditDate] = useState(
     task.soft_due_at ? new Date(task.soft_due_at).toISOString().slice(0, 16) : ''
@@ -119,6 +123,23 @@ export default function TaskCard({ task, goal, index, isPending, onTaskDrop, onC
     setIsHardDeadlineToggle(!!task.hard_due_at);
   }, [task.title, task.soft_due_at, task.hard_due_at]);
 
+  // Close size picker when clicking outside
+  useEffect(() => {
+    if (!isSizePicking) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (sizeRef.current && !sizeRef.current.contains(e.target as Node)) {
+        setIsSizePicking(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isSizePicking]);
+
+  const handleSizeSelect = (size: TaskSize | null) => {
+    updateMutation.mutate({ id: task.id, patch: { size } });
+    setIsSizePicking(false);
+  };
+
   return (
     <div className="relative">
       {dropPosition === 'before' && (
@@ -211,36 +232,20 @@ export default function TaskCard({ task, goal, index, isPending, onTaskDrop, onC
                 </button>
               </>
             ) : (
-              <>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onComplete(task.id);
-                  }}
-                  className="p-1.5 rounded-md border-2 border-black transition-all hover:translate-y-[-2px]"
-                  style={{ background: 'var(--color-surface)', boxShadow: '2px 2px 0px var(--color-border)' }}
-                  title="Complete task"
-                  aria-label="Complete task"
-                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-accent)'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
-                >
-                  <CheckCircle size={16} style={{ color: 'var(--color-text-muted)' }} />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsEditDrawerOpen(true);
-                  }}
-                  className="p-1.5 rounded-md border-2 border-black transition-all hover:translate-y-[-2px]"
-                  style={{ background: 'var(--color-surface)', boxShadow: '2px 2px 0px var(--color-border)' }}
-                  title="Edit task"
-                  aria-label="Edit task"
-                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-primary)'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
-                >
-                  <Edit size={16} style={{ color: 'var(--color-text-muted)' }} />
-                </button>
-              </>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsEditDrawerOpen(true);
+                }}
+                className="p-1.5 rounded-md border-2 border-black transition-all hover:translate-y-[-2px]"
+                style={{ background: 'var(--color-surface)', boxShadow: '2px 2px 0px var(--color-border)' }}
+                title="Edit task"
+                aria-label="Edit task"
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-primary)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
+              >
+                <Edit size={16} style={{ color: 'var(--color-text-muted)' }} />
+              </button>
             )}
           </div>
         </div>
@@ -302,6 +307,81 @@ export default function TaskCard({ task, goal, index, isPending, onTaskDrop, onC
                 </span>
               );
             })}
+          </div>
+        )}
+
+        {/* Size picker + done button */}
+        {!isQuickEditing && (
+          <div className="flex items-center justify-between">
+          <div ref={sizeRef} className="flex items-center" onClick={(e) => e.stopPropagation()}>
+            {isSizePicking ? (
+              <div className="flex items-center gap-1 flex-wrap">
+                <span className="text-xs font-medium mr-0.5" style={{ color: 'var(--color-text-muted)' }}>Points:</span>
+                {FIBONACCI_SIZES.map(n => (
+                  <button
+                    key={n}
+                    onClick={() => handleSizeSelect(n)}
+                    className="text-xs flex items-center justify-center rounded border-2 border-black font-mono font-bold transition-all hover:translate-y-[-1px]"
+                    style={{
+                      minWidth: n > 9 ? '26px' : '22px',
+                      height: '22px',
+                      background: task.size === n ? '#FCD34D' : 'var(--color-surface)',
+                      boxShadow: task.size === n ? '1px 1px 0px #000' : '1px 1px 0px var(--color-border)',
+                    }}
+                  >
+                    {n}
+                  </button>
+                ))}
+                {task.size && (
+                  <button
+                    onClick={() => handleSizeSelect(null)}
+                    title="Clear size"
+                    className="flex items-center justify-center rounded border border-gray-300 hover:border-red-400 transition-colors"
+                    style={{ width: '22px', height: '22px', color: 'var(--color-text-muted)' }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = '#EF4444'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-muted)'}
+                  >
+                    <X size={10} />
+                  </button>
+                )}
+              </div>
+            ) : (
+              <button
+                onClick={() => setIsSizePicking(true)}
+                className="text-xs px-1.5 rounded border-2 font-mono font-bold transition-all hover:translate-y-[-1px]"
+                style={task.size ? {
+                  borderColor: '#000',
+                  background: '#FCD34D',
+                  color: '#000',
+                  boxShadow: '1px 1px 0px #000',
+                  height: '22px',
+                } : {
+                  borderStyle: 'dashed',
+                  borderColor: 'var(--color-border)',
+                  color: 'var(--color-border)',
+                  background: 'transparent',
+                  height: '22px',
+                }}
+                title={task.size ? `${task.size} points — click to change` : 'Set story points'}
+              >
+                {task.size ?? '·'}
+              </button>
+            )}
+          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onComplete(task.id);
+            }}
+            className="p-1.5 rounded-md border-2 border-black transition-all hover:translate-y-[-2px]"
+            style={{ background: 'var(--color-surface)', boxShadow: '2px 2px 0px var(--color-border)' }}
+            title="Complete task"
+            aria-label="Complete task"
+            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-accent)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
+          >
+            <CheckCircle size={16} style={{ color: 'var(--color-text-muted)' }} />
+          </button>
           </div>
         )}
 

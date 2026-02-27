@@ -1,6 +1,6 @@
 export type TaskStatus = 'backlog' | 'doing' | 'week' | 'done' | 'waiting' | 'today' | 'archived'
 
-export type TaskSize = 'xs' | 's' | 'm' | 'l' | 'xl'
+export type TaskSize = 1 | 2 | 3 | 5 | 8 | 13 | 21
 
 export type GoalCadence = 'annual' | 'quarterly' | 'weekly'
 
