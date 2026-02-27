@@ -1,6 +1,12 @@
 export default function ProjectChip({ project, colorClass }: { project: any, colorClass?: string }) {
-  const daysUntilMilestone = project?.milestone_due_at ?
-    Math.ceil((new Date(project.milestone_due_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : null
+  const daysUntilMilestone = (() => {
+    if (!project?.milestone_due_at) return null
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const due = new Date(project.milestone_due_at)
+    const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate())
+    return Math.round((dueDay.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  })()
 
   return (
     <div className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md border-2 border-black font-medium ${colorClass || 'bg-blue-100 text-blue-800'}`}
