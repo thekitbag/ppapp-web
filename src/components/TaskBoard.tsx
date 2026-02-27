@@ -231,7 +231,7 @@ function TaskColumn({
                     color: 'var(--color-text)',
                     fontFamily: 'var(--font-display)'
                   }}>
-              {tasks.length}
+              {tasks.reduce((sum, t) => sum + (t.size ?? 0), 0)}
             </span>
           </div>
         </div>
