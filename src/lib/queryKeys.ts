@@ -18,4 +18,8 @@ export const qk = {
     byType: (type: string, parentId?: string) => ['goals', 'type', type, parentId] as const,
     detail: (id: string) => ['goals', id] as const,
   },
+  reports: {
+    summary: (params: { start_date: string; end_date: string }) =>
+      ['reports', 'summary', params] as const,
+  },
 };

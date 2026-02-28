@@ -7,11 +7,12 @@ import ProjectsPage from './components/ProjectsPage'
 import GoalsPage from './components/GoalsPage'
 import GoalDetailPage from './components/GoalDetailPage'
 import ArchivePage from './components/ArchivePage'
+import ReportingPage from './components/ReportingPage'
 import LoginPage from './components/LoginPage'
 export default function App() {
   // All hooks must be called before any early returns
   const { isAuthenticated, isLoading, user, logout, requiresLogin, login, devLogin } = useAuth()
-  const [currentView, setCurrentView] = useState<'tasks' | 'projects' | 'goals' | 'archive'>('tasks')
+  const [currentView, setCurrentView] = useState<'tasks' | 'projects' | 'goals' | 'archive' | 'insights'>('tasks')
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null)
   const [showGlobalTaskEditor, setShowGlobalTaskEditor] = useState(false)
   const t = useToaster()
@@ -186,6 +187,22 @@ export default function App() {
             >
               Archive
             </button>
+            <button
+              onClick={() => setCurrentView('insights')}
+              className={`px-6 py-3 rounded-lg font-bold transition-all border-3 border-black ${
+                currentView === 'insights'
+                  ? 'translate-y-[-2px]'
+                  : 'hover:translate-y-[-2px]'
+              }`}
+              style={{
+                fontFamily: 'var(--font-display)',
+                background: currentView === 'insights' ? '#7C3AED' : 'var(--color-surface)',
+                color: currentView === 'insights' ? 'white' : 'var(--color-text)',
+                boxShadow: currentView === 'insights' ? 'var(--shadow-brutal)' : 'var(--shadow-subtle)'
+              }}
+            >
+              Insights
+            </button>
           </nav>
         </div>
       </header>
@@ -219,6 +236,8 @@ export default function App() {
           <ProjectsPage />
         ) : currentView === 'archive' ? (
           <ArchivePage />
+        ) : currentView === 'insights' ? (
+          <ReportingPage />
         ) : currentView === 'goals' && selectedGoalId ? (
           <GoalDetailPage
             goalId={selectedGoalId}

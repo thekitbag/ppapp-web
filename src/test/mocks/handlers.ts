@@ -298,6 +298,34 @@ export const handlers = [
   }),
 
 
+  // Reports endpoints
+  http.get('/api/v1/reports/summary', ({ request }) => {
+    const url = new URL(request.url)
+    const start_date = url.searchParams.get('start_date') ?? ''
+    const end_date = url.searchParams.get('end_date') ?? ''
+    return HttpResponse.json({
+      impact_score: 21,
+      start_date,
+      end_date,
+      groups: [
+        {
+          goal_id: '1',
+          goal_title: 'Test Annual Goal',
+          total_size: 13,
+          task_count: 4,
+          completed_task_count: 3,
+        },
+        {
+          goal_id: null,
+          goal_title: null,
+          total_size: 8,
+          task_count: 3,
+          completed_task_count: 2,
+        },
+      ],
+    })
+  }),
+
   // Recommendations endpoints
   http.get('/api/v1/recommendations/next', () => {
     return HttpResponse.json({

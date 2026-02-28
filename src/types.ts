@@ -74,3 +74,18 @@ export interface GoalNode extends Goal {
   children: GoalNode[]
   taskCount?: number
 }
+
+export interface GoalGroup {
+  goal_id: string | null
+  goal_title: string | null
+  total_size: number
+  task_count: number
+  completed_task_count: number
+}
+
+export interface ReportSummary {
+  impact_score: number
+  start_date: string
+  end_date: string
+  groups: GoalGroup[]
+}
