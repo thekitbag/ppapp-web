@@ -8,6 +8,7 @@ import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element
 import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
 import { Upload } from 'lucide-react';
 import TrelloImportModal from './TrelloImportModal';
+import TaskSuggestionModal from './TaskSuggestionModal';
 import TaskFiltersComponent from './TaskFilters';
 import { useOptimisticCreate } from '../hooks/useOptimisticCreate';
 import QuickAdd from './QuickAdd';
@@ -151,6 +152,7 @@ function TaskColumn({
   goalsById,
   patchMutation,
   onShowImport,
+  onShowSuggest,
   density = 'comfortable',
   onQuickAdd,
   onOptimisticRetry,
@@ -162,6 +164,7 @@ function TaskColumn({
   goalsById: any,
   patchMutation: any,
   onShowImport?: () => void,
+  onShowSuggest?: () => void,
   density?: 'comfortable' | 'compact',
   onQuickAdd?: (status: TaskStatus, title: string) => void,
   onOptimisticRetry?: (tempId: string) => void,
@@ -223,6 +226,21 @@ function TaskColumn({
                 onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
               >
                 <Upload size={16} style={{ color: 'var(--color-text)' }} />
+              </button>
+            )}
+            {status === 'today' && onShowSuggest && (
+              <button
+                onClick={onShowSuggest}
+                className="px-3 py-1.5 rounded-md border-2 border-black text-xs font-bold transition-all hover:translate-y-[-2px]"
+                style={{
+                  background: 'var(--color-primary)',
+                  color: 'white',
+                  boxShadow: '2px 2px 0px var(--color-border)',
+                  fontFamily: 'var(--font-display)',
+                }}
+                aria-label="Suggest Task"
+              >
+                Suggest Task
               </button>
             )}
             <span className="text-sm font-bold rounded-md px-3 py-1 border-2 border-black"
@@ -408,6 +426,7 @@ export default function TaskBoard() {
 
   // Modal state and functionality
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showSuggestionModal, setShowSuggestionModal] = useState(false);
 
   const handleQuickAdd = (status: TaskStatus, title: string) => {
     optimisticCreate.quickAdd(status, title, debouncedFilters);
@@ -499,6 +518,7 @@ export default function TaskBoard() {
             goalsById={goalsById}
             patchMutation={patchM}
             onShowImport={status === 'backlog' ? () => setShowImportModal(true) : undefined}
+            onShowSuggest={status === 'today' ? () => setShowSuggestionModal(true) : undefined}
             onQuickAdd={handleQuickAdd}
             onOptimisticRetry={handleOptimisticRetry}
             onOptimisticCancel={handleOptimisticCancel}
@@ -512,6 +532,12 @@ export default function TaskBoard() {
       <TrelloImportModal
         open={showImportModal}
         onClose={() => setShowImportModal(false)}
+      />
+
+      {/* Task Suggestion Modal */}
+      <TaskSuggestionModal
+        open={showSuggestionModal}
+        onClose={() => setShowSuggestionModal(false)}
       />
     </div>
   );

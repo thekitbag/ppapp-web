@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { server } from '../../test/mocks/server'
 import { http, HttpResponse } from 'msw'
-import { listRecommendations, suggestWeek } from '../recommendations'
+import { listRecommendations, suggestWeek, getNextRecommendations } from '../recommendations'
 
 describe('Recommendations API', () => {
   describe('listRecommendations', () => {
@@ -178,6 +178,125 @@ describe('Recommendations API', () => {
       
       expect(Array.isArray(suggestions)).toBe(true)
       expect(suggestions.length).toBe(0)
+    })
+  })
+
+  describe('getNextRecommendations', () => {
+    it('sends energy and time_window query params', async () => {
+      let capturedParams: Record<string, string> = {}
+
+      server.use(
+        http.get('/api/v1/recommendations/next', ({ request }) => {
+          const url = new URL(request.url)
+          capturedParams = {
+            energy: url.searchParams.get('energy') ?? '',
+            time_window: url.searchParams.get('time_window') ?? '',
+            limit: url.searchParams.get('limit') ?? '',
+          }
+          return HttpResponse.json({ items: [] })
+        })
+      )
+
+      await getNextRecommendations({ energy: 'high', time_window: 60 })
+
+      expect(capturedParams.energy).toBe('high')
+      expect(capturedParams.time_window).toBe('60')
+      expect(capturedParams.limit).toBe('5')
+    })
+
+    it('sends custom limit', async () => {
+      let capturedLimit = ''
+
+      server.use(
+        http.get('/api/v1/recommendations/next', ({ request }) => {
+          const url = new URL(request.url)
+          capturedLimit = url.searchParams.get('limit') ?? ''
+          return HttpResponse.json({ items: [] })
+        })
+      )
+
+      await getNextRecommendations({ energy: 'low', time_window: 30, limit: 3 })
+
+      expect(capturedLimit).toBe('3')
+    })
+
+    it('returns items array from response', async () => {
+      server.use(
+        http.get('/api/v1/recommendations/next', () =>
+          HttpResponse.json({
+            items: [
+              {
+                task: {
+                  id: '1',
+                  title: 'Focus task',
+                  status: 'backlog',
+                  sort_order: 1000,
+                  tags: [],
+                  project_id: null,
+                  goal_id: null,
+                  hard_due_at: null,
+                  soft_due_at: null,
+                  effort_minutes: 30,
+                  created_at: '2023-01-01T00:00:00Z',
+                  updated_at: '2023-01-01T00:00:00Z',
+                },
+                score: 0.85,
+                factors: {},
+                why: 'Good fit for your energy',
+              },
+            ],
+          })
+        )
+      )
+
+      const items = await getNextRecommendations({ energy: 'medium', time_window: 120 })
+
+      expect(items.length).toBe(1)
+      expect(items[0].task.title).toBe('Focus task')
+      expect(items[0].why).toBe('Good fit for your energy')
+    })
+
+    it('handles empty response gracefully', async () => {
+      server.use(
+        http.get('/api/v1/recommendations/next', () =>
+          HttpResponse.json({ items: [] })
+        )
+      )
+
+      const items = await getNextRecommendations({ energy: 'low', time_window: 15 })
+
+      expect(Array.isArray(items)).toBe(true)
+      expect(items.length).toBe(0)
+    })
+
+    it('handles malformed response gracefully', async () => {
+      server.use(
+        http.get('/api/v1/recommendations/next', () =>
+          HttpResponse.json({})
+        )
+      )
+
+      const items = await getNextRecommendations({ energy: 'high', time_window: 240 })
+
+      expect(Array.isArray(items)).toBe(true)
+      expect(items.length).toBe(0)
+    })
+
+    it('supports all energy levels', async () => {
+      const energyLevels = ['low', 'medium', 'high'] as const
+
+      for (const energy of energyLevels) {
+        let captured = ''
+        server.use(
+          http.get('/api/v1/recommendations/next', ({ request }) => {
+            captured = new URL(request.url).searchParams.get('energy') ?? ''
+            return HttpResponse.json({ items: [] })
+          })
+        )
+
+        await getNextRecommendations({ energy, time_window: 30 })
+        expect(captured).toBe(energy)
+      }
     })
   })
 })
