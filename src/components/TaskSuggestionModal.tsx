@@ -23,24 +23,66 @@ const TIME_WINDOWS: TimeWindowOption[] = [
   { label: '4h+', minutes: 240 },
 ]
 
-function RecommendationCard({ item }: { item: RecommendationItem }) {
+function SkeletonCard() {
+  return (
+    <div
+      className="rounded-xl border-3 border-black p-4 animate-pulse"
+      style={{ background: 'var(--color-surface)', boxShadow: 'var(--shadow-subtle)' }}
+      aria-hidden="true"
+    >
+      <div className="h-4 rounded-md mb-3 w-3/4" style={{ background: 'var(--color-border)' }} />
+      <div
+        className="pl-3"
+        style={{ borderLeft: '3px solid var(--color-border)' }}
+      >
+        <div className="space-y-2">
+          <div className="h-3 rounded-md w-full" style={{ background: 'var(--color-border)' }} />
+          <div className="h-3 rounded-md w-5/6" style={{ background: 'var(--color-border)' }} />
+          <div className="h-3 rounded-md w-2/3" style={{ background: 'var(--color-border)' }} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function RecommendationCard({ item, onSelect }: { item: RecommendationItem; onSelect: () => void }) {
   return (
     <div
       className="rounded-xl border-3 border-black p-4"
       style={{ background: 'var(--color-surface)', boxShadow: 'var(--shadow-subtle)' }}
     >
-      <p
-        className="font-bold mb-2"
-        style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text)' }}
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <p
+          className="font-bold text-base"
+          style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text)' }}
+        >
+          {item.task.title}
+        </p>
+        <button
+          onClick={onSelect}
+          className="flex-shrink-0 px-3 py-1.5 rounded-lg border-2 border-black text-sm font-bold transition-all hover:translate-y-[-2px]"
+          style={{
+            background: 'var(--color-primary)',
+            color: 'white',
+            boxShadow: '2px 2px 0px var(--color-border)',
+            fontFamily: 'var(--font-display)',
+          }}
+          aria-label={`Start ${item.task.title}`}
+        >
+          Start
+        </button>
+      </div>
+      <div
+        className="pl-3"
+        style={{ borderLeft: '3px solid var(--color-primary)' }}
       >
-        {item.task.title}
-      </p>
-      <p
-        className="text-sm"
-        style={{ color: 'var(--color-text-muted)' }}
-      >
-        {item.why}
-      </p>
+        <p
+          className="text-sm leading-relaxed"
+          style={{ color: 'var(--color-text)' }}
+        >
+          {item.why}
+        </p>
+      </div>
     </div>
   )
 }
@@ -48,9 +90,11 @@ function RecommendationCard({ item }: { item: RecommendationItem }) {
 export default function TaskSuggestionModal({
   open,
   onClose,
+  onSelectTask,
 }: {
   open: boolean
   onClose: () => void
+  onSelectTask: (taskId: string) => void
 }) {
   const [step, setStep] = useState<Step>('energy')
   const [energy, setEnergy] = useState<EnergyLevel | null>(null)
@@ -100,6 +144,11 @@ export default function TaskSuggestionModal({
     if (energy !== null && timeWindow !== null) {
       fetchSuggestions(energy, timeWindow)
     }
+  }
+
+  const handleSelect = (taskId: string) => {
+    onSelectTask(taskId)
+    onClose()
   }
 
   const handleBack = () => {
@@ -278,24 +327,15 @@ export default function TaskSuggestionModal({
                 )}
               </div>
 
-              {/* Loading */}
+              {/* Loading — skeleton cards */}
               {isLoading && (
-                <div
-                  className="rounded-xl border-3 border-black p-10 text-center"
-                  role="status"
-                  aria-label="Loading suggestions"
-                >
-                  <div
-                    className="w-10 h-10 border-4 border-black rounded-full animate-spin mx-auto mb-3"
-                    style={{ borderTopColor: 'var(--color-primary)' }}
-                    aria-hidden="true"
-                  />
-                  <p
-                    className="font-bold"
-                    style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text)' }}
-                  >
-                    Finding your best tasks...
-                  </p>
+                <div role="status" aria-label="Loading suggestions">
+                  <span className="sr-only">Finding your best tasks...</span>
+                  <div className="space-y-3">
+                    <SkeletonCard />
+                    <SkeletonCard />
+                    <SkeletonCard />
+                  </div>
                 </div>
               )}
 
@@ -339,7 +379,11 @@ export default function TaskSuggestionModal({
               {!isLoading && !isError && results && results.length > 0 && (
                 <div className="space-y-3">
                   {results.map((item, i) => (
-                    <RecommendationCard key={item.task.id ?? i} item={item} />
+                    <RecommendationCard
+                      key={item.task.id ?? i}
+                      item={item}
+                      onSelect={() => handleSelect(item.task.id)}
+                    />
                   ))}
                 </div>
               )}

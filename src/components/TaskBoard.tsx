@@ -538,6 +538,7 @@ export default function TaskBoard() {
       <TaskSuggestionModal
         open={showSuggestionModal}
         onClose={() => setShowSuggestionModal(false)}
+        onSelectTask={(taskId) => patchM.mutate({ id: taskId, status: 'doing' })}
       />
     </div>
   );
