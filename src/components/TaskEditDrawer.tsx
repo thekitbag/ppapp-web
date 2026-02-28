@@ -22,7 +22,6 @@ export default function TaskEditDrawer({ task, isOpen, onClose }: TaskEditDrawer
     hard_due_at: task.hard_due_at ? new Date(task.hard_due_at).toISOString().slice(0, 16) : '',
     isHardDeadline: !!task.hard_due_at,
     size: task.size?.toString() || '',
-    effort_minutes: task.effort_minutes?.toString() || '',
     tags: task.tags.join(', '),
   })
 
@@ -43,7 +42,6 @@ export default function TaskEditDrawer({ task, isOpen, onClose }: TaskEditDrawer
       hard_due_at: task.hard_due_at ? new Date(task.hard_due_at).toISOString().slice(0, 16) : '',
       isHardDeadline: !!task.hard_due_at,
       size: task.size?.toString() || '',
-      effort_minutes: task.effort_minutes?.toString() || '',
       tags: task.tags.join(', '),
     })
     setErrors({})
@@ -125,10 +123,6 @@ export default function TaskEditDrawer({ task, isOpen, onClose }: TaskEditDrawer
       }
     }
     
-    if (formData.effort_minutes && (isNaN(Number(formData.effort_minutes)) || Number(formData.effort_minutes) < 0)) {
-      newErrors.effort_minutes = 'Effort must be a positive number'
-    }
-    
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -146,7 +140,6 @@ export default function TaskEditDrawer({ task, isOpen, onClose }: TaskEditDrawer
         ? new Date(formData.soft_due_at).toISOString()
         : null,
       size: formData.size ? (parseInt(formData.size) as TaskSize) : null,
-      effort_minutes: formData.effort_minutes ? Number(formData.effort_minutes) : null,
       tags,
     }
 
@@ -281,45 +274,25 @@ export default function TaskEditDrawer({ task, isOpen, onClose }: TaskEditDrawer
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="edit-size" className="block text-sm font-medium text-gray-700 mb-1">
-                Size/Complexity
-              </label>
-              <select
-                id="edit-size"
-                className="w-full border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary"
-                value={formData.size}
-                onChange={(e) => handleInputChange('size', e.target.value)}
-              >
-                <option value="">No size set</option>
-                <option value="1">1 — Trivial</option>
-                <option value="2">2 — Small</option>
-                <option value="3">3 — Easy</option>
-                <option value="5">5 — Medium</option>
-                <option value="8">8 — Large</option>
-                <option value="13">13 — Complex</option>
-                <option value="21">21 — Very Complex</option>
-              </select>
-            </div>
-            
-            <div>
-              <label htmlFor="edit-effort" className="block text-sm font-medium text-gray-700 mb-1">
-                Effort (minutes)
-              </label>
-              <input
-                id="edit-effort"
-                type="number"
-                min="0"
-                className={`w-full border rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary ${
-                  errors.effort_minutes ? 'border-red-500' : 'border-gray-300'
-                }`}
-                value={formData.effort_minutes}
-                onChange={(e) => handleInputChange('effort_minutes', e.target.value)}
-                placeholder="e.g. 90"
-              />
-              {errors.effort_minutes && <p className="text-red-500 text-sm mt-1">{errors.effort_minutes}</p>}
-            </div>
+          <div>
+            <label htmlFor="edit-size" className="block text-sm font-medium text-gray-700 mb-1">
+              Size/Complexity
+            </label>
+            <select
+              id="edit-size"
+              className="w-full border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary"
+              value={formData.size}
+              onChange={(e) => handleInputChange('size', e.target.value)}
+            >
+              <option value="">No size set</option>
+              <option value="1">1 — Trivial</option>
+              <option value="2">2 — Small</option>
+              <option value="3">3 — Easy</option>
+              <option value="5">5 — Medium</option>
+              <option value="8">8 — Large</option>
+              <option value="13">13 — Complex</option>
+              <option value="21">21 — Very Complex</option>
+            </select>
           </div>
           
           <div>

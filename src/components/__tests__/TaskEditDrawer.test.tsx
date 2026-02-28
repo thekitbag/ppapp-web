@@ -37,7 +37,6 @@ const mockTask: Task = {
   goal_id: '1',
   hard_due_at: '2023-12-25T23:59:00.000Z',
   soft_due_at: '2023-12-31T23:59:00.000Z',
-  effort_minutes: 90,
   created_at: '2023-01-01T00:00:00.000Z',
   updated_at: '2023-01-01T00:00:00.000Z',
 }
@@ -77,7 +76,6 @@ describe('TaskEditDrawer', () => {
     expect(screen.getByDisplayValue('Test Task')).toBeInTheDocument()
     expect(screen.getByDisplayValue('Test description')).toBeInTheDocument()
     expect(screen.getByDisplayValue('tag1, tag2')).toBeInTheDocument()
-    expect(screen.getByDisplayValue('90')).toBeInTheDocument()
     expect(screen.getByRole('combobox', { name: /size/i })).toHaveValue('5')
   })
 
@@ -156,20 +154,6 @@ describe('TaskEditDrawer', () => {
     await user.click(saveButton)
     
     expect(screen.getByText('Date is required when marked as hard deadline')).toBeInTheDocument()
-  })
-
-  it('validates effort minutes as positive number', async () => {
-    const user = userEvent.setup()
-    render(<TaskEditDrawer task={mockTask} isOpen={true} onClose={mockOnClose} />)
-    
-    const effortInput = screen.getByLabelText(/effort/i)
-    const saveButton = screen.getByRole('button', { name: /save/i })
-    
-    await user.clear(effortInput)
-    await user.type(effortInput, '-10')
-    await user.click(saveButton)
-    
-    expect(screen.getByText('Effort must be a positive number')).toBeInTheDocument()
   })
 
   it('validates past hard deadline', async () => {

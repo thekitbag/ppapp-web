@@ -1,5 +1,5 @@
 import { api } from './client'
-import type { Task, TaskStatus } from '../types'
+import type { Task, TaskSize, TaskStatus } from '../types'
 import { BUCKETS } from '../constants'
 
 export interface TaskFilters {
@@ -10,6 +10,8 @@ export interface TaskFilters {
   tags?: string[]
   due_date_start?: string
   due_date_end?: string
+  /** Client-side only — never sent to the API */
+  sizes?: Array<TaskSize | 'unsized'>
 }
 
 export async function listTasks(filters: TaskFilters = {}): Promise<Task[]> {

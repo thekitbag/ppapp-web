@@ -25,7 +25,6 @@ describe('useTaskUpdateMutation', () => {
       goal_id: '1',
       hard_due_at: null,
       soft_due_at: '2023-12-31T23:59:00.000Z',
-      effort_minutes: 120,
       created_at: '2023-01-01T00:00:00.000Z',
       updated_at: '2023-01-02T00:00:00.000Z',
     })
@@ -171,7 +170,6 @@ describe('useTaskUpdateMutation', () => {
         goal_id: null,
         hard_due_at: null,
         soft_due_at: null,
-        effort_minutes: null,
         size: null
       }
     })
@@ -183,7 +181,6 @@ describe('useTaskUpdateMutation', () => {
         goal_id: null,
         hard_due_at: null,
         soft_due_at: null,
-        effort_minutes: null,
         size: null
       })
     })

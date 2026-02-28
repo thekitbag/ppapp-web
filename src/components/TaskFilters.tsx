@@ -1,7 +1,9 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { Search, X, Filter, LayoutGrid, List, Target, CheckCircle2, AlertTriangle, XCircle as XCircleIcon } from 'lucide-react'
 import type { TaskFilters as TaskFiltersType } from '../api/tasks'
-import type { GoalStatus, Task } from '../types'
+import type { GoalStatus, Task, TaskSize } from '../types'
+
+const FIBONACCI_SIZES: TaskSize[] = [1, 2, 3, 5, 8, 13, 21]
 import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 import { useTaskUpdateMutation } from '../hooks/useTaskMutation'
 
@@ -48,6 +50,14 @@ export default function TaskFilters({ filters, onFiltersChange, goals, projects 
       due_date_start: start || undefined,
       due_date_end: end || undefined
     })
+  }
+
+  const handleSizeChange = (size: TaskSize | 'unsized') => {
+    const current = filters.sizes || []
+    const next = current.includes(size)
+      ? current.filter(s => s !== size)
+      : [...current, size]
+    onFiltersChange({ ...filters, sizes: next.length > 0 ? next : undefined })
   }
 
   const getDatePresets = () => {
@@ -176,7 +186,8 @@ export default function TaskFilters({ filters, onFiltersChange, goals, projects 
       filters.project_id ||
       filters.tags?.length ||
       filters.due_date_start ||
-      filters.due_date_end
+      filters.due_date_end ||
+      filters.sizes?.length
     )
   }, [filters])
 
@@ -186,7 +197,8 @@ export default function TaskFilters({ filters, onFiltersChange, goals, projects 
       !!filters.goal_id,
       !!filters.project_id,
       !!(filters.tags?.length),
-      !!(filters.due_date_start || filters.due_date_end)
+      !!(filters.due_date_start || filters.due_date_end),
+      !!(filters.sizes?.length)
     ].filter(Boolean).length
   }, [filters])
 
@@ -490,6 +502,51 @@ export default function TaskFilters({ filters, onFiltersChange, goals, projects 
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Size Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Size / Story Points</label>
+            <div className="flex flex-wrap gap-1.5">
+              {FIBONACCI_SIZES.map(size => {
+                const isActive = filters.sizes?.includes(size)
+                return (
+                  <button
+                    key={size}
+                    onClick={() => handleSizeChange(size)}
+                    className="h-8 min-w-[2rem] px-1.5 text-sm font-mono font-bold rounded-md border-2 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    style={isActive ? {
+                      borderColor: '#000',
+                      background: '#FCD34D',
+                      color: '#000',
+                    } : {
+                      borderColor: '#D1D5DB',
+                      background: '#F9FAFB',
+                      color: '#374151',
+                    }}
+                  >
+                    {size}
+                  </button>
+                )
+              })}
+              <button
+                onClick={() => handleSizeChange('unsized')}
+                className="h-8 px-2 text-sm font-medium rounded-md border-2 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                style={filters.sizes?.includes('unsized') ? {
+                  borderColor: '#000',
+                  background: '#FCD34D',
+                  color: '#000',
+                } : {
+                  borderStyle: 'dashed',
+                  borderColor: '#D1D5DB',
+                  background: '#F9FAFB',
+                  color: '#6B7280',
+                }}
+                title="Tasks with no size set"
+              >
+                No size
+              </button>
+            </div>
           </div>
 
           {/* Date Range */}

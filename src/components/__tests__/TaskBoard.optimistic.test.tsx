@@ -100,7 +100,6 @@ describe.skip('TaskBoard Optimistic Creation Integration', () => {
       goal_id: null,
       hard_due_at: null,
       soft_due_at: null,
-      effort_minutes: null,
       created_at: '2023-01-01T00:00:00Z',
       updated_at: '2023-01-01T00:00:00Z',
     }
@@ -148,7 +147,6 @@ describe.skip('TaskBoard Optimistic Creation Integration', () => {
       project_id: null,
       goal_id: null,
       size: null,
-      effort_minutes: null,
       soft_due_at: null,
       hard_due_at: null,
       client_request_id: 'test-uuid-123',
@@ -214,7 +212,6 @@ describe.skip('TaskBoard Optimistic Creation Integration', () => {
         goal_id: null,
         hard_due_at: null,
         soft_due_at: null,
-        effort_minutes: null,
         created_at: '2023-01-01T00:00:00Z',
         updated_at: '2023-01-01T00:00:00Z',
       } as Task)
@@ -324,7 +321,6 @@ describe.skip('TaskBoard Optimistic Creation Integration', () => {
         goal_id: null,
         hard_due_at: null,
         soft_due_at: null,
-        effort_minutes: null,
         created_at: '2023-01-01T00:00:00Z',
         updated_at: '2023-01-01T00:00:00Z',
       } as Task)
@@ -429,7 +425,6 @@ describe.skip('TaskBoard Optimistic Creation Integration', () => {
       goal_id: null,
       hard_due_at: null,
       soft_due_at: null,
-      effort_minutes: null,
       created_at: '2023-01-01T00:00:00Z',
       updated_at: '2023-01-01T00:00:00Z',
     } as Task)

@@ -157,7 +157,6 @@ export default function WeeklyGoalTaskList({ goalId, onTaskClick }: WeeklyGoalTa
         goal_id: goalId,
         hard_due_at: null,
         soft_due_at: null,
-        effort_minutes: null,
         client_request_id: clientRequestId
       })
 
@@ -189,7 +188,7 @@ export default function WeeklyGoalTaskList({ goalId, onTaskClick }: WeeklyGoalTa
         goal_id: goalId,
         hard_due_at: null,
         soft_due_at: null,
-        effort_minutes: null,
+        completed_at: null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }

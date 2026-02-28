@@ -73,12 +73,6 @@ export default function SuggestWeekModal({ open, tasks, onClose, onConfirm, isLo
                         <div className="font-medium text-gray-900 mb-2">{task.title}</div>
                         
                         <div className="flex flex-wrap items-center gap-2 text-sm">
-                          {task.effort_minutes && (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs">
-                              ⏱️ {task.effort_minutes}min
-                            </span>
-                          )}
-                          
                           {task.soft_due_at && (
                             <span className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
                               <Calendar size={12} />

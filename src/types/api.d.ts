@@ -331,9 +331,7 @@ export interface components {
             /** Description */
             description?: string | null;
             /** Size */
-            size?: ("xs" | "s" | "m" | "l" | "xl") | null;
-            /** Effort Minutes */
-            effort_minutes?: number | null;
+            size?: (1 | 2 | 3 | 5 | 8 | 13 | 21) | null;
             /** Hard Due At */
             hard_due_at?: string | null;
             /** Soft Due At */
@@ -370,12 +368,12 @@ export interface components {
              * @default []
              */
             tags: string[];
-            /** Effort Minutes */
-            effort_minutes?: number | null;
             /** Hard Due At */
             hard_due_at?: string | null;
             /** Soft Due At */
             soft_due_at?: string | null;
+            /** Completed At */
+            completed_at?: string | null;
             /** Project Id */
             project_id?: string | null;
             /** Goal Id */

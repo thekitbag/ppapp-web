@@ -15,7 +15,6 @@ interface OptimisticCreateRequest {
     project_id?: string | null
     goal_id?: string | null
     size?: TaskSize | null
-    effort_minutes?: number | null
     soft_due_at?: string | null
     hard_due_at?: string | null
   }
@@ -52,7 +51,6 @@ export function useOptimisticCreate(config: OptimisticCreateConfig = {}) {
       project_id?: string | null
       goal_id?: string | null
       size?: TaskSize | null
-      effort_minutes?: number | null
       soft_due_at?: string | null
       hard_due_at?: string | null
     } = {}
@@ -77,7 +75,7 @@ export function useOptimisticCreate(config: OptimisticCreateConfig = {}) {
       goals: undefined,
       hard_due_at: options.hard_due_at || null,
       soft_due_at: options.soft_due_at || null,
-      effort_minutes: options.effort_minutes || null,
+      completed_at: null,
       created_at: now,
       updated_at: now,
       __optimistic: true,
@@ -227,7 +225,6 @@ export function useOptimisticCreate(config: OptimisticCreateConfig = {}) {
         project_id: optimisticTask.project_id,
         goal_id: optimisticTask.goal_id,
         size: optimisticTask.size as TaskSize | null | undefined,
-        effort_minutes: optimisticTask.effort_minutes,
         soft_due_at: optimisticTask.soft_due_at,
         hard_due_at: optimisticTask.hard_due_at,
       },

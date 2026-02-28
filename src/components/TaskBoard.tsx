@@ -320,12 +320,18 @@ export default function TaskBoard() {
     return () => clearTimeout(timer);
   }, [filters]);
   
+  // Strip client-side-only fields before sending to API / using as query key
+  const apiFilters = useMemo(() => {
+    const { sizes: _sizes, ...rest } = debouncedFilters;
+    return rest;
+  }, [debouncedFilters]);
+
   const tasksQ = useQuery({
-    queryKey: ['tasks', 'filtered', debouncedFilters],
-    queryFn: () => listTasks(debouncedFilters),
+    queryKey: ['tasks', 'filtered', apiFilters],
+    queryFn: () => listTasks(apiFilters),
     select: (data) => data.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)),
   });
-  
+
   const handleFiltersChange = useCallback((newFilters: TaskFilters) => {
     setFilters(newFilters);
   }, []);
@@ -336,7 +342,15 @@ export default function TaskBoard() {
     return goalsQ.data.reduce((acc, g) => ({ ...acc, [g.id]: g }), {});
   }, [goalsQ.data]);
 
-  const tasks = tasksQ.data || [];
+  const tasks = useMemo(() => {
+    const all = tasksQ.data || [];
+    const { sizes } = debouncedFilters;
+    if (!sizes?.length) return all;
+    return all.filter(t => {
+      if (!t.size) return sizes.includes('unsized');
+      return sizes.includes(t.size);
+    });
+  }, [tasksQ.data, debouncedFilters]);
 
   const allTags = useMemo(() => {
     const tagSet = new Set<string>();

@@ -23,7 +23,6 @@ interface TaskFormData {
   hard_due_at: string
   isHardDeadline: boolean
   size: string
-  effort_minutes: string
   tags: string
   status: TaskStatus
 }
@@ -40,7 +39,6 @@ export default function TaskEditor({ task, defaultStatus = 'week', isOpen, onClo
     hard_due_at: task?.hard_due_at ? new Date(task.hard_due_at).toISOString().slice(0, 16) : '',
     isHardDeadline: !!task?.hard_due_at,
     size: task?.size?.toString() || '',
-    effort_minutes: task?.effort_minutes?.toString() || '',
     tags: task?.tags.join(', ') || '',
     status: task?.status || defaultStatus,
   })
@@ -59,7 +57,6 @@ export default function TaskEditor({ task, defaultStatus = 'week', isOpen, onClo
         hard_due_at: task?.hard_due_at ? new Date(task.hard_due_at).toISOString().slice(0, 16) : '',
         isHardDeadline: !!task?.hard_due_at,
         size: task?.size?.toString() || '',
-        effort_minutes: task?.effort_minutes?.toString() || '',
         tags: task?.tags.join(', ') || '',
         status: task?.status || defaultStatus,
       })
@@ -149,7 +146,6 @@ export default function TaskEditor({ task, defaultStatus = 'week', isOpen, onClo
       soft_due_at: formData.soft_due_at ? new Date(formData.soft_due_at).toISOString() : null,
       hard_due_at: formData.isHardDeadline && formData.hard_due_at ? new Date(formData.hard_due_at).toISOString() : null,
       size: formData.size ? (parseInt(formData.size) as TaskSize) : null,
-      effort_minutes: formData.effort_minutes ? parseInt(formData.effort_minutes) : null,
       tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
       status: formData.status,
     }
@@ -319,42 +315,26 @@ export default function TaskEditor({ task, defaultStatus = 'week', isOpen, onClo
             </div>
           </div>
 
-          {/* Size and Effort */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="size" className="block text-sm font-medium text-gray-700 mb-2">
-                Size
-              </label>
-              <select
-                id="size"
-                value={formData.size}
-                onChange={(e) => handleInputChange('size', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">No size</option>
-                <option value="1">1 — Trivial</option>
-                <option value="2">2 — Small</option>
-                <option value="3">3 — Easy</option>
-                <option value="5">5 — Medium</option>
-                <option value="8">8 — Large</option>
-                <option value="13">13 — Complex</option>
-                <option value="21">21 — Very Complex</option>
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="effort_minutes" className="block text-sm font-medium text-gray-700 mb-2">
-                Effort (minutes)
-              </label>
-              <input
-                id="effort_minutes"
-                type="number"
-                value={formData.effort_minutes}
-                onChange={(e) => handleInputChange('effort_minutes', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="e.g. 30"
-              />
-            </div>
+          {/* Size */}
+          <div>
+            <label htmlFor="size" className="block text-sm font-medium text-gray-700 mb-2">
+              Size
+            </label>
+            <select
+              id="size"
+              value={formData.size}
+              onChange={(e) => handleInputChange('size', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">No size</option>
+              <option value="1">1 — Trivial</option>
+              <option value="2">2 — Small</option>
+              <option value="3">3 — Easy</option>
+              <option value="5">5 — Medium</option>
+              <option value="8">8 — Large</option>
+              <option value="13">13 — Complex</option>
+              <option value="21">21 — Very Complex</option>
+            </select>
           </div>
 
           {/* Tags */}

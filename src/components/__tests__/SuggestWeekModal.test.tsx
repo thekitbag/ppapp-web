@@ -15,7 +15,6 @@ const mockTasks: Task[] = [
     goal_id: null,
     hard_due_at: '2023-12-31T23:59:59Z',
     soft_due_at: null,
-    effort_minutes: 30,
     created_at: '2023-01-01T00:00:00Z',
     updated_at: '2023-01-01T00:00:00Z',
   },
@@ -29,7 +28,6 @@ const mockTasks: Task[] = [
     goal_id: null,
     hard_due_at: null,
     soft_due_at: '2023-12-25T23:59:59Z',
-    effort_minutes: 15,
     created_at: '2023-01-01T00:00:00Z',
     updated_at: '2023-01-01T00:00:00Z',
   },
@@ -43,7 +41,6 @@ const mockTasks: Task[] = [
     goal_id: '1',
     hard_due_at: null,
     soft_due_at: null,
-    effort_minutes: null,
     created_at: '2023-01-01T00:00:00Z',
     updated_at: '2023-01-01T00:00:00Z',
   },
@@ -126,10 +123,6 @@ describe('SuggestWeekModal', () => {
     expect(screen.getByText('High Priority Task')).toBeInTheDocument()
     expect(screen.getByText('Quick Task')).toBeInTheDocument()
     expect(screen.getByText('No Deadline Task')).toBeInTheDocument()
-
-    // Check effort minutes display
-    expect(screen.getByText(/30min/)).toBeInTheDocument()
-    expect(screen.getByText(/15min/)).toBeInTheDocument()
 
     // Check tags display
     expect(screen.getByText('urgent')).toBeInTheDocument()
@@ -313,7 +306,6 @@ describe('SuggestWeekModal', () => {
       goal_id: null,
       hard_due_at: null,
       soft_due_at: null,
-      effort_minutes: null,
       created_at: '2023-01-01T00:00:00Z',
       updated_at: '2023-01-01T00:00:00Z',
     }
@@ -343,7 +335,6 @@ describe('SuggestWeekModal', () => {
       goal_id: null,
       hard_due_at: '2023-06-15T10:30:00Z',
       soft_due_at: '2023-03-22T14:45:00Z',
-      effort_minutes: null,
       created_at: '2023-01-01T00:00:00Z',
       updated_at: '2023-01-01T00:00:00Z',
     }

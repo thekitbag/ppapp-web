@@ -19,7 +19,7 @@ export interface Task {
   goals?: { id: string; title: string }[]
   hard_due_at?: string | null
   soft_due_at?: string | null
-  effort_minutes?: number | null
+  completed_at?: string | null
   created_at: string
   updated_at: string
   // Client-side only optimistic fields
