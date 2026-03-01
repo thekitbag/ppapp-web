@@ -17,9 +17,10 @@ import GoalTreeVisualization from './goals/GoalTreeVisualization'
 import SortControl from './goals/SortControl'
 import ClosedGoalsList from './goals/ClosedGoalsList'
 import GoalCreateModal from './goals/GoalCreateModal'
+import TaskEditDrawer from './TaskEditDrawer'
 import { getTreeMemberIds, type SortOption } from '../lib/goalTreeUtils'
 
-import type { GoalCadence, GoalStatus, Goal, GoalNode } from '../types'
+import type { GoalCadence, GoalStatus, Goal, GoalNode, Task } from '../types'
 
 type TabType = 'open' | 'closed'
 
@@ -30,6 +31,7 @@ export default function GoalsPage() {
   const [createModalType, setCreateModalType] = useState<GoalCadence>('annual')
   const [createModalParentId, setCreateModalParentId] = useState<string | undefined>()
   const [editGoal, setEditGoal] = useState<Goal | undefined>()
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
 
   // Focus and sort state
   const [focusedGoalId, setFocusedGoalId] = useState<string | null>(null)
@@ -163,6 +165,10 @@ export default function GoalsPage() {
     setFocusedGoalId(prev => prev === goal.id ? null : goal.id)
   }
 
+  const handleTaskClick = (task: Task) => {
+    setSelectedTask(task)
+  }
+
   const handleCreateSubmit = (data: CreateGoalInput) => {
     if (editGoal) {
       // Update existing goal
@@ -287,6 +293,7 @@ export default function GoalsPage() {
                 sortBy={sortBy}
                 sortOrder={sortOrder}
                 onGoalClick={handleGoalClick}
+                onTaskClick={handleTaskClick}
                 onStatusChange={handleStatusChange}
                 onEndDateChange={handleEndDateChange}
                 onEdit={handleEditGoal}
@@ -323,6 +330,15 @@ export default function GoalsPage() {
         parentId={createModalParentId}
         editGoal={editGoal}
       />
+
+      {/* Task Edit Drawer */}
+      {selectedTask && (
+        <TaskEditDrawer
+          task={selectedTask}
+          isOpen={!!selectedTask}
+          onClose={() => setSelectedTask(null)}
+        />
+      )}
     </div>
   )
 }

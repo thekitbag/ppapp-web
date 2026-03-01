@@ -8,7 +8,7 @@ import { qk } from '../../lib/queryKeys'
 import { Task, TaskStatus } from '../../types'
 import { STATUS_ORDER } from '../../constants'
 
-interface WeeklyGoalTaskListProps {
+interface GoalTaskListProps {
   goalId: string
   onTaskClick: (task: Task) => void
 }
@@ -123,7 +123,7 @@ function TaskRow({ task, project, onClick }: { task: Task; project?: any; onClic
   )
 }
 
-export default function WeeklyGoalTaskList({ goalId, onTaskClick }: WeeklyGoalTaskListProps) {
+export default function GoalTaskList({ goalId, onTaskClick }: GoalTaskListProps) {
   const qc = useQueryClient()
   const [newTaskTitle, setNewTaskTitle] = useState('')
 
@@ -193,7 +193,7 @@ export default function WeeklyGoalTaskList({ goalId, onTaskClick }: WeeklyGoalTa
         updated_at: new Date().toISOString()
       }
 
-      // Update weekly goal task list
+      // Update goal task list
       qc.setQueryData([qk.tasks.all, { goal_id: goalId }], (old: Task[] | undefined) => {
         return [optimisticTask, ...(old || [])]
       })

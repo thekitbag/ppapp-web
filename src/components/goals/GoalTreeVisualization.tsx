@@ -366,6 +366,8 @@ export default function GoalTreeVisualization({
                                 onEdit={() => onEdit?.(goal)}
                                 onClose={() => onClose?.(goal)}
                                 onDelete={() => onDelete?.(goal)}
+                                onTaskClick={onTaskClick}
+                                showTasks={true}
                                 childCount={getChildren(goal.id, quarterlyGoals).length}
                                 onIncreasePriority={() => onChangePriority?.(goal.id, 'up')}
                                 onDecreasePriority={() => onChangePriority?.(goal.id, 'down')}
@@ -429,6 +431,8 @@ export default function GoalTreeVisualization({
                                 onEdit={() => onEdit?.(goal)}
                                 onClose={() => onClose?.(goal)}
                                 onDelete={() => onDelete?.(goal)}
+                                onTaskClick={onTaskClick}
+                                showTasks={true}
                                 childCount={getChildren(goal.id, weeklyGoals).length}
                                 onIncreasePriority={() => onChangePriority?.(goal.id, 'up')}
                                 onDecreasePriority={() => onChangePriority?.(goal.id, 'down')}

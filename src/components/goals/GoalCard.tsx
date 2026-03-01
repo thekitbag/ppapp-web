@@ -3,7 +3,7 @@ import { ChevronUp, ChevronDown } from 'lucide-react'
 import StatusPill from './StatusPill'
 import EndDatePicker from './EndDatePicker'
 import GoalActionsMenu from './GoalActionsMenu'
-import WeeklyGoalTaskList from './WeeklyGoalTaskList'
+import GoalTaskList from './GoalTaskList'
 
 interface GoalCardProps {
   goal: Goal
@@ -116,9 +116,9 @@ export default function GoalCard({
         />
       </div>
 
-      {/* Weekly Goal Tasks */}
-      {showTasks && goal.type === 'weekly' && onTaskClick && (
-        <WeeklyGoalTaskList
+      {/* Goal Tasks */}
+      {showTasks && onTaskClick && (
+        <GoalTaskList
           goalId={goal.id}
           onTaskClick={onTaskClick}
         />
