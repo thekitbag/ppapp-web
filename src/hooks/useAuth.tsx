@@ -34,18 +34,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [userQuery.isLoading])
 
-  useEffect(() => {
-    // Only auto-redirect to login if VITE_REQUIRE_LOGIN is not explicitly false
-    if (userQuery.error && !isLoading && requireLogin) {
-      const error = userQuery.error as any
-      
-      // Only redirect on actual 401 auth errors, not CORS errors
-      if (error.response?.status === 401) {
-        window.location.href = getMicrosoftLoginUrl()
-      }
-    }
-  }, [userQuery.error, isLoading, requireLogin])
-
   const login = () => {
     window.location.href = getMicrosoftLoginUrl()
   }
