@@ -34,15 +34,11 @@ const mockSummary = {
       goal_id: '1',
       goal_title: 'Launch Product',
       total_size: 34,
-      task_count: 8,
-      completed_task_count: 7,
     },
     {
       goal_id: null,
       goal_title: null,
       total_size: 8,
-      task_count: 3,
-      completed_task_count: 1,
     },
   ],
 }
@@ -207,6 +203,50 @@ describe('ReportingPage', () => {
       expect(screen.getByRole('alert')).toBeInTheDocument()
       expect(screen.getByText('Failed to load report')).toBeInTheDocument()
       expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
+    })
+  })
+
+  it('renders points share ratio and percentage in goal breakdown row', async () => {
+    server.use(
+      http.get('/api/v1/reports/summary', () =>
+        HttpResponse.json({
+          impact_score: 30,
+          start_date: THIS_WEEK.start_date,
+          end_date: THIS_WEEK.end_date,
+          groups: [
+            { goal_id: '1', goal_title: 'Alpha', total_size: 2 },
+          ],
+        })
+      )
+    )
+
+    render(<ReportingPage />)
+
+    await waitFor(() => {
+      expect(screen.getByText('2/30')).toBeInTheDocument()
+      expect(screen.getByText('7%')).toBeInTheDocument()
+    })
+  })
+
+  it('shows 0% for all groups when impact_score is zero', async () => {
+    server.use(
+      http.get('/api/v1/reports/summary', () =>
+        HttpResponse.json({
+          impact_score: 0,
+          start_date: THIS_WEEK.start_date,
+          end_date: THIS_WEEK.end_date,
+          groups: [
+            { goal_id: '1', goal_title: 'Beta', total_size: 5 },
+          ],
+        })
+      )
+    )
+
+    render(<ReportingPage />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Beta')).toBeInTheDocument()
+      expect(screen.getByText('0%')).toBeInTheDocument()
     })
   })
 

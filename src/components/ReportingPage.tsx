@@ -51,9 +51,9 @@ function getDateRange(preset: Preset): { start_date: string; end_date: string } 
   return { start_date: start.toISOString(), end_date: end.toISOString() }
 }
 
-function GoalGroupRow({ group }: { group: GoalGroup }) {
-  const completionPct = group.task_count > 0
-    ? Math.round((group.completed_task_count / group.task_count) * 100)
+function GoalGroupRow({ group, impactScore }: { group: GoalGroup; impactScore: number }) {
+  const completionPct = impactScore > 0
+    ? Math.round((group.total_size / impactScore) * 100)
     : 0
   const isNoGoal = group.goal_id === null
 
@@ -106,10 +106,10 @@ function GoalGroupRow({ group }: { group: GoalGroup }) {
               className="text-sm font-bold"
               style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text)' }}
             >
-              {group.completed_task_count}/{group.task_count}
+              {group.total_size}/{impactScore}
             </div>
             <div className="text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>
-              tasks
+              pts
             </div>
           </div>
 
@@ -302,6 +302,7 @@ export default function ReportingPage() {
                   <GoalGroupRow
                     key={group.goal_id ?? `no-goal-${i}`}
                     group={group}
+                    impactScore={data.impact_score}
                   />
                 ))}
               </div>
