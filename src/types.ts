@@ -87,3 +87,18 @@ export interface ReportSummary {
   end_date: string
   groups: GoalGroup[]
 }
+
+export interface BreakdownEntry {
+  goal_id: string | null
+  goal_title: string | null
+  goal_type?: 'annual' | 'quarterly' | 'weekly' | null
+  points: number
+  percentage: number
+  has_children: boolean
+}
+
+export interface ReportBreakdown {
+  parent_id: string | null
+  total_impact: number
+  breakdown: BreakdownEntry[]
+}

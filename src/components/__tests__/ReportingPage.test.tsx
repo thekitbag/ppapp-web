@@ -43,13 +43,32 @@ const mockSummary = {
   ],
 }
 
+const mockBreakdown = {
+  parent_id: null,
+  total_impact: 42,
+  breakdown: [
+    { goal_id: '1', goal_title: 'Launch Product', goal_type: 'annual', points: 34, percentage: 81, has_children: true },
+    { goal_id: null, goal_title: null, points: 8, percentage: 19, has_children: false },
+  ],
+}
+
+const mockChildBreakdown = {
+  parent_id: '1',
+  total_impact: 34,
+  breakdown: [
+    { goal_id: '2', goal_title: 'Q1 Goals', goal_type: 'quarterly', points: 20, percentage: 59, has_children: false },
+    { goal_id: '3', goal_title: 'Q2 Goals', goal_type: 'quarterly', points: 14, percentage: 41, has_children: false },
+  ],
+}
+
 describe('ReportingPage', () => {
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(FIXED_NOW)
     server.resetHandlers()
     server.use(
-      http.get('/api/v1/reports/summary', () => HttpResponse.json(mockSummary))
+      http.get('/api/v1/reports/summary', () => HttpResponse.json(mockSummary)),
+      http.get('/api/v1/reports/breakdown', () => HttpResponse.json(mockBreakdown)),
     )
   })
 
@@ -158,10 +177,10 @@ describe('ReportingPage', () => {
 
   it('renders loading state while fetching', async () => {
     server.use(
-      http.get('/api/v1/reports/summary', async () => {
+      http.get('/api/v1/reports/breakdown', async () => {
         // Never resolves during this test
         await new Promise(() => {})
-        return HttpResponse.json(mockSummary)
+        return HttpResponse.json(mockBreakdown)
       })
     )
 
@@ -173,12 +192,11 @@ describe('ReportingPage', () => {
 
   it('renders empty state when impact is zero and groups are empty', async () => {
     server.use(
-      http.get('/api/v1/reports/summary', () =>
+      http.get('/api/v1/reports/breakdown', () =>
         HttpResponse.json({
-          impact_score: 0,
-          start_date: THIS_WEEK.start_date,
-          end_date: THIS_WEEK.end_date,
-          groups: [],
+          parent_id: null,
+          total_impact: 0,
+          breakdown: [],
         })
       )
     )
@@ -192,7 +210,7 @@ describe('ReportingPage', () => {
 
   it('renders error state when API fails', async () => {
     server.use(
-      http.get('/api/v1/reports/summary', () =>
+      http.get('/api/v1/reports/breakdown', () =>
         HttpResponse.json({ detail: 'Server error' }, { status: 500 })
       )
     )
@@ -208,13 +226,12 @@ describe('ReportingPage', () => {
 
   it('renders points share ratio and percentage in goal breakdown row', async () => {
     server.use(
-      http.get('/api/v1/reports/summary', () =>
+      http.get('/api/v1/reports/breakdown', () =>
         HttpResponse.json({
-          impact_score: 30,
-          start_date: THIS_WEEK.start_date,
-          end_date: THIS_WEEK.end_date,
-          groups: [
-            { goal_id: '1', goal_title: 'Alpha', total_size: 2 },
+          parent_id: null,
+          total_impact: 30,
+          breakdown: [
+            { goal_id: '1', goal_title: 'Alpha', goal_type: 'annual', points: 2, percentage: 7, has_children: false },
           ],
         })
       )
@@ -230,13 +247,12 @@ describe('ReportingPage', () => {
 
   it('shows 0% for all groups when impact_score is zero', async () => {
     server.use(
-      http.get('/api/v1/reports/summary', () =>
+      http.get('/api/v1/reports/breakdown', () =>
         HttpResponse.json({
-          impact_score: 0,
-          start_date: THIS_WEEK.start_date,
-          end_date: THIS_WEEK.end_date,
-          groups: [
-            { goal_id: '1', goal_title: 'Beta', total_size: 5 },
+          parent_id: null,
+          total_impact: 0,
+          breakdown: [
+            { goal_id: '1', goal_title: 'Beta', goal_type: 'annual', points: 5, percentage: 0, has_children: false },
           ],
         })
       )
@@ -255,12 +271,12 @@ describe('ReportingPage', () => {
     let callCount = 0
 
     server.use(
-      http.get('/api/v1/reports/summary', () => {
+      http.get('/api/v1/reports/breakdown', () => {
         callCount++
         if (callCount === 1) {
           return HttpResponse.json({ detail: 'Server error' }, { status: 500 })
         }
-        return HttpResponse.json(mockSummary)
+        return HttpResponse.json(mockBreakdown)
       })
     )
 
@@ -274,6 +290,132 @@ describe('ReportingPage', () => {
 
     await waitFor(() => {
       expect(callCount).toBeGreaterThanOrEqual(2)
+    })
+  })
+
+  describe('drill-down', () => {
+    it('renders drill button for rows with has_children=true', async () => {
+      render(<ReportingPage />)
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Drill into Launch Product' })).toBeInTheDocument()
+      })
+    })
+
+    it('clicking drillable row fetches child breakdown with parent_goal_id', async () => {
+      const user = userEvent.setup()
+      let capturedParentId: string | null = null
+
+      server.use(
+        http.get('/api/v1/reports/breakdown', ({ request }) => {
+          const url = new URL(request.url)
+          capturedParentId = url.searchParams.get('parent_goal_id')
+          if (capturedParentId === '1') {
+            return HttpResponse.json(mockChildBreakdown)
+          }
+          return HttpResponse.json(mockBreakdown)
+        })
+      )
+
+      render(<ReportingPage />)
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Drill into Launch Product' })).toBeInTheDocument()
+      })
+
+      await user.click(screen.getByRole('button', { name: 'Drill into Launch Product' }))
+
+      await waitFor(() => {
+        expect(capturedParentId).toBe('1')
+      })
+    })
+
+    it('shows child rows after drilling down', async () => {
+      const user = userEvent.setup()
+
+      server.use(
+        http.get('/api/v1/reports/breakdown', ({ request }) => {
+          const parentId = new URL(request.url).searchParams.get('parent_goal_id')
+          if (parentId === '1') {
+            return HttpResponse.json(mockChildBreakdown)
+          }
+          return HttpResponse.json(mockBreakdown)
+        })
+      )
+
+      render(<ReportingPage />)
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Drill into Launch Product' })).toBeInTheDocument()
+      })
+
+      await user.click(screen.getByRole('button', { name: 'Drill into Launch Product' }))
+
+      await waitFor(() => {
+        expect(screen.getByText('Q1 Goals')).toBeInTheDocument()
+        expect(screen.getByText('Q2 Goals')).toBeInTheDocument()
+      })
+    })
+
+    it('shows breadcrumb navigation after drilling down', async () => {
+      const user = userEvent.setup()
+
+      server.use(
+        http.get('/api/v1/reports/breakdown', ({ request }) => {
+          const parentId = new URL(request.url).searchParams.get('parent_goal_id')
+          if (parentId === '1') {
+            return HttpResponse.json(mockChildBreakdown)
+          }
+          return HttpResponse.json(mockBreakdown)
+        })
+      )
+
+      render(<ReportingPage />)
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Drill into Launch Product' })).toBeInTheDocument()
+      })
+
+      await user.click(screen.getByRole('button', { name: 'Drill into Launch Product' }))
+
+      await waitFor(() => {
+        expect(screen.getByRole('navigation', { name: 'Drill-down breadcrumbs' })).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Insights' })).toBeInTheDocument()
+        expect(screen.getByText('Launch Product')).toBeInTheDocument()
+      })
+    })
+
+    it('clicking Insights breadcrumb navigates back to root', async () => {
+      const user = userEvent.setup()
+
+      server.use(
+        http.get('/api/v1/reports/breakdown', ({ request }) => {
+          const parentId = new URL(request.url).searchParams.get('parent_goal_id')
+          if (parentId === '1') {
+            return HttpResponse.json(mockChildBreakdown)
+          }
+          return HttpResponse.json(mockBreakdown)
+        })
+      )
+
+      render(<ReportingPage />)
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Drill into Launch Product' })).toBeInTheDocument()
+      })
+
+      await user.click(screen.getByRole('button', { name: 'Drill into Launch Product' }))
+
+      await waitFor(() => {
+        expect(screen.getByText('Q1 Goals')).toBeInTheDocument()
+      })
+
+      await user.click(screen.getByRole('button', { name: 'Insights' }))
+
+      await waitFor(() => {
+        expect(screen.queryByRole('navigation', { name: 'Drill-down breadcrumbs' })).not.toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Drill into Launch Product' })).toBeInTheDocument()
+      })
     })
   })
 })
