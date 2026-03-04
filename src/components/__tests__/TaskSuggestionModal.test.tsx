@@ -349,4 +349,203 @@ describe('TaskSuggestionModal', () => {
       })
     })
   })
+
+  describe('SUGGEST-004: compatibility hardening', () => {
+    it('renders a single-item result and Start action works', async () => {
+      const user = userEvent.setup()
+      const onSelectTask = vi.fn()
+
+      server.use(
+        http.get('/api/v1/recommendations/next', () =>
+          HttpResponse.json({ items: [mockItems[0]] })
+        )
+      )
+
+      render(<TaskSuggestionModal open={true} onClose={() => {}} onSelectTask={onSelectTask} />)
+
+      await user.click(screen.getByText('High'))
+      await user.click(screen.getByText('1h'))
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Start Write unit tests' })).toBeInTheDocument()
+        expect(screen.getAllByRole('button', { name: /^Start / })).toHaveLength(1)
+      })
+
+      await user.click(screen.getByRole('button', { name: 'Start Write unit tests' }))
+      expect(onSelectTask).toHaveBeenCalledWith('1')
+    })
+
+    it('renders long narrative why text without truncation', async () => {
+      const user = userEvent.setup()
+      const longWhy =
+        'This is a very long explanation that exceeds 250 characters. It describes in detail why this task is important for the user, taking into account their current energy level, available time, and the strategic importance of the linked goals. Completing this task will have a meaningful impact on the overall project trajectory and should be prioritized accordingly over other pending items.'
+
+      server.use(
+        http.get('/api/v1/recommendations/next', () =>
+          HttpResponse.json({
+            items: [{ ...mockItems[0], why: longWhy }],
+          })
+        )
+      )
+
+      render(<TaskSuggestionModal open={true} onClose={() => {}} onSelectTask={() => {}} />)
+
+      await user.click(screen.getByText('Medium'))
+      await user.click(screen.getByText('30m'))
+
+      await waitFor(() => {
+        const whyEl = screen.getByText(longWhy)
+        expect(whyEl).toBeInTheDocument()
+        expect(whyEl).not.toHaveClass('truncate')
+        expect(whyEl.closest('[class*="truncate"]')).toBeNull()
+        expect(whyEl.closest('[class*="line-clamp"]')).toBeNull()
+      })
+    })
+
+    it('renders fallback-style algorithmic why payload without conditional branching', async () => {
+      const user = userEvent.setup()
+
+      server.use(
+        http.get('/api/v1/recommendations/next', () =>
+          HttpResponse.json({
+            items: [
+              {
+                task: {
+                  id: '10',
+                  title: 'Update docs',
+                  status: 'backlog',
+                  sort_order: 100,
+                  tags: [],
+                  project_id: null,
+                  goal_id: null,
+                  hard_due_at: null,
+                  soft_due_at: null,
+                  effort_minutes: 20,
+                  created_at: '2023-01-01T00:00:00Z',
+                  updated_at: '2023-01-01T00:00:00Z',
+                },
+                score: 72.0,
+                factors: { goal_status_off_target: 1 },
+                why: 'High priority. Due soon.',
+              },
+            ],
+          })
+        )
+      )
+
+      render(<TaskSuggestionModal open={true} onClose={() => {}} onSelectTask={() => {}} />)
+
+      await user.click(screen.getByText('Low'))
+      await user.click(screen.getByText('15m'))
+
+      await waitFor(() => {
+        expect(screen.getByText('Update docs')).toBeInTheDocument()
+        expect(screen.getByText('High priority. Due soon.')).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Start Update docs' })).toBeInTheDocument()
+      })
+    })
+
+    it('retry calls same API params and successful results render', async () => {
+      const user = userEvent.setup()
+      let callCount = 0
+      const capturedParams: { energy: string; time_window: string }[] = []
+
+      server.use(
+        http.get('/api/v1/recommendations/next', ({ request }) => {
+          const url = new URL(request.url)
+          callCount++
+          capturedParams.push({
+            energy: url.searchParams.get('energy') ?? '',
+            time_window: url.searchParams.get('time_window') ?? '',
+          })
+          if (callCount === 1) {
+            return HttpResponse.json({ detail: 'Error' }, { status: 500 })
+          }
+          return HttpResponse.json({ items: mockItems })
+        })
+      )
+
+      render(<TaskSuggestionModal open={true} onClose={() => {}} onSelectTask={() => {}} />)
+
+      await user.click(screen.getByText('Medium'))
+      await user.click(screen.getByText('30m'))
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
+      })
+
+      await user.click(screen.getByRole('button', { name: 'Retry' }))
+
+      await waitFor(() => {
+        expect(callCount).toBe(2)
+        expect(capturedParams[1].energy).toBe('medium')
+        expect(capturedParams[1].time_window).toBe('30')
+        expect(screen.getByText('Write unit tests')).toBeInTheDocument()
+      })
+    })
+
+    it('shows Thinking strategically... text while loading recommendations', async () => {
+      const user = userEvent.setup()
+
+      server.use(
+        http.get('/api/v1/recommendations/next', async () => {
+          await new Promise(() => {})
+          return HttpResponse.json({ items: mockItems })
+        })
+      )
+
+      render(<TaskSuggestionModal open={true} onClose={() => {}} onSelectTask={() => {}} />)
+
+      await user.click(screen.getByText('Low'))
+      await user.click(screen.getByText('15m'))
+
+      const status = screen.getByRole('status', { name: 'Loading suggestions' })
+      expect(status).toBeInTheDocument()
+      expect(screen.getByText('Thinking strategically...')).toBeInTheDocument()
+    })
+
+    it('Thinking strategically... text disappears once results render', async () => {
+      const user = userEvent.setup()
+
+      render(<TaskSuggestionModal open={true} onClose={() => {}} onSelectTask={() => {}} />)
+
+      await user.click(screen.getByText('High'))
+      await user.click(screen.getByText('1h'))
+
+      await waitFor(() => {
+        expect(screen.getByText('Write unit tests')).toBeInTheDocument()
+        expect(screen.queryByText('Thinking strategically...')).not.toBeInTheDocument()
+      })
+    })
+
+    it('energy → time → results step flow works with unchanged API params', async () => {
+      const user = userEvent.setup()
+      let capturedParams: Record<string, string> = {}
+
+      server.use(
+        http.get('/api/v1/recommendations/next', ({ request }) => {
+          const url = new URL(request.url)
+          capturedParams = {
+            energy: url.searchParams.get('energy') ?? '',
+            time_window: url.searchParams.get('time_window') ?? '',
+          }
+          return HttpResponse.json({ items: mockItems })
+        })
+      )
+
+      render(<TaskSuggestionModal open={true} onClose={() => {}} onSelectTask={() => {}} />)
+
+      expect(screen.getByText('How are you feeling?')).toBeInTheDocument()
+      await user.click(screen.getByText('High'))
+
+      expect(screen.getByText('How big is your time window?')).toBeInTheDocument()
+      await user.click(screen.getByText('2h'))
+
+      await waitFor(() => {
+        expect(capturedParams.energy).toBe('high')
+        expect(capturedParams.time_window).toBe('120')
+        expect(screen.getByText('Write unit tests')).toBeInTheDocument()
+      })
+    })
+  })
 })

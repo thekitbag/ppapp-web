@@ -330,6 +330,12 @@ export default function TaskSuggestionModal({
               {/* Loading — skeleton cards */}
               {isLoading && (
                 <div role="status" aria-label="Loading suggestions">
+                  <p
+                    className="text-sm font-bold text-center mb-3"
+                    style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text-muted)' }}
+                  >
+                    Thinking strategically...
+                  </p>
                   <span className="sr-only">Finding your best tasks...</span>
                   <div className="space-y-3">
                     <SkeletonCard />
