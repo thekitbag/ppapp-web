@@ -145,7 +145,7 @@ function StickyHeaderDropZone({ status, onTaskDrop }: { status: TaskStatus, onTa
   );
 }
 
-function TaskColumn({
+export function TaskColumn({
   status,
   tasks,
   onTaskDrop,
@@ -172,6 +172,7 @@ function TaskColumn({
 }) {
   const columnRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [isColumnDraggedOver, setIsColumnDraggedOver] = useState(false);
 
   // Enable auto-scroll for the column's vertical scroll
   useEffect(() => {
@@ -182,6 +183,30 @@ function TaskColumn({
       element: el,
     });
   }, []);
+
+  // Column-wide drop zone — catches drops on whitespace not covered by card targets
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+
+    return dropTargetForElements({
+      element: el,
+      getData: () => ({ status, targetIndex: tasks.length }),
+      onDragEnter: ({ location }) => {
+        setIsColumnDraggedOver(location.current.dropTargets[0]?.element === el);
+      },
+      onDropTargetChange: ({ location }) => {
+        setIsColumnDraggedOver(location.current.dropTargets[0]?.element === el);
+      },
+      onDragLeave: () => setIsColumnDraggedOver(false),
+      onDrop: ({ source, location }) => {
+        setIsColumnDraggedOver(false);
+        // Only handle if the column body is the innermost target (not a card target)
+        if (location.current.dropTargets[0]?.element !== el) return;
+        onTaskDrop(source.data.task as Task, status, tasks.length);
+      },
+    });
+  }, [status, tasks.length, onTaskDrop]);
 
   const handleComplete = (taskId: string) => {
     // Trigger confetti animation
@@ -265,7 +290,17 @@ function TaskColumn({
         </div>
       )}
 
-      <div ref={scrollContainerRef} className="space-y-3 p-1 overflow-y-auto h-full custom-scrollbar">
+      <div
+        ref={scrollContainerRef}
+        data-testid={`column-scroll-${status}`}
+        data-column-drag-over={isColumnDraggedOver}
+        className="space-y-3 p-1 overflow-y-auto h-full custom-scrollbar"
+        style={{
+          borderRadius: '8px',
+          background: isColumnDraggedOver ? 'rgba(255, 107, 88, 0.08)' : 'transparent',
+          outline: isColumnDraggedOver ? '2px dashed var(--color-primary)' : 'none',
+        }}
+      >
         {tasks.length === 0 && !onQuickAdd && (
           <EmptyColumnDropZone status={status} onTaskDrop={onTaskDrop} />
         )}
