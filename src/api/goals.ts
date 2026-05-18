@@ -2,7 +2,7 @@ import { api } from './client'
 import type { Goal, KeyResult, GoalDetail, GoalCadence, GoalNode, GoalStatus } from '../types'
 
 export async function listGoals(): Promise<Goal[]> {
-  const { data } = await api.get('/goals')
+  const { data } = await api.get('/goals?is_closed=false&limit=1000')
   return data as Goal[]
 }
 

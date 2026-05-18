@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '../../test/utils'
 import '@testing-library/jest-dom'
 import TaskFilters from '../TaskFilters'
 import type { TaskFilters as TaskFiltersType } from '../../api/tasks'
@@ -100,6 +100,20 @@ describe('TaskFilters Integration Tests', () => {
   })
 
   describe('Goal Filter', () => {
+    it('shows open weekly goals in the top bar', () => {
+      renderTaskFilters({
+        goals: [
+          { id: 'annual-1', title: 'Annual Goal', type: 'annual' },
+          { id: 'weekly-open', title: 'Open Weekly Goal', type: 'weekly', is_closed: false },
+          { id: 'weekly-closed', title: 'Closed Weekly Goal', type: 'weekly', is_closed: true },
+        ],
+      })
+
+      expect(screen.getByText('Open Weekly Goal')).toBeInTheDocument()
+      expect(screen.queryByText('Closed Weekly Goal')).not.toBeInTheDocument()
+      expect(screen.queryByText('Annual Goal')).not.toBeInTheDocument()
+    })
+
     it('shows goals dropdown when filters are expanded', async () => {
       renderTaskFilters()
 
