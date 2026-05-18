@@ -12,7 +12,7 @@ import {
   reorderGoal,
   type CreateGoalInput
 } from '../api/goals'
-import { Target, Archive } from 'lucide-react'
+import { Target, Archive, X } from 'lucide-react'
 import GoalTreeVisualization from './goals/GoalTreeVisualization'
 import SortControl from './goals/SortControl'
 import ClosedGoalsList from './goals/ClosedGoalsList'
@@ -266,21 +266,6 @@ export default function GoalsPage() {
                   setSortOrder(order)
                 }}
               />
-
-              {focusedGoalId && (
-                <button
-                  onClick={() => setFocusedGoalId(null)}
-                  className="px-4 py-2 text-sm font-bold rounded-lg border-2 border-black transition-all hover:translate-y-[-1px]"
-                  style={{
-                    background: 'var(--color-secondary)',
-                    color: 'var(--color-text)',
-                    boxShadow: 'var(--shadow-subtle)',
-                    fontFamily: 'var(--font-display)'
-                  }}
-                >
-                  Clear Focus
-                </button>
-              )}
             </div>
 
             {/* Tree visualization */}
@@ -316,6 +301,24 @@ export default function GoalsPage() {
           </div>
         )}
       </div>
+
+      {activeTab === 'open' && focusedGoalId && (
+        <button
+          onClick={() => setFocusedGoalId(null)}
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 text-sm font-bold rounded-lg border-3 border-black transition-all hover:translate-y-[-2px] focus:outline-none focus:ring-4 focus:ring-offset-2"
+          style={{
+            background: 'var(--color-secondary)',
+            color: 'var(--color-text)',
+            boxShadow: 'var(--shadow-brutal)',
+            fontFamily: 'var(--font-display)',
+            '--tw-ring-color': 'var(--color-accent)'
+          } as React.CSSProperties}
+          aria-label="Clear goal focus"
+        >
+          <X size={16} />
+          Clear Focus
+        </button>
+      )}
 
       {/* Create Goal Modal */}
       <GoalCreateModal

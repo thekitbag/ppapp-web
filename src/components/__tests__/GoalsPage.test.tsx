@@ -106,6 +106,26 @@ describe('GoalsPage', () => {
     })
   })
 
+  it('keeps clear focus visible as a fixed action while focused', async () => {
+    const user = userEvent.setup()
+    render(<GoalsPage />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Test Annual Goal')).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByText('Test Annual Goal'))
+
+    const clearFocusButton = await screen.findByRole('button', { name: /clear goal focus/i })
+    expect(clearFocusButton).toHaveClass('fixed', 'bottom-6', 'right-6')
+
+    await user.click(clearFocusButton)
+
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: /clear goal focus/i })).not.toBeInTheDocument()
+    })
+  })
+
   it('shows action menus for goals', async () => {
     const user = userEvent.setup()
     render(<GoalsPage />)
