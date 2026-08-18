@@ -228,7 +228,7 @@ export default function App() {
                 <span style={{ fontFamily: 'var(--font-display)' }}>Add Task</span>
               </button>
             </div>
-            <div className="max-w-7xl mx-auto">
+            <div className="w-full">
               <TaskBoard />
             </div>
           </>

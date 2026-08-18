@@ -62,10 +62,16 @@ export default function TaskEditor({ task, defaultStatus = 'week', isOpen, onClo
       })
       setErrors({})
 
-      // Focus title input
-      setTimeout(() => titleInputRef.current?.focus(), 100)
     }
   }, [isOpen, task, defaultStatus])
+
+  // Focus only when the modal opens. Delaying this focus can steal it back if
+  // the user has already moved on to another field, such as the goal picker.
+  useEffect(() => {
+    if (isOpen) {
+      titleInputRef.current?.focus()
+    }
+  }, [isOpen])
 
   // Validate hard due date
   useEffect(() => {

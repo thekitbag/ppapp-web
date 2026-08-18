@@ -28,6 +28,9 @@ export default function TaskEditDrawer({ task, isOpen, onClose }: TaskEditDrawer
   const [errors, setErrors] = useState<Record<string, string>>({})
   const dialogRef = useRef<HTMLDivElement>(null)
   const firstInputRef = useRef<HTMLInputElement>(null)
+  const onCloseRef = useRef(onClose)
+
+  onCloseRef.current = onClose
 
   const goalsTreeQ = useQuery({ queryKey: qk.goals.tree, queryFn: getGoalsTree })
   const updateMutation = useTaskUpdateMutation()
@@ -47,7 +50,8 @@ export default function TaskEditDrawer({ task, isOpen, onClose }: TaskEditDrawer
     setErrors({})
   }, [task])
   
-  // Focus management and escape key handling
+  // Focus the title once when the drawer opens. Keep the close callback out of
+  // this effect so a parent re-render cannot pull focus away from another field.
   useEffect(() => {
     if (isOpen && firstInputRef.current) {
       firstInputRef.current.focus()
@@ -55,13 +59,13 @@ export default function TaskEditDrawer({ task, isOpen, onClose }: TaskEditDrawer
     
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
-        onClose()
+        onCloseRef.current()
       }
     }
     
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
-  }, [isOpen, onClose])
+  }, [isOpen])
   
   // Focus trap
   useEffect(() => {
