@@ -102,3 +102,48 @@ export interface ReportBreakdown {
   total_impact: number
   breakdown: BreakdownEntry[]
 }
+
+export type TrendGranularity = 'day' | 'week' | 'month'
+
+export interface TrendBucket {
+  bucket_start: string
+  bucket_end: string
+  /** Axis label, formatted server-side so UTC buckets are never re-dated by the browser. */
+  label: string
+  points: number
+  task_count: number
+}
+
+export interface TrendSeries {
+  goal_id: string | null
+  goal_title: string
+  is_no_goal: boolean
+  /** Stable position of this goal at the current drill level — keys its colour. */
+  order_index: number
+  points: number
+  /** Index-aligned to ReportTrends.buckets. */
+  values: number[]
+}
+
+export interface TrendStats {
+  total_points: number
+  task_count: number
+  days_in_period: number
+  active_days: number
+  avg_points_per_day: number
+  avg_points_per_active_day: number
+  avg_points_per_week: number
+  best_day: string | null
+  best_day_points: number
+}
+
+export interface ReportTrends {
+  start_date: string
+  end_date: string
+  granularity: TrendGranularity
+  parent_id: string | null
+  total_points: number
+  buckets: TrendBucket[]
+  series: TrendSeries[]
+  stats: TrendStats
+}
