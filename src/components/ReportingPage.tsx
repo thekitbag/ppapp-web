@@ -2,71 +2,41 @@ import { useState, Fragment } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { BarChart3, Target, RefreshCw, ChevronRight } from 'lucide-react'
 import { qk } from '../lib/queryKeys'
-import { getReportSummary, getReportBreakdown } from '../api/reports'
-import type { BreakdownEntry } from '../types'
-
-type Preset = 'this_week' | 'last_week' | 'last_30_days'
-
-const PRESETS: { key: Preset; label: string }[] = [
-  { key: 'this_week', label: 'This Week' },
-  { key: 'last_week', label: 'Last Week' },
-  { key: 'last_30_days', label: 'Last 30 Days' },
-]
+import { getReportSummary, getReportBreakdown, getReportTrends } from '../api/reports'
+import type { BreakdownEntry, TrendGranularity } from '../types'
+import {
+  GRANULARITY_LABELS,
+  PRESETS,
+  allowedGranularities,
+  getDateRange,
+  rangeDays,
+  resolveGranularity,
+  type Preset,
+} from '../lib/insightsPeriods'
+import { seriesColor } from '../lib/insightsColors'
+import TrendChart from './insights/TrendChart'
+import StatTiles from './insights/StatTiles'
 
 interface DrillCrumb {
   id: string
   title: string
 }
 
-function getDateRange(preset: Preset): { start_date: string; end_date: string } {
-  const now = new Date()
-  const utcDay = now.getUTCDay() // 0 = Sun, 1 = Mon … 6 = Sat
-  const daysFromMonday = utcDay === 0 ? 6 : utcDay - 1
-
-  if (preset === 'this_week') {
-    const monday = new Date(Date.UTC(
-      now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - daysFromMonday
-    ))
-    const sunday = new Date(Date.UTC(
-      now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - daysFromMonday + 6,
-      23, 59, 59
-    ))
-    return { start_date: monday.toISOString(), end_date: sunday.toISOString() }
-  }
-
-  if (preset === 'last_week') {
-    const monday = new Date(Date.UTC(
-      now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - daysFromMonday - 7
-    ))
-    const sunday = new Date(Date.UTC(
-      now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - daysFromMonday - 1,
-      23, 59, 59
-    ))
-    return { start_date: monday.toISOString(), end_date: sunday.toISOString() }
-  }
-
-  // last_30_days
-  const start = new Date(Date.UTC(
-    now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 29
-  ))
-  const end = new Date(Date.UTC(
-    now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(),
-    23, 59, 59
-  ))
-  return { start_date: start.toISOString(), end_date: end.toISOString() }
-}
-
 function BreakdownRow({
   entry,
   scopeTotal,
+  colorIndex,
   onDrillDown,
 }: {
   entry: BreakdownEntry
   scopeTotal: number
+  colorIndex: number
   onDrillDown?: (entry: BreakdownEntry) => void
 }) {
   const isNoGoal = entry.goal_id === null
   const drillable = entry.has_children && !isNoGoal
+  // Same colour the goal wears in the trend chart, so the two views read as one.
+  const swatch = seriesColor(colorIndex, isNoGoal)
 
   const content = (
     <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -82,42 +52,48 @@ function BreakdownRow({
         ) : (
           <div
             className="w-8 h-8 rounded-md flex items-center justify-center border-2 border-black flex-shrink-0"
-            style={{ background: 'var(--color-accent)' }}
+            style={{ background: swatch }}
           >
             <Target size={14} style={{ color: 'white' }} />
           </div>
         )}
-        <span
-          className="font-semibold truncate"
-          style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text)' }}
-        >
-          {isNoGoal ? 'No Goal' : entry.goal_title}
-        </span>
-        {drillable && (
-          <ChevronRight
-            size={16}
-            style={{ color: 'var(--color-text-muted)', flexShrink: 0 }}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span
+              className="font-semibold truncate"
+              style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text)' }}
+            >
+              {isNoGoal ? 'No Goal' : entry.goal_title}
+            </span>
+            {drillable && (
+              <ChevronRight
+                size={16}
+                style={{ color: 'var(--color-text-muted)', flexShrink: 0 }}
+                aria-hidden="true"
+              />
+            )}
+          </div>
+          {/* Share meter — the bar restates the percentage pill as length */}
+          <div
+            className="mt-1.5 rounded-full overflow-hidden"
+            style={{ height: 6, background: 'var(--color-border-light)', maxWidth: 320 }}
             aria-hidden="true"
-          />
-        )}
+          >
+            <div
+              style={{
+                width: `${Math.min(entry.percentage, 100)}%`,
+                height: '100%',
+                background: swatch,
+              }}
+            />
+          </div>
+        </div>
       </div>
 
       <div className="flex items-center gap-4 flex-shrink-0">
         <div className="text-center">
           <div
             className="text-xl font-bold"
-            style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text)' }}
-          >
-            {entry.points}
-          </div>
-          <div className="text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>
-            pts
-          </div>
-        </div>
-
-        <div className="text-center">
-          <div
-            className="text-sm font-bold"
             style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text)' }}
           >
             {entry.points}/{scopeTotal}
@@ -166,8 +142,13 @@ function BreakdownRow({
 
 export default function ReportingPage() {
   const [preset, setPreset] = useState<Preset>('this_week')
+  const [granularityOverride, setGranularityOverride] = useState<TrendGranularity | null>(null)
   const [drillPath, setDrillPath] = useState<DrillCrumb[]>([])
+
   const dateRange = getDateRange(preset)
+  const spanDays = rangeDays(dateRange)
+  const granularity = resolveGranularity(spanDays, granularityOverride)
+  const granularityOptions = allowedGranularities(spanDays)
   const currentParentId = drillPath.length > 0 ? drillPath[drillPath.length - 1].id : undefined
 
   const reportQ = useQuery({
@@ -179,6 +160,12 @@ export default function ReportingPage() {
   const breakdownQ = useQuery({
     queryKey: qk.reports.breakdown(dateRange, currentParentId),
     queryFn: () => getReportBreakdown({ ...dateRange, parent_goal_id: currentParentId }),
+    placeholderData: keepPreviousData,
+  })
+
+  const trendsQ = useQuery({
+    queryKey: qk.reports.trends({ ...dateRange, granularity }, currentParentId),
+    queryFn: () => getReportTrends({ ...dateRange, granularity, parent_goal_id: currentParentId }),
     placeholderData: keepPreviousData,
   })
 
@@ -199,10 +186,19 @@ export default function ReportingPage() {
   const isBreakdownLoading = breakdownQ.isLoading
   const breakdownData = breakdownQ.data
   const summaryData = reportQ.data
+  const trendsData = trendsQ.data
   const isEmpty = breakdownData && breakdownData.breakdown.length === 0 && breakdownData.total_impact === 0
   const isAnyFetching =
     (reportQ.isFetching && !reportQ.isLoading) ||
-    (breakdownQ.isFetching && !isBreakdownLoading)
+    (breakdownQ.isFetching && !isBreakdownLoading) ||
+    (trendsQ.isFetching && !trendsQ.isLoading)
+
+  // Goal rows take their colour from the trend series' stable order_index, so a
+  // goal is the same colour in the chart, the legend and the breakdown list.
+  const orderIndexByGoal = new Map<string, number>()
+  trendsData?.series.forEach(s => {
+    if (s.goal_id) orderIndexByGoal.set(s.goal_id, s.order_index)
+  })
 
   return (
     <div>
@@ -233,28 +229,59 @@ export default function ReportingPage() {
         <div className="w-24 h-1 rounded-full ml-16" style={{ background: '#7C3AED' }}></div>
       </div>
 
-      {/* Period selector */}
-      <div className="flex items-center gap-2 mb-8 flex-wrap" role="group" aria-label="Report period">
-        {PRESETS.map(({ key, label }) => {
-          const isActive = preset === key
-          return (
-            <button
-              key={key}
-              onClick={() => handlePresetChange(key)}
-              aria-pressed={isActive}
-              className="px-5 py-2.5 rounded-lg font-bold border-3 border-black transition-all"
-              style={{
-                fontFamily: 'var(--font-display)',
-                background: isActive ? '#7C3AED' : 'var(--color-surface)',
-                color: isActive ? 'white' : 'var(--color-text)',
-                boxShadow: isActive ? 'var(--shadow-brutal)' : 'var(--shadow-subtle)',
-                transform: isActive ? 'translate(-2px, -2px)' : undefined,
-              }}
+      {/* Filter row — scopes everything below it */}
+      <div className="flex items-center gap-x-6 gap-y-3 mb-8 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap" role="group" aria-label="Report period">
+          {PRESETS.map(({ key, label }) => {
+            const isActive = preset === key
+            return (
+              <button
+                key={key}
+                onClick={() => handlePresetChange(key)}
+                aria-pressed={isActive}
+                className="px-5 py-2.5 rounded-lg font-bold border-3 border-black transition-all"
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  background: isActive ? '#7C3AED' : 'var(--color-surface)',
+                  color: isActive ? 'white' : 'var(--color-text)',
+                  boxShadow: isActive ? 'var(--shadow-brutal)' : 'var(--shadow-subtle)',
+                  transform: isActive ? 'translate(-2px, -2px)' : undefined,
+                }}
+              >
+                {label}
+              </button>
+            )
+          })}
+        </div>
+
+        {granularityOptions.length > 1 && (
+          <div className="flex items-center gap-2" role="group" aria-label="Bucket size">
+            <span
+              className="text-xs font-bold uppercase tracking-wider"
+              style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text-muted)' }}
             >
-              {label}
-            </button>
-          )
-        })}
+              By
+            </span>
+            {granularityOptions.map(option => {
+              const isActive = granularity === option
+              return (
+                <button
+                  key={option}
+                  onClick={() => setGranularityOverride(option)}
+                  aria-pressed={isActive}
+                  className="px-3 py-1.5 rounded-lg font-bold border-2 border-black text-sm"
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    background: isActive ? 'var(--color-secondary)' : 'var(--color-surface)',
+                    color: 'var(--color-text)',
+                  }}
+                >
+                  {GRANULARITY_LABELS[option]}
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* Breadcrumbs */}
@@ -329,7 +356,7 @@ export default function ReportingPage() {
             {breakdownQ.error instanceof Error ? breakdownQ.error.message : 'Something went wrong'}
           </p>
           <button
-            onClick={() => breakdownQ.refetch()}
+            onClick={() => { breakdownQ.refetch(); trendsQ.refetch() }}
             className="btn-brutal px-6 py-3 rounded-lg font-bold text-white"
             style={{ background: '#7C3AED', fontFamily: 'var(--font-display)' }}
           >
@@ -384,6 +411,44 @@ export default function ReportingPage() {
             </p>
           </div>
 
+          {/* Period averages */}
+          {trendsData && (
+            <StatTiles
+              stats={trendsData.stats}
+              dimmed={trendsQ.isFetching && !trendsQ.isLoading}
+            />
+          )}
+
+          {/* Trend over time, split by goal */}
+          {trendsData && trendsData.buckets.length > 0 && (
+            <TrendChart
+              data={trendsData}
+              dimmed={trendsQ.isFetching && !trendsQ.isLoading}
+            />
+          )}
+
+          {trendsQ.isError && (
+            <div
+              className="rounded-xl border-3 border-black p-6 text-center"
+              style={{ background: 'var(--color-surface)', boxShadow: 'var(--shadow-subtle)' }}
+              role="alert"
+            >
+              <p className="font-bold mb-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text)' }}>
+                Couldn't load the trend
+              </p>
+              <p className="text-sm mb-4" style={{ color: 'var(--color-text-muted)' }}>
+                The totals below are still accurate.
+              </p>
+              <button
+                onClick={() => trendsQ.refetch()}
+                className="px-4 py-2 rounded-lg font-bold border-2 border-black text-sm"
+                style={{ fontFamily: 'var(--font-display)', background: 'var(--color-secondary)', color: 'var(--color-text)' }}
+              >
+                Retry trend
+              </button>
+            </div>
+          )}
+
           {/* Goal breakdown */}
           {breakdownData.breakdown.length > 0 && (
             <div>
@@ -399,6 +464,7 @@ export default function ReportingPage() {
                     key={entry.goal_id ?? `no-goal-${i}`}
                     entry={entry}
                     scopeTotal={breakdownData.total_impact}
+                    colorIndex={entry.goal_id ? orderIndexByGoal.get(entry.goal_id) ?? i : i}
                     onDrillDown={handleDrillDown}
                   />
                 ))}
