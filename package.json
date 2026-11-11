@@ -3,6 +3,7 @@
     "version": "1.0.0",
     "private": true,
     "scripts": {
+        "generate:api": "openapi-typescript ../ppapp-fastapi/openapi.json -o src/types/api.d.ts",
         "dev": "vite --host 127.0.0.1",
         "build": "vite build",
         "preview": "vite preview",

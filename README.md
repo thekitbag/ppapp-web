@@ -33,6 +33,7 @@ App runs on Vite dev server (default `http://localhost:5173`) and proxies `/api`
 npm run dev       # local dev server
 npm run build     # production build
 npm run preview   # preview built output
+npm run generate:api # regenerate src/types/api.d.ts from backend openapi.json
 npm run test      # vitest
 npm run typecheck # tsc checks
 ```
@@ -43,6 +44,9 @@ Primary views are controlled in `src/App.tsx` via local state:
 - Goals
 - Archive
 - Insights (reporting)
+- Settings (personal access tokens for Claude Code; plaintext shown once)
+
+Goal create/edit forms support an optional, per-user unique plan reference such as `Q4-A4`. The MCP milestone 1 connection exposes read tools only; write permissions are reserved for the next milestone.
 
 ## Reporting Integration
 Insights consumes backend reporting endpoints:

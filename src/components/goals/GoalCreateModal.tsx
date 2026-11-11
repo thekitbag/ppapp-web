@@ -7,6 +7,7 @@ interface GoalCreateModalProps {
   onClose: () => void
   onSubmit: (data: {
     title: string
+    plan_ref?: string | null
     description?: string
     type: GoalCadence
     parent_goal_id?: string
@@ -16,6 +17,7 @@ interface GoalCreateModalProps {
   isLoading?: boolean
   defaultType?: GoalCadence
   parentId?: string
+  error?: string
   editGoal?: Goal
 }
 
@@ -26,10 +28,12 @@ export default function GoalCreateModal({
   isLoading = false,
   defaultType = 'annual',
   parentId,
-  editGoal
+  editGoal,
+  error
 }: GoalCreateModalProps) {
   const [formData, setFormData] = useState({
     title: '',
+    plan_ref: '',
     description: '',
     type: defaultType,
     end_date: '',
@@ -46,6 +50,7 @@ export default function GoalCreateModal({
         const endDate = editGoal.end_date ? new Date(editGoal.end_date).toISOString().slice(0, 16) : ''
         setFormData({
           title: editGoal.title,
+          plan_ref: editGoal.plan_ref || '',
           description: editGoal.description || '',
           type: editGoal.type || 'annual',
           end_date: endDate,
@@ -55,6 +60,7 @@ export default function GoalCreateModal({
         // Creation mode - use defaults
         setFormData({
           title: '',
+          plan_ref: '',
           description: '',
           type: defaultType,
           end_date: '',
@@ -99,6 +105,7 @@ export default function GoalCreateModal({
 
     onSubmit({
       title: formData.title.trim(),
+      plan_ref: formData.plan_ref.trim() || null,
       description: formData.description.trim() || undefined,
       type: formData.type,
       parent_goal_id: parentId,
@@ -139,6 +146,7 @@ export default function GoalCreateModal({
           </button>
         </div>
 
+        {error && <p role="alert" className="text-red-600 mb-3">{error}</p>}
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Title */}
@@ -162,6 +170,13 @@ export default function GoalCreateModal({
             )}
           </div>
 
+          <div>
+            <label htmlFor="goal-plan-ref" className="block text-sm font-medium text-gray-700 mb-1">Plan reference</label>
+            <input id="goal-plan-ref" value={formData.plan_ref}
+              onChange={e => handleInputChange('plan_ref', e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg" placeholder="e.g. Q4-A4" />
+            <p className="text-sm text-gray-500">Optional unique reference linking this goal to your plan.</p>
+          </div>
           {/* Description */}
           <div>
             <label htmlFor="goal-description" className="block text-sm font-medium text-gray-700 mb-1">

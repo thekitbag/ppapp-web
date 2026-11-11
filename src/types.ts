@@ -39,6 +39,7 @@ export interface Project {
 }
 
 export interface Goal {
+  plan_ref?: string | null
   id: string
   title: string
   description?: string | null

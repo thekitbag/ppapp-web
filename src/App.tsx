@@ -9,10 +9,11 @@ import GoalDetailPage from './components/GoalDetailPage'
 import ArchivePage from './components/ArchivePage'
 import ReportingPage from './components/ReportingPage'
 import LoginPage from './components/LoginPage'
+import SettingsPage from './components/SettingsPage'
 export default function App() {
   // All hooks must be called before any early returns
   const { isAuthenticated, isLoading, user, logout, requiresLogin, login, devLogin } = useAuth()
-  const [currentView, setCurrentView] = useState<'tasks' | 'projects' | 'goals' | 'archive' | 'insights'>('tasks')
+  const [currentView, setCurrentView] = useState<'tasks' | 'projects' | 'goals' | 'archive' | 'insights' | 'settings'>('tasks')
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null)
   const [showGlobalTaskEditor, setShowGlobalTaskEditor] = useState(false)
   const t = useToaster()
@@ -203,6 +204,8 @@ export default function App() {
             >
               Insights
             </button>
+            <button onClick={() => setCurrentView('settings')}
+              className="btn-brutal px-6 py-3 rounded-lg" aria-pressed={currentView === 'settings'}>Settings</button>
           </nav>
         </div>
       </header>
@@ -236,6 +239,8 @@ export default function App() {
           <ProjectsPage />
         ) : currentView === 'archive' ? (
           <ArchivePage />
+        ) : currentView === 'settings' ? (
+          <SettingsPage />
         ) : currentView === 'insights' ? (
           <ReportingPage />
         ) : currentView === 'goals' && selectedGoalId ? (

@@ -7,6 +7,7 @@ export async function listGoals(): Promise<Goal[]> {
 }
 
 export interface CreateGoalInput {
+  plan_ref?: string | null
   title: string
   description?: string | null
   // Accept broader string for tests/backward-compat, UI restricts to GoalCadence

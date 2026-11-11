@@ -4,6 +4,41 @@
  */
 
 export interface paths {
+    "/api/v1/tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Tokens */
+        get: operations["list_tokens_api_v1_tokens_get"];
+        put?: never;
+        /** Create Token */
+        post: operations["create_token_api_v1_tokens_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tokens/{token_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke Token */
+        delete: operations["revoke_token_api_v1_tokens__token_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tasks": {
         parameters: {
             query?: never;
@@ -888,6 +923,8 @@ export interface components {
         };
         /** GoalCreate */
         GoalCreate: {
+            /** Plan Ref */
+            plan_ref?: string | null;
             /** Title */
             title: string;
             /** Description */
@@ -911,6 +948,8 @@ export interface components {
         };
         /** GoalDetail */
         GoalDetail: {
+            /** Plan Ref */
+            plan_ref?: string | null;
             /** Title */
             title: string;
             /** Description */
@@ -972,6 +1011,8 @@ export interface components {
          * @description Goal with hierarchical children for tree view
          */
         GoalNode: {
+            /** Plan Ref */
+            plan_ref?: string | null;
             /** Title */
             title: string;
             /** Description */
@@ -1021,6 +1062,8 @@ export interface components {
         };
         /** GoalOut */
         GoalOut: {
+            /** Plan Ref */
+            plan_ref?: string | null;
             /** Title */
             title: string;
             /** Description */
@@ -1088,6 +1131,8 @@ export interface components {
         };
         /** GoalUpdate */
         GoalUpdate: {
+            /** Plan Ref */
+            plan_ref?: string | null;
             /** Title */
             title?: string | null;
             /** Description */
@@ -1360,6 +1405,55 @@ export interface components {
             /** Goal Id */
             goal_id?: string | null;
         };
+        /** TokenCreate */
+        TokenCreate: {
+            /** Name */
+            name: string;
+            /** Scopes */
+            scopes: ("read" | "write")[];
+        };
+        /** TokenCreated */
+        TokenCreated: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Prefix */
+            prefix: string;
+            /** Scopes */
+            scopes: string[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Last Used At */
+            last_used_at: string | null;
+            /** Revoked At */
+            revoked_at: string | null;
+            /** Token */
+            token: string;
+        };
+        /** TokenOut */
+        TokenOut: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Prefix */
+            prefix: string;
+            /** Scopes */
+            scopes: string[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Last Used At */
+            last_used_at: string | null;
+            /** Revoked At */
+            revoked_at: string | null;
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -1378,6 +1472,103 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_tokens_api_v1_tokens_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                ppapp_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_token_api_v1_tokens_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                ppapp_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TokenCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenCreated"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_token_api_v1_tokens__token_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token_id: string;
+            };
+            cookie?: {
+                ppapp_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_tasks_api_v1_tasks_get: {
         parameters: {
             query?: {
