@@ -13,13 +13,16 @@ export interface paths {
         };
         /**
          * List Tasks
-         * @description List tasks with optional status filtering.
+         * @description List tasks for authenticated user with full filtering support.
+         *
+         *     If no status is provided, defaults to [backlog, week, today, doing, waiting].
+         *     Supports filtering by project, goal (legacy or TaskGoal link), tags (AND), text search, and due date range.
          */
         get: operations["list_tasks_api_v1_tasks_get"];
         put?: never;
         /**
          * Create Task
-         * @description Create a new task.
+         * @description Create a new task for authenticated user.
          */
         post: operations["create_task_api_v1_tasks_post"];
         delete?: never;
@@ -37,23 +40,27 @@ export interface paths {
         };
         /**
          * Get Task
-         * @description Get a specific task by ID.
+         * @description Get a specific task by ID for authenticated user.
          */
         get: operations["get_task_api_v1_tasks__task_id__get"];
         /**
          * Update Task
-         * @description Update a task.
+         * @description Update a task for authenticated user (supports both PUT and PATCH for compatibility).
          */
         put: operations["update_task_api_v1_tasks__task_id__put"];
         post?: never;
         /**
          * Delete Task
-         * @description Delete a task.
+         * @description Delete a task for authenticated user.
          */
         delete: operations["delete_task_api_v1_tasks__task_id__delete"];
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Update Task
+         * @description Update a task for authenticated user (supports both PUT and PATCH for compatibility).
+         */
+        patch: operations["update_task_api_v1_tasks__task_id__patch"];
         trace?: never;
     };
     "/api/v1/tasks/promote-week": {
@@ -67,9 +74,29 @@ export interface paths {
         put?: never;
         /**
          * Promote Week
-         * @description Promote tasks to week status.
+         * @description Promote tasks to week status for authenticated user.
          */
         post: operations["promote_week_api_v1_tasks_promote_week_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tasks/reindex": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reindex Tasks
+         * @description Reindex sort_order values for tasks in a specific status bucket.
+         */
+        post: operations["reindex_tasks_api_v1_tasks_reindex_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -85,13 +112,13 @@ export interface paths {
         };
         /**
          * List Projects
-         * @description List projects.
+         * @description List projects for authenticated user.
          */
         get: operations["list_projects_api_v1_projects_get"];
         put?: never;
         /**
          * Create Project
-         * @description Create a new project.
+         * @description Create a new project for authenticated user.
          */
         post: operations["create_project_api_v1_projects_post"];
         delete?: never;
@@ -109,19 +136,23 @@ export interface paths {
         };
         /**
          * Get Project
-         * @description Get a specific project by ID.
+         * @description Get a specific project by ID for authenticated user.
          */
         get: operations["get_project_api_v1_projects__project_id__get"];
         put?: never;
         post?: never;
         /**
          * Delete Project
-         * @description Delete a project.
+         * @description Delete a project for authenticated user.
          */
         delete: operations["delete_project_api_v1_projects__project_id__delete"];
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Update Project
+         * @description Update a project (partial update) for authenticated user.
+         */
+        patch: operations["update_project_api_v1_projects__project_id__patch"];
         trace?: never;
     };
     "/api/v1/goals": {
@@ -133,15 +164,55 @@ export interface paths {
         };
         /**
          * List Goals
-         * @description List goals.
+         * @description List goals for authenticated user with optional closed status filter and archive exclusion.
          */
         get: operations["list_goals_api_v1_goals_get"];
         put?: never;
         /**
          * Create Goal
-         * @description Create a new goal.
+         * @description Create a new goal for authenticated user.
          */
         post: operations["create_goal_api_v1_goals_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/goals/tree": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Goals Tree
+         * @description Get hierarchical tree of goals (Annual → Quarterly → Weekly) for authenticated user.
+         */
+        get: operations["get_goals_tree_api_v1_goals_tree_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/goals/by-type": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Goals By Type
+         * @description Get goals filtered by type and optionally by parent for picker UIs for authenticated user.
+         */
+        get: operations["get_goals_by_type_api_v1_goals_by_type_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -157,16 +228,212 @@ export interface paths {
         };
         /**
          * Get Goal
-         * @description Get a specific goal by ID.
+         * @description Get a goal with its key results and linked tasks for authenticated user.
          */
         get: operations["get_goal_api_v1_goals__goal_id__get"];
         put?: never;
         post?: never;
         /**
          * Delete Goal
-         * @description Delete a goal.
+         * @description Delete a goal for authenticated user.
          */
         delete: operations["delete_goal_api_v1_goals__goal_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Goal
+         * @description Update a goal for authenticated user.
+         */
+        patch: operations["update_goal_api_v1_goals__goal_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/goals/{goal_id}/krs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Key Result
+         * @description Create a key result for a goal for authenticated user.
+         */
+        post: operations["create_key_result_api_v1_goals__goal_id__krs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/goals/{goal_id}/krs/{kr_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Key Result
+         * @description Delete a key result for authenticated user.
+         */
+        delete: operations["delete_key_result_api_v1_goals__goal_id__krs__kr_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/goals/{goal_id}/link-tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link Tasks To Goal
+         * @description Link tasks to a goal for authenticated user.
+         */
+        post: operations["link_tasks_to_goal_api_v1_goals__goal_id__link_tasks_post"];
+        /**
+         * Unlink Tasks From Goal
+         * @description Unlink tasks from a goal for authenticated user.
+         */
+        delete: operations["unlink_tasks_from_goal_api_v1_goals__goal_id__link_tasks_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/goals/{goal_id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Close Goal
+         * @description Close a goal for authenticated user. Idempotent: returns 200 if already closed.
+         */
+        post: operations["close_goal_api_v1_goals__goal_id__close_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/goals/{goal_id}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reopen Goal
+         * @description Reopen a goal for authenticated user. Idempotent: returns 200 if already open.
+         */
+        post: operations["reopen_goal_api_v1_goals__goal_id__reopen_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/goals/{goal_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive Goal
+         * @description Archive a goal for authenticated user. Idempotent: returns 200 if already archived.
+         */
+        post: operations["archive_goal_api_v1_goals__goal_id__archive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/goals/{goal_id}/unarchive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unarchive Goal
+         * @description Unarchive a goal for authenticated user. Idempotent: returns 200 if already unarchived.
+         */
+        post: operations["unarchive_goal_api_v1_goals__goal_id__unarchive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/goals/{goal_id}/priority": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Goal Priority
+         * @description Update a goal's priority. Higher values = higher priority (displayed first).
+         */
+        post: operations["update_goal_priority_api_v1_goals__goal_id__priority_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/goals/{goal_id}/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reorder Goal
+         * @description Smart reordering endpoint. Swaps goal with adjacent sibling.
+         *     Automatically fixes priority collisions with self-healing re-indexing.
+         *
+         *     Args:
+         *         goal_id: ID of the goal to reorder
+         *         payload: {"direction": "up" | "down"}
+         *
+         *     Returns:
+         *         Updated goal object
+         */
+        post: operations["reorder_goal_api_v1_goals__goal_id__reorder_post"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -179,7 +446,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Health */
+        /**
+         * Health
+         * @description Health check endpoint.
+         */
         get: operations["health_api_v1_health_get"];
         put?: never;
         post?: never;
@@ -196,7 +466,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Next Recommendations */
+        /**
+         * Next Recommendations
+         * @description Get next task recommendations with optional energy and time_window filtering.
+         */
         get: operations["next_recommendations_api_v1_recommendations_next_get"];
         put?: never;
         post?: never;
@@ -215,8 +488,235 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Suggest Week Api */
+        /**
+         * Suggest Week Api
+         * @description Get week suggestions.
+         */
         post: operations["suggest_week_api_api_v1_recommendations_suggest_week_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/import/trello": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Trello
+         * @description Import tasks from Trello export file (JSON or CSV format) for authenticated user.
+         */
+        post: operations["import_trello_api_v1_import_trello_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/ms/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Microsoft Login
+         * @description Initiate Microsoft OAuth login flow.
+         */
+        get: operations["microsoft_login_api_v1_auth_ms_login_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/ms/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Microsoft Callback
+         * @description Handle Microsoft OAuth callback.
+         */
+        get: operations["microsoft_callback_api_v1_auth_ms_callback_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/google/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Google Login
+         * @description Initiate Google OAuth login flow.
+         */
+        get: operations["google_login_api_v1_auth_google_login_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/google/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Google Callback
+         * @description Handle Google OAuth callback.
+         */
+        get: operations["google_callback_api_v1_auth_google_callback_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Logout
+         * @description Logout user by clearing session cookie.
+         */
+        get: operations["logout_api_v1_auth_logout_get"];
+        put?: never;
+        /**
+         * Logout
+         * @description Logout user by clearing session cookie.
+         */
+        post: operations["logout_api_v1_auth_logout_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/dev-login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Dev Login
+         * @description Development-only login endpoint for local testing.
+         */
+        post: operations["dev_login_api_v1_auth_dev_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Current User
+         * @description Get current authenticated user information from database.
+         */
+        get: operations["get_current_user_api_v1_auth_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/goals/{goal_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Goal Report
+         * @description Return cumulative completed task size for a goal and all its descendants.
+         */
+        get: operations["get_goal_report_api_v1_reports_goals__goal_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/breakdown": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Breakdown Report
+         * @description Return hierarchical breakdown of completed task points by goal level.
+         */
+        get: operations["get_breakdown_report_api_v1_reports_breakdown_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Summary Report
+         * @description Return period productivity totals grouped by top-level goal roots plus unlinked tasks.
+         */
+        get: operations["get_summary_report_api_v1_reports_summary_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -243,16 +743,180 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/healthz": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Healthz
+         * @description Production health check endpoint.
+         */
+        get: operations["healthz_healthz_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/ms/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ms Login Alias
+         * @description Alias for Microsoft login endpoint.
+         */
+        get: operations["ms_login_alias_auth_ms_login_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/ms/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ms Callback Alias
+         * @description Alias for Microsoft callback endpoint.
+         */
+        get: operations["ms_callback_alias_auth_ms_callback_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/google/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Google Login Alias
+         * @description Alias for Google login endpoint.
+         */
+        get: operations["google_login_alias_auth_google_login_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/google/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Google Callback Alias
+         * @description Alias for Google callback endpoint.
+         */
+        get: operations["google_callback_alias_auth_google_callback_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** Goal */
-        Goal: {
+        /** Body_import_trello_api_v1_import_trello_post */
+        Body_import_trello_api_v1_import_trello_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
+        /** BreakdownReportResponse */
+        BreakdownReportResponse: {
+            /** Parent Id */
+            parent_id: string | null;
+            /** Total Impact */
+            total_impact: number;
+            /** Breakdown */
+            breakdown: components["schemas"]["BreakdownRow"][];
+        };
+        /** BreakdownRow */
+        BreakdownRow: {
+            /** Goal Id */
+            goal_id: string | null;
+            /** Goal Title */
+            goal_title: string;
+            /** Goal Type */
+            goal_type?: ("annual" | "quarterly" | "weekly") | null;
+            /** Points */
+            points: number;
+            /** Percentage */
+            percentage: number;
+            /** Has Children */
+            has_children: boolean;
+        };
+        /** DevLoginRequest */
+        DevLoginRequest: {
+            /** Email */
+            email: string;
+            /** Name */
+            name: string;
+        };
+        /** GoalCreate */
+        GoalCreate: {
             /** Title */
             title: string;
+            /** Description */
+            description?: string | null;
             /** Type */
-            type?: string | null;
+            type?: ("annual" | "quarterly" | "weekly") | null;
+            /** Parent Goal Id */
+            parent_goal_id?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /**
+             * Status
+             * @default on_target
+             */
+            status: ("on_target" | "at_risk" | "off_target") | null;
+            /**
+             * Priority
+             * @default 0
+             */
+            priority: number | null;
+        };
+        /** GoalDetail */
+        GoalDetail: {
+            /** Title */
+            title: string;
+            /** Description */
+            description?: string | null;
+            /** Type */
+            type?: ("annual" | "quarterly" | "weekly") | null;
             /** Id */
             id: string;
             /**
@@ -260,18 +924,225 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** Parent Goal Id */
+            parent_goal_id?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /**
+             * Status
+             * @default on_target
+             * @enum {string}
+             */
+            status: "on_target" | "at_risk" | "off_target";
+            /**
+             * Is Closed
+             * @default false
+             */
+            is_closed: boolean;
+            /** Closed At */
+            closed_at?: string | null;
+            /**
+             * Is Archived
+             * @default false
+             */
+            is_archived: boolean;
+            /**
+             * Priority
+             * @default 0
+             */
+            priority: number;
+            /** Key Results */
+            key_results?: components["schemas"]["KROut"][];
+            /** Tasks */
+            tasks?: components["schemas"]["TaskOut"][];
         };
-        /** GoalCreate */
-        GoalCreate: {
+        /** GoalGroupEntry */
+        GoalGroupEntry: {
+            /** Goal Id */
+            goal_id: string | null;
+            /** Goal Title */
+            goal_title: string;
+            /** Total Size */
+            total_size: number;
+            /** Is No Goal */
+            is_no_goal: boolean;
+        };
+        /**
+         * GoalNode
+         * @description Goal with hierarchical children for tree view
+         */
+        GoalNode: {
             /** Title */
             title: string;
+            /** Description */
+            description?: string | null;
             /** Type */
-            type?: string | null;
+            type?: ("annual" | "quarterly" | "weekly") | null;
+            /** Id */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Parent Goal Id */
+            parent_goal_id?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /**
+             * Status
+             * @default on_target
+             * @enum {string}
+             */
+            status: "on_target" | "at_risk" | "off_target";
+            /**
+             * Is Closed
+             * @default false
+             */
+            is_closed: boolean;
+            /** Closed At */
+            closed_at?: string | null;
+            /**
+             * Is Archived
+             * @default false
+             */
+            is_archived: boolean;
+            /**
+             * Priority
+             * @default 0
+             */
+            priority: number;
+            /** Children */
+            children?: components["schemas"]["GoalNode"][];
+            /** Tasks */
+            tasks?: components["schemas"]["TaskOut"][] | null;
+            /** Path */
+            path?: string | null;
+        };
+        /** GoalOut */
+        GoalOut: {
+            /** Title */
+            title: string;
+            /** Description */
+            description?: string | null;
+            /** Type */
+            type?: ("annual" | "quarterly" | "weekly") | null;
+            /** Id */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Parent Goal Id */
+            parent_goal_id?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /**
+             * Status
+             * @default on_target
+             * @enum {string}
+             */
+            status: "on_target" | "at_risk" | "off_target";
+            /**
+             * Is Closed
+             * @default false
+             */
+            is_closed: boolean;
+            /** Closed At */
+            closed_at?: string | null;
+            /**
+             * Is Archived
+             * @default false
+             */
+            is_archived: boolean;
+            /**
+             * Priority
+             * @default 0
+             */
+            priority: number;
+        };
+        /** GoalReportResponse */
+        GoalReportResponse: {
+            /** Goal Id */
+            goal_id: string;
+            /** Goal Title */
+            goal_title: string;
+            /** Total Size */
+            total_size: number;
+            /** Direct Size */
+            direct_size: number;
+            /** Descendant Size */
+            descendant_size: number;
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+        };
+        /** GoalSummary */
+        GoalSummary: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+        };
+        /** GoalUpdate */
+        GoalUpdate: {
+            /** Title */
+            title?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Type */
+            type?: ("annual" | "quarterly" | "weekly") | null;
+            /** Parent Goal Id */
+            parent_goal_id?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Status */
+            status?: ("on_target" | "at_risk" | "off_target") | null;
+            /** Priority */
+            priority?: number | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** KRCreate */
+        KRCreate: {
+            /** Name */
+            name: string;
+            /** Target Value */
+            target_value: number;
+            /** Unit */
+            unit?: string | null;
+            /** Baseline Value */
+            baseline_value?: number | null;
+        };
+        /** KROut */
+        KROut: {
+            /** Id */
+            id: string;
+            /** Goal Id */
+            goal_id: string;
+            /** Name */
+            name: string;
+            /** Target Value */
+            target_value: number;
+            /** Unit */
+            unit?: string | null;
+            /** Baseline Value */
+            baseline_value?: number | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** PriorityUpdate */
+        PriorityUpdate: {
+            /** Priority */
+            priority: number;
         };
         /** Project */
         Project: {
@@ -279,6 +1150,10 @@ export interface components {
             name: string;
             /** Color */
             color?: string | null;
+            /** Milestone Title */
+            milestone_title?: string | null;
+            /** Milestone Due At */
+            milestone_due_at?: string | null;
             /** Id */
             id: string;
             /**
@@ -293,6 +1168,21 @@ export interface components {
             name: string;
             /** Color */
             color?: string | null;
+            /** Milestone Title */
+            milestone_title?: string | null;
+            /** Milestone Due At */
+            milestone_due_at?: string | null;
+        };
+        /** ProjectUpdate */
+        ProjectUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Color */
+            color?: string | null;
+            /** Milestone Title */
+            milestone_title?: string | null;
+            /** Milestone Due At */
+            milestone_due_at?: string | null;
         };
         /** PromoteWeekBody */
         PromoteWeekBody: {
@@ -316,6 +1206,11 @@ export interface components {
             /** Items */
             items: components["schemas"]["RecommendationItem"][];
         };
+        /** ReorderRequest */
+        ReorderRequest: {
+            /** Direction */
+            direction: string;
+        };
         /** SuggestWeekBody */
         SuggestWeekBody: {
             /**
@@ -324,6 +1219,23 @@ export interface components {
              */
             limit: number;
         };
+        /** SummaryReportResponse */
+        SummaryReportResponse: {
+            /**
+             * Start Date
+             * Format: date-time
+             */
+            start_date: string;
+            /**
+             * End Date
+             * Format: date-time
+             */
+            end_date: string;
+            /** Impact Score */
+            impact_score: number;
+            /** Groups */
+            groups: components["schemas"]["GoalGroupEntry"][];
+        };
         /** TaskCreate */
         TaskCreate: {
             /** Title */
@@ -331,7 +1243,7 @@ export interface components {
             /** Description */
             description?: string | null;
             /** Size */
-            size?: (1 | 2 | 3 | 5 | 8 | 13 | 21) | null;
+            size?: number | null;
             /** Hard Due At */
             hard_due_at?: string | null;
             /** Soft Due At */
@@ -342,13 +1254,42 @@ export interface components {
             project_id?: string | null;
             /** Goal Id */
             goal_id?: string | null;
-            /**
-             * Tags
-             * @default []
-             */
-            tags: string[];
+            /** Tags */
+            tags?: string[];
             /** Status */
-            status?: ("backlog" | "week" | "today" | "doing" | "done" | "waiting") | null;
+            status?: ("backlog" | "week" | "today" | "doing" | "done" | "waiting" | "archived") | null;
+            /** Sort Order */
+            sort_order?: number | null;
+            /**
+             * Insert At
+             * @description Position for new task in status bucket
+             * @default top
+             */
+            insert_at: ("top" | "bottom") | null;
+            /**
+             * Client Request Id
+             * @description Optional client-generated token for idempotent requests
+             */
+            client_request_id?: string | null;
+            /**
+             * Goals
+             * @description Array of goal IDs to link to this task
+             */
+            goals?: string[] | null;
+        };
+        /** TaskGoalLink */
+        TaskGoalLink: {
+            /** Task Ids */
+            task_ids: string[];
+            /** Goal Id */
+            goal_id?: string | null;
+        };
+        /** TaskGoalLinkResponse */
+        TaskGoalLinkResponse: {
+            /** Linked */
+            linked: string[];
+            /** Already Linked */
+            already_linked: string[];
         };
         /** TaskOut */
         TaskOut: {
@@ -356,28 +1297,33 @@ export interface components {
             id: string;
             /** Title */
             title: string;
+            /** Description */
+            description?: string | null;
             /**
              * Status
              * @enum {string}
              */
-            status: "backlog" | "week" | "today" | "doing" | "done" | "waiting";
+            status: "backlog" | "week" | "today" | "doing" | "done" | "waiting" | "archived";
             /** Sort Order */
             sort_order: number;
-            /**
-             * Tags
-             * @default []
-             */
-            tags: string[];
+            /** Tags */
+            tags?: string[];
+            /** Size */
+            size?: number | null;
+            /** Completed At */
+            completed_at?: string | null;
             /** Hard Due At */
             hard_due_at?: string | null;
             /** Soft Due At */
             soft_due_at?: string | null;
-            /** Completed At */
-            completed_at?: string | null;
+            /** Energy */
+            energy?: ("low" | "medium" | "high" | "energized" | "neutral" | "tired") | null;
             /** Project Id */
             project_id?: string | null;
             /** Goal Id */
             goal_id?: string | null;
+            /** Goals */
+            goals?: components["schemas"]["GoalSummary"][];
             /**
              * Created At
              * Format: date-time
@@ -388,6 +1334,31 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /** TaskUpdate */
+        TaskUpdate: {
+            /** Title */
+            title?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Status */
+            status?: ("backlog" | "week" | "today" | "doing" | "done" | "waiting" | "archived") | null;
+            /** Sort Order */
+            sort_order?: number | null;
+            /** Tags */
+            tags?: string[] | null;
+            /** Size */
+            size?: number | null;
+            /** Hard Due At */
+            hard_due_at?: string | null;
+            /** Soft Due At */
+            soft_due_at?: string | null;
+            /** Energy */
+            energy?: ("low" | "medium" | "high" | "energized" | "neutral" | "tired") | null;
+            /** Project Id */
+            project_id?: string | null;
+            /** Goal Id */
+            goal_id?: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -410,13 +1381,28 @@ export interface operations {
     list_tasks_api_v1_tasks_get: {
         parameters: {
             query?: {
+                /** @description Filter by status; repeat param for multiple */
                 status?: string[];
                 skip?: number;
                 limit?: number;
+                /** @description Filter by project ID */
+                project_id?: string | null;
+                /** @description Filter by goal ID (legacy goal_id or TaskGoal link) */
+                goal_id?: string | null;
+                /** @description Filter by tags (AND semantics; repeat param) */
+                tags?: string[] | null;
+                /** @description Case-insensitive search on title or description */
+                search?: string | null;
+                /** @description Start date (YYYY-MM-DD) for due date range */
+                due_date_start?: string | null;
+                /** @description End date (YYYY-MM-DD) for due date range */
+                due_date_end?: string | null;
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                ppapp_session?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -445,7 +1431,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                ppapp_session?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -454,7 +1442,7 @@ export interface operations {
         };
         responses: {
             /** @description Successful Response */
-            201: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -480,7 +1468,9 @@ export interface operations {
             path: {
                 task_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                ppapp_session?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -511,13 +1501,13 @@ export interface operations {
             path: {
                 task_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                ppapp_session?: string | null;
+            };
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                };
+                "application/json": components["schemas"]["TaskUpdate"];
             };
         };
         responses: {
@@ -548,7 +1538,9 @@ export interface operations {
             path: {
                 task_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                ppapp_session?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -570,18 +1562,91 @@ export interface operations {
             };
         };
     };
+    update_task_api_v1_tasks__task_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: {
+                ppapp_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     promote_week_api_v1_tasks_promote_week_post: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                ppapp_session?: string | null;
+            };
         };
         requestBody: {
             content: {
                 "application/json": components["schemas"]["PromoteWeekBody"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reindex_tasks_api_v1_tasks_reindex_post: {
+        parameters: {
+            query: {
+                /** @description Status bucket to reindex */
+                status: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                ppapp_session?: string | null;
+            };
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -611,7 +1676,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                ppapp_session?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -640,7 +1707,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                ppapp_session?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -675,7 +1744,9 @@ export interface operations {
             path: {
                 project_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                ppapp_session?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -706,7 +1777,9 @@ export interface operations {
             path: {
                 project_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                ppapp_session?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -728,15 +1801,58 @@ export interface operations {
             };
         };
     };
+    update_project_api_v1_projects__project_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: {
+                ppapp_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_goals_api_v1_goals_get: {
         parameters: {
             query?: {
                 skip?: number;
                 limit?: number;
+                /** @description Filter by closed status. None = no filter (all goals) */
+                is_closed?: boolean;
+                /** @description Include archived goals. Default: exclude archived */
+                include_archived?: boolean;
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                ppapp_session?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -746,7 +1862,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Goal"][];
+                    "application/json": components["schemas"]["GoalOut"][];
                 };
             };
             /** @description Validation Error */
@@ -765,7 +1881,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                ppapp_session?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -779,7 +1897,83 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Goal"];
+                    "application/json": components["schemas"]["GoalOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_goals_tree_api_v1_goals_tree_get: {
+        parameters: {
+            query?: {
+                /** @description Include linked tasks for weekly goals */
+                include_tasks?: boolean;
+                /** @description Include closed goals in tree. Default: open goals only */
+                include_closed?: boolean;
+                /** @description Include archived goals. Default: exclude archived */
+                include_archived?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                ppapp_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalNode"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_goals_by_type_api_v1_goals_by_type_get: {
+        parameters: {
+            query: {
+                /** @description Goal type to filter by */
+                type: "annual" | "quarterly" | "weekly";
+                /** @description Parent goal ID (for quarterly/weekly goals) */
+                parent_id?: string;
+                /** @description Include archived goals. Default: exclude archived */
+                include_archived?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                ppapp_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalOut"][];
                 };
             };
             /** @description Validation Error */
@@ -800,7 +1994,9 @@ export interface operations {
             path: {
                 goal_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                ppapp_session?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -810,7 +2006,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Goal"];
+                    "application/json": components["schemas"]["GoalDetail"];
                 };
             };
             /** @description Validation Error */
@@ -831,7 +2027,9 @@ export interface operations {
             path: {
                 goal_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                ppapp_session?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -841,6 +2039,392 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_goal_api_v1_goals__goal_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goal_id: string;
+            };
+            cookie?: {
+                ppapp_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoalUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_key_result_api_v1_goals__goal_id__krs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goal_id: string;
+            };
+            cookie?: {
+                ppapp_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KRCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KROut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_key_result_api_v1_goals__goal_id__krs__kr_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goal_id: string;
+                kr_id: string;
+            };
+            cookie?: {
+                ppapp_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    link_tasks_to_goal_api_v1_goals__goal_id__link_tasks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goal_id: string;
+            };
+            cookie?: {
+                ppapp_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskGoalLink"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskGoalLinkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unlink_tasks_from_goal_api_v1_goals__goal_id__link_tasks_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goal_id: string;
+            };
+            cookie?: {
+                ppapp_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskGoalLink"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskGoalLinkResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    close_goal_api_v1_goals__goal_id__close_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goal_id: string;
+            };
+            cookie?: {
+                ppapp_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reopen_goal_api_v1_goals__goal_id__reopen_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goal_id: string;
+            };
+            cookie?: {
+                ppapp_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    archive_goal_api_v1_goals__goal_id__archive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goal_id: string;
+            };
+            cookie?: {
+                ppapp_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unarchive_goal_api_v1_goals__goal_id__unarchive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goal_id: string;
+            };
+            cookie?: {
+                ppapp_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_goal_priority_api_v1_goals__goal_id__priority_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goal_id: string;
+            };
+            cookie?: {
+                ppapp_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PriorityUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reorder_goal_api_v1_goals__goal_id__reorder_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                goal_id: string;
+            };
+            cookie?: {
+                ppapp_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalOut"];
+                };
             };
             /** @description Validation Error */
             422: {
@@ -876,13 +2460,22 @@ export interface operations {
     next_recommendations_api_v1_recommendations_next_get: {
         parameters: {
             query?: {
-                window?: number;
+                /** @description Current energy level (low, medium, or high); influences task-size preference in ranking */
+                energy?: string | null;
+                /** @description Available time in minutes; must be one of 15, 30, 60, 120, 240 */
+                time_window?: number | null;
                 limit?: number;
-                energy?: string;
+                /**
+                 * @deprecated
+                 * @description Deprecated: use time_window instead
+                 */
+                window?: number;
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                ppapp_session?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -911,7 +2504,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                ppapp_session?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -926,6 +2521,367 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RecommendationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_trello_api_v1_import_trello_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                ppapp_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_trello_api_v1_import_trello_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    microsoft_login_api_v1_auth_ms_login_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    microsoft_callback_api_v1_auth_ms_callback_get: {
+        parameters: {
+            query?: {
+                code?: string | null;
+                state?: string | null;
+                error?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                oauth_state?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    google_login_api_v1_auth_google_login_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    google_callback_api_v1_auth_google_callback_get: {
+        parameters: {
+            query?: {
+                code?: string | null;
+                state?: string | null;
+                error?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                oauth_state?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    logout_api_v1_auth_logout_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    logout_api_v1_auth_logout_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    dev_login_api_v1_auth_dev_login_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DevLoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_current_user_api_v1_auth_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                ppapp_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_goal_report_api_v1_reports_goals__goal_id__get: {
+        parameters: {
+            query?: {
+                /** @description Inclusive start (ISO8601) */
+                start_date?: string | null;
+                /** @description Inclusive end (ISO8601) */
+                end_date?: string | null;
+            };
+            header?: never;
+            path: {
+                goal_id: string;
+            };
+            cookie?: {
+                ppapp_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalReportResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_breakdown_report_api_v1_reports_breakdown_get: {
+        parameters: {
+            query: {
+                /** @description Inclusive start (ISO8601) */
+                start_date: string;
+                /** @description Inclusive end (ISO8601) */
+                end_date: string;
+                /** @description Drill into children of this goal; omit for root view */
+                parent_goal_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                ppapp_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreakdownReportResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_summary_report_api_v1_reports_summary_get: {
+        parameters: {
+            query: {
+                /** @description Inclusive start (ISO8601) */
+                start_date: string;
+                /** @description Inclusive end (ISO8601) */
+                end_date: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                ppapp_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SummaryReportResponse"];
                 };
             };
             /** @description Validation Error */
@@ -955,6 +2911,136 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    healthz_healthz_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    ms_login_alias_auth_ms_login_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    ms_callback_alias_auth_ms_callback_get: {
+        parameters: {
+            query?: {
+                code?: string | null;
+                state?: string | null;
+                error?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                oauth_state?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    google_login_alias_auth_google_login_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    google_callback_alias_auth_google_callback_get: {
+        parameters: {
+            query?: {
+                code?: string | null;
+                state?: string | null;
+                error?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                oauth_state?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
