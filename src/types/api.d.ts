@@ -758,6 +758,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/trends": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Trends Report
+         * @description Return completed points bucketed over time, split by goal, plus period averages.
+         */
+        get: operations["get_trends_report_api_v1_reports_trends_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/": {
         parameters: {
             query?: never;
@@ -1453,6 +1473,97 @@ export interface components {
             last_used_at: string | null;
             /** Revoked At */
             revoked_at: string | null;
+        };
+        /**
+         * TrendBucket
+         * @description One time slot on the trend axis. Buckets are dense — zero-point slots included.
+         */
+        TrendBucket: {
+            /**
+             * Bucket Start
+             * Format: date-time
+             */
+            bucket_start: string;
+            /**
+             * Bucket End
+             * Format: date-time
+             */
+            bucket_end: string;
+            /** Label */
+            label: string;
+            /** Points */
+            points: number;
+            /** Task Count */
+            task_count: number;
+        };
+        /**
+         * TrendSeries
+         * @description Points for one goal row across every bucket. `values` is index-aligned to `buckets`.
+         */
+        TrendSeries: {
+            /** Goal Id */
+            goal_id: string | null;
+            /** Goal Title */
+            goal_title: string;
+            /** Is No Goal */
+            is_no_goal: boolean;
+            /** Order Index */
+            order_index: number;
+            /** Points */
+            points: number;
+            /** Values */
+            values: number[];
+        };
+        /**
+         * TrendStats
+         * @description Period aggregates. Always computed over UTC calendar days, whatever the granularity.
+         */
+        TrendStats: {
+            /** Total Points */
+            total_points: number;
+            /** Task Count */
+            task_count: number;
+            /** Days In Period */
+            days_in_period: number;
+            /** Active Days */
+            active_days: number;
+            /** Avg Points Per Day */
+            avg_points_per_day: number;
+            /** Avg Points Per Active Day */
+            avg_points_per_active_day: number;
+            /** Avg Points Per Week */
+            avg_points_per_week: number;
+            /** Best Day */
+            best_day?: string | null;
+            /** Best Day Points */
+            best_day_points: number;
+        };
+        /** TrendsReportResponse */
+        TrendsReportResponse: {
+            /**
+             * Start Date
+             * Format: date-time
+             */
+            start_date: string;
+            /**
+             * End Date
+             * Format: date-time
+             */
+            end_date: string;
+            /**
+             * Granularity
+             * @enum {string}
+             */
+            granularity: "day" | "week" | "month";
+            /** Parent Id */
+            parent_id: string | null;
+            /** Total Points */
+            total_points: number;
+            /** Buckets */
+            buckets: components["schemas"]["TrendBucket"][];
+            /** Series */
+            series: components["schemas"]["TrendSeries"][];
+            stats: components["schemas"]["TrendStats"];
         };
         /** ValidationError */
         ValidationError: {
@@ -3073,6 +3184,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SummaryReportResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_trends_report_api_v1_reports_trends_get: {
+        parameters: {
+            query: {
+                /** @description Inclusive start (ISO8601) */
+                start_date: string;
+                /** @description Inclusive end (ISO8601) */
+                end_date: string;
+                /** @description Bucket size: day | week | month */
+                granularity?: string;
+                /** @description Scope series to children of this goal; omit for root view */
+                parent_goal_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                ppapp_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrendsReportResponse"];
                 };
             };
             /** @description Validation Error */
