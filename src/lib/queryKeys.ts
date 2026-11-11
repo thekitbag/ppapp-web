@@ -23,5 +23,9 @@ export const qk = {
       ['reports', 'summary', params] as const,
     breakdown: (params: { start_date: string; end_date: string }, parentGoalId?: string) =>
       ['reports', 'breakdown', params, parentGoalId ?? null] as const,
+    trends: (
+      params: { start_date: string; end_date: string; granularity: string },
+      parentGoalId?: string,
+    ) => ['reports', 'trends', params, parentGoalId ?? null] as const,
   },
 };

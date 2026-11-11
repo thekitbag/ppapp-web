@@ -197,6 +197,25 @@ describe('TaskEditDrawer', () => {
     expect(titleInput).toHaveFocus()
   })
 
+  it('keeps focus in the goal search when the parent re-renders', async () => {
+    const user = userEvent.setup()
+    const { rerender } = render(
+      <TaskEditDrawer task={mockTask} isOpen={true} onClose={mockOnClose} />
+    )
+
+    const goalPicker = await screen.findByRole('button', { name: /test annual goal/i })
+    await user.click(goalPicker)
+
+    const goalSearch = screen.getByPlaceholderText('Search goals...')
+    expect(goalSearch).toHaveFocus()
+
+    rerender(
+      <TaskEditDrawer task={mockTask} isOpen={true} onClose={() => mockOnClose()} />
+    )
+
+    expect(goalSearch).toHaveFocus()
+  })
+
   it('parses tags correctly from comma-separated string', () => {
     render(<TaskEditDrawer task={mockTask} isOpen={true} onClose={mockOnClose} />)
     

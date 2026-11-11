@@ -326,6 +326,81 @@ export const handlers = [
     })
   }),
 
+  http.get('/api/v1/reports/breakdown', ({ request }) => {
+    const url = new URL(request.url)
+    const parentId = url.searchParams.get('parent_goal_id')
+    return HttpResponse.json({
+      parent_id: parentId,
+      total_impact: 21,
+      breakdown: [
+        {
+          goal_id: '1',
+          goal_title: 'Test Annual Goal',
+          goal_type: 'annual',
+          points: 13,
+          percentage: 62,
+          has_children: false,
+        },
+        {
+          goal_id: null,
+          goal_title: 'No Goal',
+          goal_type: null,
+          points: 8,
+          percentage: 38,
+          has_children: false,
+        },
+      ],
+    })
+  }),
+
+  http.get('/api/v1/reports/trends', ({ request }) => {
+    const url = new URL(request.url)
+    const start_date = url.searchParams.get('start_date') ?? ''
+    const end_date = url.searchParams.get('end_date') ?? ''
+    const granularity = url.searchParams.get('granularity') ?? 'day'
+    const buckets = [
+      { bucket_start: start_date, bucket_end: start_date, label: 'Jan 1', points: 13, task_count: 2 },
+      { bucket_start: end_date, bucket_end: end_date, label: 'Jan 2', points: 8, task_count: 1 },
+    ]
+    return HttpResponse.json({
+      start_date,
+      end_date,
+      granularity,
+      parent_id: url.searchParams.get('parent_goal_id'),
+      total_points: 21,
+      buckets,
+      series: [
+        {
+          goal_id: '1',
+          goal_title: 'Test Annual Goal',
+          is_no_goal: false,
+          order_index: 0,
+          points: 13,
+          values: [13, 0],
+        },
+        {
+          goal_id: null,
+          goal_title: 'No Goal',
+          is_no_goal: true,
+          order_index: 1,
+          points: 8,
+          values: [0, 8],
+        },
+      ],
+      stats: {
+        total_points: 21,
+        task_count: 3,
+        days_in_period: 2,
+        active_days: 2,
+        avg_points_per_day: 10.5,
+        avg_points_per_active_day: 10.5,
+        avg_points_per_week: 73.5,
+        best_day: '2024-01-01T00:00:00',
+        best_day_points: 13,
+      },
+    })
+  }),
+
   // Recommendations endpoints
   http.get('/api/v1/recommendations/next', () => {
     return HttpResponse.json({
