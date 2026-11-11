@@ -47,7 +47,7 @@ export default function SettingsPage() {
     <h2 className="text-3xl font-bold">Settings</h2>
     <div className="card-brutal p-6 space-y-4">
       <h3 className="text-xl font-bold">Claude connection</h3>
-      <p>Create a personal access token to connect Claude Code to your tasks and goals. Milestone 1 supports reading only.</p>
+      <p>Create a personal access token so Claude Code can read or update your tasks and goals.</p>
       {error && <p role="alert">{error}</p>}
       <form onSubmit={create} className="space-y-3">
         <label className="block">Token name
@@ -56,7 +56,7 @@ export default function SettingsPage() {
         </label>
         <fieldset className="flex gap-4"><legend>Permissions</legend>
           <label><input type="checkbox" checked={read} onChange={e => setRead(e.target.checked)} /> Read</label>
-          <label><input type="checkbox" checked={write} onChange={e => setWrite(e.target.checked)} /> Write (for milestone 2)</label>
+          <label><input type="checkbox" checked={write} onChange={e => setWrite(e.target.checked)} /> Write</label>
         </fieldset>
         <button className="btn-brutal px-4 py-2" disabled={busy || !name.trim() || (!read && !write)}>Create token</button>
       </form>

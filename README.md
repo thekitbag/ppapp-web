@@ -46,7 +46,7 @@ Primary views are controlled in `src/App.tsx` via local state:
 - Insights (reporting)
 - Settings (personal access tokens for Claude Code; plaintext shown once)
 
-Goal create/edit forms support an optional, per-user unique plan reference such as `Q4-A4`. The MCP milestone 1 connection exposes read tools only; write permissions are reserved for the next milestone.
+Goal create/edit forms support an optional, per-user unique plan reference such as `Q4-A4`. MCP supports read and write permissions. Existing read-only tokens continue to query data; create a token with Write permission to create or update tasks and goals. Bulk creation previews changes before an approved atomic commit.
 
 ## Reporting Integration
 Insights consumes backend reporting endpoints:
