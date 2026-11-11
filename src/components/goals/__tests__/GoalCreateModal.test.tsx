@@ -89,6 +89,8 @@ describe('GoalCreateModal', () => {
     await user.type(screen.getByRole('textbox', { name: /description/i }), 'Test Description')
     await user.type(screen.getByLabelText(/end date/i), '2024-12-31T23:59')
 
+    await user.type(screen.getByLabelText('Plan reference'), ' Q4-A4 ')
+
     // Submit the form
     const submitButton = screen.getByRole('button', { name: /create goal/i })
     await user.click(submitButton)
@@ -96,6 +98,7 @@ describe('GoalCreateModal', () => {
     // Should call onSubmit with correct data
     expect(mockOnSubmit).toHaveBeenCalledWith({
       title: 'Test Goal',
+      plan_ref: 'Q4-A4',
       description: 'Test Description',
       type: 'weekly',
       parent_goal_id: 'parent-123',
@@ -174,4 +177,13 @@ describe('GoalCreateModal', () => {
     // Button should say "Save Changes"
     expect(screen.getByRole('button', { name: /save changes/i })).toBeInTheDocument()
   })
+  it('clears an existing plan reference explicitly', async () => {
+    const user = userEvent.setup()
+    render(<GoalCreateModal open onClose={mockOnClose} onSubmit={mockOnSubmit}
+      editGoal={{ id:'goal', title:'Existing', type:'annual', plan_ref:'A1', end_date:'2027-12-31T12:00:00Z', created_at:'2026-11-11T12:00:00Z' }} />)
+    await user.clear(screen.getByLabelText('Plan reference'))
+    await user.click(screen.getByRole('button', {name:/save changes/i}))
+    expect(mockOnSubmit).toHaveBeenCalledWith(expect.objectContaining({plan_ref:null}))
+  })
+
 })

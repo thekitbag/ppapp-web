@@ -175,6 +175,7 @@ export default function GoalsPage() {
       updateM.mutate({
         id: editGoal.id,
         title: data.title,
+        plan_ref: data.plan_ref,
         description: data.description,
         type: data.type as GoalCadence,
         parent_goal_id: data.parent_goal_id,
@@ -328,6 +329,8 @@ export default function GoalsPage() {
           setEditGoal(undefined)
         }}
         onSubmit={handleCreateSubmit}
+        error={(editGoal ? updateM.isError : createM.isError) ?
+          ((editGoal ? updateM.error : createM.error) as any)?.response?.data?.error?.message || 'Could not save goal. Please try again.' : undefined}
         isLoading={editGoal ? updateM.isPending : createM.isPending}
         defaultType={createModalType}
         parentId={createModalParentId}
