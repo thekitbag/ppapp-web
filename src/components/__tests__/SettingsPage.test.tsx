@@ -55,7 +55,7 @@ describe('Token settings', () => {
     await user.type(screen.getByLabelText('Token name'),'Claude')
     await user.click(screen.getByLabelText('Read'))
     expect(screen.getByRole('button',{name:'Create token'})).toBeDisabled()
-    await user.click(screen.getByLabelText('Write (for milestone 2)'))
+    await user.click(screen.getByLabelText('Write'))
     expect(screen.getByRole('button',{name:'Create token'})).toBeEnabled()
   })
 
