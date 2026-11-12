@@ -145,6 +145,14 @@ export default function GoalTreeVisualization({
     })
   }, [annualGoals, quarterlyGoals, weeklyGoals, parentChildMap])
 
+  // Keep goals outside a complete annual hierarchy visible and actionable.
+  const unparentedGoals = useMemo(() => {
+    const renderedIds = new Set(buckets.flatMap(bucket => bucket.rows.flatMap(row =>
+      [row.annualGoal, row.quarterlyGoal, row.weeklyGoal].flatMap(goal => goal ? [goal.id] : [])
+    )))
+    return [...quarterlyGoals, ...weeklyGoals].filter(goal => !renderedIds.has(goal.id))
+  }, [buckets, quarterlyGoals, weeklyGoals])
+
   // Check if goal is in tree
   const isInTree = (goalId: string) => {
     return !focusedGoalId || treeMemberIds?.has(goalId)
@@ -200,7 +208,7 @@ export default function GoalTreeVisualization({
     observer.observe(containerRef.current)
 
     return () => observer.disconnect()
-  }, [buckets])
+  }, [buckets, unparentedGoals])
 
   // Generate connector lines
   const connectorLines = useMemo(() => {
@@ -310,7 +318,7 @@ export default function GoalTreeVisualization({
 
       {/* Buckets - each annual goal and its descendants */}
       <div className="flex flex-col gap-8" style={{ zIndex: 1, position: 'relative' }}>
-        {buckets.length === 0 ? (
+        {buckets.length === 0 && unparentedGoals.length === 0 ? (
           <div className="text-center py-12"
                style={{ color: 'var(--color-text-muted)' }}>
             <p className="text-lg mb-4 font-bold" style={{ fontFamily: 'var(--font-display)' }}>
@@ -515,6 +523,29 @@ export default function GoalTreeVisualization({
               </div>
             )
           })
+        )}
+        {unparentedGoals.length > 0 && (
+          <section aria-label="Unparented goals">
+            <h2 className="text-lg font-bold mb-2" style={{ fontFamily: 'var(--font-display)' }}>
+              Unparented goals
+            </h2>
+            <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>
+              Goals without a complete parent hierarchy.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {unparentedGoals.map(goal => (
+                <div key={goal.id} data-goal-id={goal.id}
+                  className={`transition-all ${!isInTree(goal.id) ? 'opacity-30 blur-[1px] pointer-events-none' : ''} ${isFocused(goal.id) ? 'ring-3 ring-offset-2' : ''}`}
+                  style={isFocused(goal.id) ? { '--tw-ring-color': 'var(--color-accent)' } as React.CSSProperties : undefined}
+                  onClick={() => isInTree(goal.id) && onGoalClick?.(goal)}>
+                  <GoalCard goal={goal} onStatusChange={onStatusChange} onEndDateChange={onEndDateChange}
+                    onEdit={() => onEdit?.(goal)} onClose={() => onClose?.(goal)}
+                    onDelete={() => onDelete?.(goal)} onTaskClick={onTaskClick}
+                    showTasks={true} childCount={goal.children.length} />
+                </div>
+              ))}
+            </div>
+          </section>
         )}
       </div>
     </div>
